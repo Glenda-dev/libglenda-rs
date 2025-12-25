@@ -20,8 +20,15 @@ impl CapPtr {
     }
 
     // --- TCB Methods ---
-    pub fn tcb_configure(&self, cspace: CapPtr, vspace: CapPtr, utcb: usize, fault_ep: CapPtr) -> usize {
-        self.invoke(tcbmethod::CONFIGURE, [cspace.0, vspace.0, utcb, fault_ep.0, 0, 0])
+    pub fn tcb_configure(
+        &self,
+        cspace: CapPtr,
+        vspace: CapPtr,
+        utcb: usize,
+        fault_ep: CapPtr,
+        utcb_frame: CapPtr,
+    ) -> usize {
+        self.invoke(tcbmethod::CONFIGURE, [cspace.0, vspace.0, utcb, fault_ep.0, utcb_frame.0, 0])
     }
 
     pub fn tcb_set_priority(&self, priority: usize) -> usize {
@@ -54,8 +61,18 @@ impl CapPtr {
     }
 
     // --- Untyped Methods ---
-    pub fn untyped_retype(&self, obj_type: CapType, size_bits: usize, n_objs: usize, dest_cnode: CapPtr, dest_offset: usize) -> usize {
-        self.invoke(untypedmethod::RETYPE, [obj_type as usize, size_bits, n_objs, dest_cnode.0, dest_offset, 0])
+    pub fn untyped_retype(
+        &self,
+        obj_type: CapType,
+        size_bits: usize,
+        n_objs: usize,
+        dest_cnode: CapPtr,
+        dest_offset: usize,
+    ) -> usize {
+        self.invoke(
+            untypedmethod::RETYPE,
+            [obj_type as usize, size_bits, n_objs, dest_cnode.0, dest_offset, 0],
+        )
     }
 
     // --- PageTable Methods ---

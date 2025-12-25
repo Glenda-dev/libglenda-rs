@@ -6,6 +6,3 @@ edition = "2024"
 [lib]
 name = "glenda"
 crate-type = ["staticlib", "rlib"]
-
-[dependencies]
-riscv = "0.15.0"

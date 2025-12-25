@@ -5,8 +5,8 @@ pub mod errors;
 pub mod syscall;
 pub mod types;
 
-pub use types::*;
 pub use caps::CapPtr;
+pub use types::*;
 
 pub const UTCB_ADDR: usize = 0x8000_0000;
 
@@ -24,4 +24,14 @@ pub mod errcode {
     pub const MAPPING_FAILED: usize = 6;
     pub const INVALID_SLOT: usize = 7;
     pub const UNTYPE_OOM: usize = 8;
+}
+
+#[panic_handler]
+fn panic(_info: &core::panic::PanicInfo) -> ! {
+    unsafe {
+        core::arch::asm!("ebreak");
+        loop {
+            core::arch::asm!("wfi");
+        }
+    }
 }
