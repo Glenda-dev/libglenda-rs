@@ -1,5 +1,6 @@
 #![no_std]
 
+pub mod bootinfo;
 pub mod caps;
 pub mod errors;
 pub mod syscall;
