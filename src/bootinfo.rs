@@ -1,4 +1,4 @@
-use crate::CapPtr;
+use crate::cap::CapPtr;
 
 /// Magic number to verify BootInfo validity: 'GLENDA_B'
 pub const BOOTINFO_MAGIC: u32 = 0x99999999;

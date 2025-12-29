@@ -1,9 +1,9 @@
 mod syscall;
 pub use syscall::PosixSyscall;
 
-use crate::caps::CapPtr;
-use crate::types::MsgTag;
-use crate::utcb;
+use crate::cap::CapPtr;
+use crate::ipc::MsgTag;
+use crate::ipc::utcb;
 
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]

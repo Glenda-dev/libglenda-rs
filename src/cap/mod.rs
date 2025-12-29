@@ -1,9 +1,23 @@
-use crate::syscall::*;
-use crate::types::*;
+pub mod method;
+
+pub use method::*;
+
+use crate::ipc::MsgTag;
+use crate::syscall::sys_invoke;
 
 #[repr(transparent)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct CapPtr(pub usize);
+
+#[derive(Debug, Clone, Copy)]
+#[repr(usize)]
+pub enum CapType {
+    CNode = 1,
+    TCB = 2,
+    Endpoint = 3,
+    Frame = 4,
+    PageTable = 5,
+}
 
 impl CapPtr {
     pub const fn new(cptr: usize) -> Self {
@@ -113,4 +127,25 @@ impl CapPtr {
             [msg_info.as_usize(), args[0], args[1], args[2], args[3], args[4]],
         )
     }
+}
+
+pub const CSPACE_SLOT: usize = 0;
+pub const VSPACE_SLOT: usize = 1;
+pub const TCB_SLOT: usize = 2;
+pub const UTCB_SLOT: usize = 3;
+pub const MEM_SLOT: usize = 4;
+pub const MMIO_SLOT: usize = 5;
+pub const IRQ_SLOT: usize = 6;
+pub const FAULT_SLOT: usize = 7;
+
+pub mod rights {
+    pub const READ: u8 = 1 << 0;
+    pub const WRITE: u8 = 1 << 1;
+    pub const GRANT: u8 = 1 << 2;
+    pub const SEND: u8 = 1 << 3;
+    pub const RECV: u8 = 1 << 4;
+    pub const CALL: u8 = 1 << 5;
+    pub const ALL: u8 = 0xFF;
+    pub const RW: u8 = READ | WRITE;
+    pub const MASTER: u8 = ALL;
 }
