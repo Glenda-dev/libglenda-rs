@@ -5,6 +5,7 @@ extern crate alloc;
 pub mod allocator;
 pub mod bootinfo;
 pub mod caps;
+pub mod crt0;
 pub mod errors;
 pub mod posix;
 pub mod syscall;
