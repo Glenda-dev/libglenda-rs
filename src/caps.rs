@@ -102,4 +102,15 @@ impl CapPtr {
             [msg_info.as_usize(), args[0], args[1], args[2], args[3], args[4]],
         )
     }
+
+    pub fn ipc_notify(&self, badge: usize) -> usize {
+        self.invoke(ipcmethod::NOTIFY, [badge, 0, 0, 0, 0, 0])
+    }
+
+    pub fn ipc_reply(&self, msg_info: MsgTag, args: &[usize]) -> usize {
+        self.invoke(
+            replymethod::REPLY,
+            [msg_info.as_usize(), args[0], args[1], args[2], args[3], args[4]],
+        )
+    }
 }
