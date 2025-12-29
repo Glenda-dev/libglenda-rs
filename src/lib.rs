@@ -1,5 +1,8 @@
 #![no_std]
 
+extern crate alloc;
+
+pub mod allocator;
 pub mod bootinfo;
 pub mod caps;
 pub mod errors;
