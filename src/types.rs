@@ -1,7 +1,5 @@
 pub use super::caps::CapPtr;
 
-pub type CPTR = usize;
-
 pub const CSPACE_SLOT: usize = 0;
 pub const VSPACE_SLOT: usize = 1;
 pub const TCB_SLOT: usize = 2;
@@ -26,6 +24,7 @@ pub mod rights {
 pub mod ipcmethod {
     pub const SEND: usize = 1;
     pub const RECV: usize = 2;
+    pub const CALL: usize = 3;
 }
 
 pub mod tcbmethod {
@@ -84,13 +83,16 @@ impl MsgTag {
     pub fn set_has_cap(&mut self) {
         self.0 |= Self::FLAG_HAS_CAP;
     }
+
+    pub fn as_usize(&self) -> usize {
+        self.0
+    }
 }
 
 #[repr(C)]
 #[derive(Debug, Clone, Copy)]
 pub struct UTCB {
-    pub msg_tag: MsgTag,
-    pub mrs_regs: [usize; 7],
+    pub mrs: [usize; 7],
     pub cap_transfer: usize,
     pub recv_window: usize,
     pub tls: usize,

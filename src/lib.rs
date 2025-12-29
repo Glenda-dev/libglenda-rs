@@ -3,17 +3,13 @@
 pub mod bootinfo;
 pub mod caps;
 pub mod errors;
+pub mod posix;
 pub mod syscall;
 pub mod types;
+pub mod utcb;
 
 pub use caps::CapPtr;
 pub use types::*;
-
-pub const UTCB_ADDR: usize = 0x8000_0000;
-
-pub fn get_utcb() -> &'static mut UTCB {
-    unsafe { &mut *(UTCB_ADDR as *mut UTCB) }
-}
 
 pub mod errcode {
     pub const SUCCESS: usize = 0;

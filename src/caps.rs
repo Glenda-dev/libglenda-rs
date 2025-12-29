@@ -85,11 +85,21 @@ impl CapPtr {
     }
 
     // --- IPC Methods ---
-    pub fn send(&self, msg_info: usize) -> usize {
-        sys_send(self.0, msg_info)
+    pub fn ipc_send(&self, msg_info: MsgTag, args: &[usize]) -> usize {
+        self.invoke(
+            ipcmethod::SEND,
+            [msg_info.as_usize(), args[0], args[1], args[2], args[3], args[4]],
+        )
     }
 
-    pub fn recv(&self) -> usize {
-        sys_recv(self.0)
+    pub fn ipc_recv(&self) -> usize {
+        self.invoke(ipcmethod::RECV, [0, 0, 0, 0, 0, 0])
+    }
+
+    pub fn ipc_call(&self, msg_info: MsgTag, args: &[usize]) -> usize {
+        self.invoke(
+            ipcmethod::CALL,
+            [msg_info.as_usize(), args[0], args[1], args[2], args[3], args[4]],
+        )
     }
 }

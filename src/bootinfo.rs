@@ -1,4 +1,4 @@
-use crate::types::CPTR;
+use crate::CapPtr;
 
 /// Magic number to verify BootInfo validity: 'GLENDA_B'
 pub const BOOTINFO_MAGIC: u32 = 0x99999999;
@@ -46,8 +46,8 @@ pub struct BootInfo {
 #[repr(C)]
 #[derive(Debug, Clone, Copy)]
 pub struct SlotRegion {
-    pub start: CPTR,
-    pub end: CPTR,
+    pub start: CapPtr,
+    pub end: CapPtr,
 }
 
 #[repr(C)]
@@ -71,9 +71,9 @@ impl BootInfo {
             magic: BOOTINFO_MAGIC,
             dtb_paddr: 0,
             dtb_size: 0,
-            empty: SlotRegion { start: 0, end: 0 },
-            untyped: SlotRegion { start: 0, end: 0 },
-            irq: SlotRegion { start: 0, end: 0 },
+            empty: SlotRegion { start: CapPtr(0), end: CapPtr(0) },
+            untyped: SlotRegion { start: CapPtr(0), end: CapPtr(0) },
+            irq: SlotRegion { start: CapPtr(0), end: CapPtr(0) },
             untyped_count: 0,
             untyped_list: [UntypedDesc {
                 paddr: 0,
