@@ -28,11 +28,3 @@ pub fn sys_invoke(
     }
     ret
 }
-
-pub fn sys_send(cptr: usize, msg_info: usize) -> usize {
-    sys_invoke(cptr, 1, msg_info, 0, 0, 0, 0, 0)
-}
-
-pub fn sys_recv(cptr: usize) -> usize {
-    sys_invoke(cptr, 2, 0, 0, 0, 0, 0, 0)
-}
