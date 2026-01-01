@@ -69,9 +69,9 @@ pub extern "C" fn posix_call(posixd_cap: CapPtr, request: &PosixRequest) -> Posi
     let res = posixd_cap.ipc_call(msg_tag, args);
 
     if res == 0 {
-        let err = utcb.mrs[0] as isize;
+        let err = utcb.mrs_regs[0] as isize;
         if err >= 0 {
-            PosixResponse::success(utcb.mrs[1])
+            PosixResponse::success(utcb.mrs_regs[1])
         } else {
             PosixResponse::error(err as i32)
         }

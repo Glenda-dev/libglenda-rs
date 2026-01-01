@@ -3,6 +3,7 @@ pub mod utcb;
 pub use utcb::UTCB;
 
 #[derive(Debug, Clone, Copy)]
+#[repr(transparent)]
 pub struct MsgTag(pub usize);
 
 impl MsgTag {

@@ -17,6 +17,7 @@ pub enum CapType {
     Endpoint = 3,
     Frame = 4,
     PageTable = 5,
+    Console = 6,
 }
 
 impl CapPtr {
@@ -127,6 +128,21 @@ impl CapPtr {
             [msg_info.as_usize(), args[0], args[1], args[2], args[3], args[4]],
         )
     }
+
+    // --- Console Methods ---
+    pub fn console_put_char(&self, c: char) -> usize {
+        self.invoke(consolemethod::PUT_CHAR, [c as usize, 0, 0, 0, 0, 0])
+    }
+
+    pub fn console_put_str(&self, s: &str) -> usize {
+        let ipc_buf = crate::ipc::utcb::get_ipc_buffer();
+        if let Some((offset, len)) = ipc_buf.append_str(s) {
+            self.invoke(consolemethod::PUT_STR, [offset, len, 0, 0, 0, 0])
+        } else {
+            // Buffer overflow
+            1
+        }
+    }
 }
 
 pub const CSPACE_SLOT: usize = 0;
@@ -137,6 +153,7 @@ pub const MEM_SLOT: usize = 4;
 pub const MMIO_SLOT: usize = 5;
 pub const IRQ_SLOT: usize = 6;
 pub const FAULT_SLOT: usize = 7;
+pub const CONSOLE_SLOT: usize = 8;
 
 pub mod rights {
     pub const READ: u8 = 1 << 0;
