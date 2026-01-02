@@ -25,8 +25,8 @@ _start:
     "#
 );
 
-pub const HEAP_VA: usize = 0xffff_ffff_c000_0000;
-pub const HEAP_SIZE: usize = 16 * 1024; // 16 KB
+pub const HEAP_VA: usize = 0x2000_0000;
+pub const HEAP_SIZE: usize = 1024 * 1024; // 1 MB
 
 #[unsafe(no_mangle)]
 unsafe extern "C" fn glenda_start() -> ! {

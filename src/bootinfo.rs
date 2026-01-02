@@ -6,6 +6,18 @@ pub const BOOTINFO_MAGIC: u32 = 0x99999999;
 /// Fixed size of the BootInfo page (usually 4KB)
 pub const BOOTINFO_SIZE: usize = 4096;
 
+/// Virtual Address where BootInfo is mapped in Root Task
+pub const BOOTINFO_VA: usize = 0x3F_FFFF_C000;
+
+/// Virtual Address where Initrd is mapped in Root Task
+pub const INITRD_VA: usize = 0x3000_0000;
+
+/// Capability Slot for Console
+pub const CONSOLE_CAP: usize = 5;
+
+/// Capability Slot for Initrd Frame
+pub const INITRD_CAP: usize = 6;
+
 /// Maximum number of untyped memory regions we can describe
 pub const MAX_UNTYPED_REGIONS: usize = 128;
 
@@ -38,12 +50,6 @@ pub struct BootInfo {
     /// List of untyped memory regions available to the system
     /// The i-th entry here corresponds to the capability at `untyped.start + i`
     pub untyped_list: [UntypedDesc; MAX_UNTYPED_REGIONS],
-
-    /// Physical address of the Initrd (Ramdisk)
-    pub initrd_paddr: usize,
-
-    /// Size of the Initrd
-    pub initrd_size: usize,
 
     /// Command line arguments passed to the kernel
     pub cmdline: [u8; 128],
@@ -87,8 +93,6 @@ impl BootInfo {
                 is_device: false,
                 padding: [0; 6],
             }; MAX_UNTYPED_REGIONS],
-            initrd_paddr: 0,
-            initrd_size: 0,
             cmdline: [0; 128],
         }
     }
