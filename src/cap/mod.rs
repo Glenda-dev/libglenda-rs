@@ -50,6 +50,10 @@ impl CapPtr {
         self.invoke(tcbmethod::SET_PRIORITY, [priority, 0, 0, 0, 0, 0])
     }
 
+    pub fn tcb_set_registers(&self, flags: usize, pc: usize, sp: usize) -> usize {
+        self.invoke(tcbmethod::SET_REGISTERS, [flags, pc, sp, 0, 0, 0])
+    }
+
     pub fn tcb_resume(&self) -> usize {
         self.invoke(tcbmethod::RESUME, [0, 0, 0, 0, 0, 0])
     }
@@ -108,7 +112,14 @@ impl CapPtr {
     }
 
     pub fn ipc_recv(&self) -> usize {
-        self.invoke(ipcmethod::RECV, [0, 0, 0, 0, 0, 0])
+        let (ret, badge) =
+            crate::syscall::sys_invoke_recv(self.0, ipcmethod::RECV, 0, 0, 0, 0, 0, 0);
+        if ret == 0 {
+            badge
+        } else {
+            // TODO: Return Result
+            0
+        }
     }
 
     pub fn ipc_call(&self, msg_info: MsgTag, args: &[usize]) -> usize {

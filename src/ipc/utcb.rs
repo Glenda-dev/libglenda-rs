@@ -35,6 +35,19 @@ impl IPCBuffer {
         self.0[0..len].copy_from_slice(s.as_bytes());
         Some((0, len))
     }
+
+    pub fn append_bytes(&mut self, bytes: &[u8]) -> Option<(usize, usize)> {
+        let len = bytes.len();
+        if len > IPC_BUFFER_SIZE {
+            return None;
+        }
+        self.0[0..len].copy_from_slice(bytes);
+        Some((0, len))
+    }
+
+    pub fn clear(&mut self) {
+        // No-op since we don't track cursor yet
+    }
 }
 
 pub fn get() -> &'static mut UTCB {
