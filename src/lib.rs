@@ -8,11 +8,11 @@ pub mod cap;
 pub mod crt0;
 pub mod elf;
 pub mod error;
-pub mod factotum;
 pub mod initrd;
 pub mod ipc;
 pub mod log;
 pub mod posix;
+pub mod protocol;
 pub mod syscall;
 
 #[panic_handler]

@@ -19,6 +19,7 @@ pub enum CapType {
     Frame = 4,
     PageTable = 5,
     Console = 6,
+    IrqHandler = 7,
 }
 
 impl CapPtr {
@@ -144,6 +145,15 @@ impl CapPtr {
     // --- Console Methods ---
     pub fn console_put_char(&self, c: char) -> usize {
         self.invoke(consolemethod::PUT_CHAR, [c as usize, 0, 0, 0, 0, 0])
+    }
+
+    // --- IrqHandler Methods ---
+    pub fn irq_handler_ack(&self) -> usize {
+        self.invoke(irqmethod::ACK, [0, 0, 0, 0, 0, 0])
+    }
+
+    pub fn irq_handler_set_notification(&self, notification: CapPtr) -> usize {
+        self.invoke(irqmethod::SET_NOTIFICATION, [notification.0, 0, 0, 0, 0, 0])
     }
 
     pub fn console_put_str(&self, s: &str) -> usize {
