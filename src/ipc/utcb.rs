@@ -14,6 +14,12 @@ pub struct UTCB {
     pub ipc_buffer_size: usize,
 }
 
+impl UTCB {
+    pub fn current() -> &'static mut Self {
+        unsafe { &mut *(UTCB_ADDR as *mut UTCB) }
+    }
+}
+
 pub const UTCB_SIZE: usize = core::mem::size_of::<UTCB>();
 pub const IPC_BUFFER_SIZE: usize = PGSIZE - UTCB_SIZE;
 
