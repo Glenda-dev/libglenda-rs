@@ -7,8 +7,9 @@ pub mod bootinfo;
 pub mod cap;
 pub mod crt0;
 pub mod error;
-pub mod log;
+pub mod initrd;
 pub mod ipc;
+pub mod log;
 pub mod posix;
 pub mod syscall;
 
