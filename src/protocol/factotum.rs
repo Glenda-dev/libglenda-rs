@@ -35,3 +35,7 @@ pub const INIT_RESOURCES: usize = 20; // arg0: start_slot, arg1: count
 pub const INIT_IRQ: usize = 23; // arg0: start_slot, arg1: count
 pub const PROCESS_LOAD_IMAGE: usize = 21; // arg0: pid, arg1: frame_cap, arg2: offset, arg3: len, arg4: load_addr
 pub const PROCESS_START: usize = 22; // arg0: pid, arg1: entry, arg2: stack
+pub const SPAWN_SERVICE: usize = 24; // arg0: name_len, arg1: binary_name_len. Name in UTCB buffer.
+pub const SPAWN_SERVICE_INITRD: usize = 25; // arg0: name_len. Name in UTCB buffer. Cap: manifest_frame.
+pub const INIT_MANIFEST: usize = 26; // Cap: manifest_frame.
+pub const SPAWN_SERVICE_MANIFEST: usize = 27; // arg0: index.
