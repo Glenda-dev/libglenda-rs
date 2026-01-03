@@ -1,4 +1,3 @@
-
 // Protocol ID
 pub const UNICORN_PROTO: usize = 0x0200;
 
@@ -6,6 +5,7 @@ pub const UNICORN_PROTO: usize = 0x0200;
 pub const SCAN_BUS: usize = 1;
 pub const LOAD_DRIVER: usize = 2;
 pub const LIST_DEVICES: usize = 3;
+pub const INIT_MANIFEST: usize = 4; // arg0: frame_cap, arg1: size
 
 // Driver Interface
 pub const GET_INFO: usize = 10;
