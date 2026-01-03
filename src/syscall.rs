@@ -1,3 +1,4 @@
+use crate::ipc::utcb;
 use core::arch::asm;
 
 #[inline(always)]
@@ -10,18 +11,22 @@ pub fn sys_invoke(
     arg3: usize,
     arg4: usize,
     arg5: usize,
+    arg6: usize,
 ) -> usize {
+    let utcb = utcb::get();
+    utcb.mrs_regs[0] = arg0;
+    utcb.mrs_regs[1] = arg1;
+    utcb.mrs_regs[2] = arg2;
+    utcb.mrs_regs[3] = arg3;
+    utcb.mrs_regs[4] = arg4;
+    utcb.mrs_regs[5] = arg5;
+    utcb.mrs_regs[6] = arg6;
+
     let mut ret;
     unsafe {
         asm!(
             "ecall",
             in("a0") cptr,
-            in("a1") arg0,
-            in("a2") arg1,
-            in("a3") arg2,
-            in("a4") arg3,
-            in("a5") arg4,
-            in("a6") arg5,
             in("a7") method,
             lateout("a0") ret,
         );
@@ -40,18 +45,20 @@ pub fn sys_invoke_recv(
     arg4: usize,
     arg5: usize,
 ) -> (usize, usize) {
+    let utcb = crate::ipc::utcb::get();
+    utcb.mrs_regs[0] = arg0;
+    utcb.mrs_regs[1] = arg1;
+    utcb.mrs_regs[2] = arg2;
+    utcb.mrs_regs[3] = arg3;
+    utcb.mrs_regs[4] = arg4;
+    utcb.mrs_regs[5] = arg5;
+
     let mut ret;
     let mut badge;
     unsafe {
         asm!(
             "ecall",
             in("a0") cptr,
-            in("a1") arg0,
-            in("a2") arg1,
-            in("a3") arg2,
-            in("a4") arg3,
-            in("a5") arg4,
-            in("a6") arg5,
             in("a7") method,
             lateout("a0") ret,
             lateout("t0") badge,

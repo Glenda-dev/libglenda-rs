@@ -1,5 +1,6 @@
 pub mod utcb;
 
+pub use utcb::MAX_MRS;
 pub use utcb::UTCB;
 
 #[derive(Debug, Clone, Copy)]
@@ -8,6 +9,10 @@ pub struct MsgTag(pub usize);
 
 impl MsgTag {
     pub const FLAG_HAS_CAP: usize = 1 << 4;
+
+    pub const fn empty() -> Self {
+        Self(0)
+    }
 
     pub fn new(label: usize, length: usize) -> Self {
         Self((label << 16) | (length & 0xF))

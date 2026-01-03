@@ -3,13 +3,15 @@ pub mod pagetable;
 
 pub use method::*;
 
+use crate::ipc::MAX_MRS;
 use crate::ipc::MsgTag;
 use crate::ipc::utcb;
-use crate::syscall::sys_invoke;
+use crate::syscall::{sys_invoke, sys_invoke_recv};
 
 #[repr(transparent)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct CapPtr(pub usize);
+pub type Args = [usize; MAX_MRS];
 
 #[derive(Debug, Clone, Copy)]
 #[repr(usize)]
@@ -24,6 +26,10 @@ pub enum CapType {
 }
 
 impl CapPtr {
+    pub const fn null() -> Self {
+        Self(0)
+    }
+
     pub const fn new(cptr: usize) -> Self {
         Self(cptr)
     }
@@ -33,8 +39,8 @@ impl CapPtr {
     }
 
     // --- Generic Invocation ---
-    pub fn invoke(&self, method: usize, args: [usize; 6]) -> usize {
-        sys_invoke(self.0, method, args[0], args[1], args[2], args[3], args[4], args[5])
+    pub fn invoke(&self, method: usize, args: Args) -> usize {
+        sys_invoke(self.0, method, args[0], args[1], args[2], args[3], args[4], args[5], args[6])
     }
 
     // --- TCB Methods ---
@@ -42,48 +48,48 @@ impl CapPtr {
         &self,
         cspace: CapPtr,
         vspace: CapPtr,
-        utcb: usize,
-        fault_ep: CapPtr,
-        utcb_frame: CapPtr,
+        utcb: CapPtr,
+        trapframe: CapPtr,
+        kstack: CapPtr,
     ) -> usize {
-        self.invoke(tcbmethod::CONFIGURE, [cspace.0, vspace.0, utcb, fault_ep.0, utcb_frame.0, 0])
+        self.invoke(tcbmethod::CONFIGURE, [cspace.0, vspace.0, utcb.0, trapframe.0, kstack.0, 0, 0])
     }
 
     pub fn tcb_set_priority(&self, priority: usize) -> usize {
-        self.invoke(tcbmethod::SET_PRIORITY, [priority, 0, 0, 0, 0, 0])
+        self.invoke(tcbmethod::SET_PRIORITY, [priority, 0, 0, 0, 0, 0, 0])
     }
 
     pub fn tcb_set_registers(&self, flags: usize, pc: usize, sp: usize) -> usize {
-        self.invoke(tcbmethod::SET_REGISTERS, [flags, pc, sp, 0, 0, 0])
+        self.invoke(tcbmethod::SET_REGISTERS, [flags, pc, sp, 0, 0, 0, 0])
     }
 
     pub fn tcb_set_fault_handler(&self, fault_ep: CapPtr) -> usize {
-        self.invoke(tcbmethod::SET_FAULT_HANDLER, [fault_ep.0, 0, 0, 0, 0, 0])
+        self.invoke(tcbmethod::SET_FAULT_HANDLER, [fault_ep.0, 0, 0, 0, 0, 0, 0])
     }
 
     pub fn tcb_resume(&self) -> usize {
-        self.invoke(tcbmethod::RESUME, [0, 0, 0, 0, 0, 0])
+        self.invoke(tcbmethod::RESUME, [0, 0, 0, 0, 0, 0, 0])
     }
 
     pub fn tcb_suspend(&self) -> usize {
-        self.invoke(tcbmethod::SUSPEND, [0, 0, 0, 0, 0, 0])
+        self.invoke(tcbmethod::SUSPEND, [0, 0, 0, 0, 0, 0, 0])
     }
 
     // --- CNode Methods ---
     pub fn cnode_mint(&self, src: CapPtr, dest_slot: usize, badge: usize, rights: u8) -> usize {
-        self.invoke(cnodemethod::MINT, [src.0, dest_slot, badge, rights as usize, 0, 0])
+        self.invoke(cnodemethod::MINT, [src.0, dest_slot, badge, rights as usize, 0, 0, 0])
     }
 
     pub fn cnode_copy(&self, src: CapPtr, dest_slot: usize, rights: u8) -> usize {
-        self.invoke(cnodemethod::COPY, [src.0, dest_slot, rights as usize, 0, 0, 0])
+        self.invoke(cnodemethod::COPY, [src.0, dest_slot, rights as usize, 0, 0, 0, 0])
     }
 
     pub fn cnode_delete(&self, slot: usize) -> usize {
-        self.invoke(cnodemethod::DELETE, [slot, 0, 0, 0, 0, 0])
+        self.invoke(cnodemethod::DELETE, [slot, 0, 0, 0, 0, 0, 0])
     }
 
     pub fn cnode_revoke(&self, slot: usize) -> usize {
-        self.invoke(cnodemethod::REVOKE, [slot, 0, 0, 0, 0, 0])
+        self.invoke(cnodemethod::REVOKE, [slot, 0, 0, 0, 0, 0, 0])
     }
 
     // --- Untyped Methods ---
@@ -97,30 +103,29 @@ impl CapPtr {
     ) -> usize {
         self.invoke(
             untypedmethod::RETYPE,
-            [obj_type as usize, size_bits, n_objs, dest_cnode.0, dest_offset, 0],
+            [obj_type as usize, size_bits, n_objs, dest_cnode.0, dest_offset, 0, 0],
         )
     }
 
     // --- PageTable Methods ---
     pub fn pagetable_map(&self, frame: CapPtr, vaddr: usize, rights: usize) -> usize {
-        self.invoke(pagetablemethod::MAP, [frame.0, vaddr, rights, 0, 0, 0])
+        self.invoke(pagetablemethod::MAP, [frame.0, vaddr, rights, 0, 0, 0, 0])
     }
 
     pub fn pagetable_unmap(&self, vaddr: usize) -> usize {
-        self.invoke(pagetablemethod::UNMAP, [vaddr, 0, 0, 0, 0, 0])
+        self.invoke(pagetablemethod::UNMAP, [vaddr, 0, 0, 0, 0, 0, 0])
     }
 
     // --- IPC Methods ---
     pub fn ipc_send(&self, msg_info: MsgTag, args: &[usize]) -> usize {
         self.invoke(
             ipcmethod::SEND,
-            [msg_info.as_usize(), args[0], args[1], args[2], args[3], args[4]],
+            [msg_info.as_usize(), args[0], args[1], args[2], args[3], args[4], 0],
         )
     }
 
     pub fn ipc_recv(&self) -> usize {
-        let (ret, badge) =
-            crate::syscall::sys_invoke_recv(self.0, ipcmethod::RECV, 0, 0, 0, 0, 0, 0);
+        let (ret, badge) = sys_invoke_recv(self.0, ipcmethod::RECV, 0, 0, 0, 0, 0, 0);
         if ret == 0 {
             badge
         } else {
@@ -132,39 +137,39 @@ impl CapPtr {
     pub fn ipc_call(&self, msg_info: MsgTag, args: &[usize]) -> usize {
         self.invoke(
             ipcmethod::CALL,
-            [msg_info.as_usize(), args[0], args[1], args[2], args[3], args[4]],
+            [msg_info.as_usize(), args[0], args[1], args[2], args[3], args[4], args[5]],
         )
     }
 
     pub fn ipc_notify(&self, badge: usize) -> usize {
-        self.invoke(ipcmethod::NOTIFY, [badge, 0, 0, 0, 0, 0])
+        self.invoke(ipcmethod::NOTIFY, [badge, 0, 0, 0, 0, 0, 0])
     }
 
     pub fn ipc_reply(&self, msg_info: MsgTag, args: &[usize]) -> usize {
         self.invoke(
             replymethod::REPLY,
-            [msg_info.as_usize(), args[0], args[1], args[2], args[3], args[4]],
+            [msg_info.as_usize(), args[0], args[1], args[2], args[3], args[4], args[5]],
         )
     }
 
     // --- Console Methods ---
     pub fn console_put_char(&self, c: char) -> usize {
-        self.invoke(consolemethod::PUT_CHAR, [c as usize, 0, 0, 0, 0, 0])
+        self.invoke(consolemethod::PUT_CHAR, [c as usize, 0, 0, 0, 0, 0, 0])
     }
 
     // --- IrqHandler Methods ---
     pub fn irq_handler_ack(&self) -> usize {
-        self.invoke(irqmethod::ACK, [0, 0, 0, 0, 0, 0])
+        self.invoke(irqmethod::ACK, [0, 0, 0, 0, 0, 0, 0])
     }
 
     pub fn irq_handler_set_notification(&self, notification: CapPtr) -> usize {
-        self.invoke(irqmethod::SET_NOTIFICATION, [notification.0, 0, 0, 0, 0, 0])
+        self.invoke(irqmethod::SET_NOTIFICATION, [notification.0, 0, 0, 0, 0, 0, 0])
     }
 
     pub fn console_put_str(&self, s: &str) -> usize {
-        let mut utcb = utcb::get();
+        let utcb = utcb::get();
         if let Some((offset, len)) = utcb.set_str(s) {
-            self.invoke(consolemethod::PUT_STR, [offset, len, 0, 0, 0, 0])
+            self.invoke(consolemethod::PUT_STR, [offset, len, 0, 0, 0, 0, 0])
         } else {
             // Buffer overflow
             1
