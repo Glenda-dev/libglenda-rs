@@ -24,7 +24,7 @@ unsafe extern "C" fn glenda_start() -> ! {
     }
 
     // TODO: 使用 bootinfo 初始化堆
-    // allocator::init_heap(HEAP_VA, HEAP_SIZE);
+    allocator::init_heap(HEAP_VA, HEAP_SIZE);
 
     unsafe {
         main();
