@@ -1,6 +1,6 @@
 use super::MsgTag;
 
-pub const UTCB_ADDR: usize = 0x7FFF_F000;
+pub const UTCB_ADDR: usize = 0x3FFFFFD000;
 pub const PGSIZE: usize = 4096;
 pub const BUFFER_MAX_SIZE: usize = 3 * 1024; // 3KB
 
