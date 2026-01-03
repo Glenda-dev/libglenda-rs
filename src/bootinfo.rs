@@ -27,6 +27,9 @@ pub const CONSOLE_CAP: usize = 5;
 /// Capability Slot for Initrd Frame
 pub const INITRD_CAP: usize = 6;
 
+/// Capability Slot for BootInfo Frame
+pub const BOOTINFO_SLOT: usize = 4;
+
 /// Capability Slot for Trampoline Frame
 pub const TRAMPOLINE_CAP: usize = 7;
 

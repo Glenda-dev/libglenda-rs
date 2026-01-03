@@ -107,6 +107,21 @@ impl CapPtr {
         )
     }
 
+    pub fn untyped_retype_with_offset(
+        &self,
+        obj_type_raw: usize,
+        size_bits: usize,
+        n_objs: usize,
+        dest_cnode: CapPtr,
+        dest_offset: usize,
+        offset: usize,
+    ) -> usize {
+        self.invoke(
+            untypedmethod::RETYPE_WITH_OFFSET,
+            [obj_type_raw, size_bits, n_objs, dest_cnode.0, dest_offset, offset, 0],
+        )
+    }
+
     // --- PageTable Methods ---
     pub fn pagetable_map(&self, frame: CapPtr, vaddr: usize, rights: usize) -> usize {
         self.invoke(pagetablemethod::MAP, [frame.0, vaddr, rights, 0, 0, 0, 0])

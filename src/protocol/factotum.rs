@@ -29,6 +29,10 @@ pub const PS: usize = 18;
 
 // Capability Brokerage
 pub const REQUEST_CAP: usize = 19;
+pub const CAP_TYPE_IRQ: usize = 1;
+pub const CAP_TYPE_ENDPOINT: usize = 2;
+pub const CAP_TYPE_INITRD: usize = 3;
+pub const CAP_TYPE_MMIO: usize = 4;
 
 // Admin / Loading
 pub const INIT_RESOURCES: usize = 20; // arg0: start_slot, arg1: count
@@ -39,3 +43,4 @@ pub const SPAWN_SERVICE: usize = 24; // arg0: name_len, arg1: binary_name_len. N
 pub const SPAWN_SERVICE_INITRD: usize = 25; // arg0: name_len. Name in UTCB buffer. Cap: manifest_frame.
 pub const INIT_MANIFEST: usize = 26; // Cap: manifest_frame.
 pub const SPAWN_SERVICE_MANIFEST: usize = 27; // arg0: index.
+pub const SHARE_CAP: usize = 28; // arg0: dest_slot, arg1: target_pid. Cap in transfer.
