@@ -11,6 +11,7 @@ pub mod elf;
 pub mod error;
 pub mod initrd;
 pub mod ipc;
+pub mod manifest;
 pub mod posix;
 pub mod protocol;
 pub mod syscall;
