@@ -53,7 +53,7 @@ impl<'a> Initrd<'a> {
         let count = u32::from_le_bytes([data[4], data[5], data[6], data[7]]) as usize;
         // let total_size = u32::from_le_bytes([data[8], data[9], data[10], data[11]]) as usize;
 
-        let entry_base = 12;
+        let entry_base = 16;
         let entry_size = 48;
 
         if data.len() < entry_base + count * entry_size {
