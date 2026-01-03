@@ -41,7 +41,7 @@ pub const PF_R: u32 = 4;
 
 pub struct ElfFile<'a> {
     data: &'a [u8],
-    header: &'a Elf64Ehdr,
+    header: Elf64Ehdr,
 }
 
 impl<'a> ElfFile<'a> {
@@ -49,7 +49,7 @@ impl<'a> ElfFile<'a> {
         if data.len() < size_of::<Elf64Ehdr>() {
             return Err("Buffer too small for ELF header");
         }
-        let header = unsafe { &*(data.as_ptr() as *const Elf64Ehdr) };
+        let header = unsafe { core::ptr::read_unaligned(data.as_ptr() as *const Elf64Ehdr) };
         if header.e_ident[0..4] != ELF_MAGIC {
             return Err("Invalid ELF magic");
         }
@@ -60,18 +60,40 @@ impl<'a> ElfFile<'a> {
         self.header.e_entry as usize
     }
 
-    pub fn program_headers(&self) -> &'a [Elf64Phdr] {
-        let ph_off = self.header.e_phoff as usize;
-        let ph_num = self.header.e_phnum as usize;
-        let ph_size = self.header.e_phentsize as usize;
+    pub fn program_headers(&self) -> ProgramHeaders<'a> {
+        ProgramHeaders {
+            data: self.data,
+            ph_off: self.header.e_phoff as usize,
+            ph_num: self.header.e_phnum as usize,
+            ph_size: self.header.e_phentsize as usize,
+            current: 0,
+        }
+    }
+}
 
-        // Safety check
-        if ph_off + ph_num * ph_size > self.data.len() {
-            return &[];
+pub struct ProgramHeaders<'a> {
+    data: &'a [u8],
+    ph_off: usize,
+    ph_num: usize,
+    ph_size: usize,
+    current: usize,
+}
+
+impl<'a> Iterator for ProgramHeaders<'a> {
+    type Item = Elf64Phdr;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.current >= self.ph_num {
+            return None;
         }
 
-        unsafe {
-            core::slice::from_raw_parts(self.data.as_ptr().add(ph_off) as *const Elf64Phdr, ph_num)
+        let off = self.ph_off + self.current * self.ph_size;
+        if off + size_of::<Elf64Phdr>() > self.data.len() {
+            return None;
         }
+
+        let ph = unsafe { core::ptr::read_unaligned(self.data.as_ptr().add(off) as *const Elf64Phdr) };
+        self.current += 1;
+        Some(ph)
     }
 }

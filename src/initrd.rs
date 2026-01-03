@@ -34,7 +34,7 @@ pub struct Entry {
 }
 
 pub struct Initrd<'a> {
-    data: &'a [u8],
+    pub data: &'a [u8],
     pub entries: Vec<Entry>,
 }
 
