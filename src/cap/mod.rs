@@ -56,6 +56,10 @@ impl CapPtr {
         self.invoke(tcbmethod::SET_REGISTERS, [flags, pc, sp, 0, 0, 0])
     }
 
+    pub fn tcb_set_fault_handler(&self, fault_ep: CapPtr) -> usize {
+        self.invoke(tcbmethod::SET_FAULT_HANDLER, [fault_ep.0, 0, 0, 0, 0, 0])
+    }
+
     pub fn tcb_resume(&self) -> usize {
         self.invoke(tcbmethod::RESUME, [0, 0, 0, 0, 0, 0])
     }
