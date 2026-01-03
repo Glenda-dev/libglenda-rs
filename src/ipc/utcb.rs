@@ -2,6 +2,7 @@ use super::MsgTag;
 
 pub const UTCB_ADDR: usize = 0x7FFF_F000;
 pub const PGSIZE: usize = 4096;
+pub const BUFFER_MAX_SIZE: usize = 3 * 1024; // 3KB
 
 #[repr(C)]
 #[derive(Debug, Clone, Copy)]
@@ -11,46 +12,31 @@ pub struct UTCB {
     pub cap_transfer: usize,
     pub recv_window: usize,
     pub tls: usize,
-    pub ipc_buffer_size: usize,
+    pub buffer_size: usize,
+    pub ipc_buffer: [u8; BUFFER_MAX_SIZE],
 }
 
 impl UTCB {
     pub fn current() -> &'static mut Self {
         unsafe { &mut *(UTCB_ADDR as *mut UTCB) }
     }
-}
-
-pub const UTCB_SIZE: usize = core::mem::size_of::<UTCB>();
-pub const IPC_BUFFER_SIZE: usize = PGSIZE - UTCB_SIZE;
-
-#[repr(C)]
-pub struct IPCBuffer(pub [u8; IPC_BUFFER_SIZE]);
-
-impl IPCBuffer {
-    pub fn from_utcb(utcb: &UTCB) -> &mut Self {
-        let buf_addr = (utcb as *const UTCB as usize) + UTCB_SIZE;
-        unsafe { &mut *(buf_addr as *mut IPCBuffer) }
-    }
-
-    pub fn append_str(&mut self, s: &str) -> Option<(usize, usize)> {
+    pub fn set_str(&mut self, s: &str) -> Option<(usize, usize)> {
         let len = s.len();
-        if len > IPC_BUFFER_SIZE {
+        if len > BUFFER_MAX_SIZE {
             return None;
         }
         // For simplicity, always write at offset 0 for now
-        self.0[0..len].copy_from_slice(s.as_bytes());
+        self.ipc_buffer[0..len].copy_from_slice(s.as_bytes());
         Some((0, len))
     }
-
-    pub fn append_bytes(&mut self, bytes: &[u8]) -> Option<(usize, usize)> {
+    pub fn set_bytes(&mut self, bytes: &[u8]) -> Option<(usize, usize)> {
         let len = bytes.len();
-        if len > IPC_BUFFER_SIZE {
+        if len > BUFFER_MAX_SIZE {
             return None;
         }
-        self.0[0..len].copy_from_slice(bytes);
+        self.ipc_buffer[0..len].copy_from_slice(bytes);
         Some((0, len))
     }
-
     pub fn clear(&mut self) {
         // No-op since we don't track cursor yet
     }
@@ -58,8 +44,4 @@ impl IPCBuffer {
 
 pub fn get() -> &'static mut UTCB {
     unsafe { &mut *(UTCB_ADDR as *mut UTCB) }
-}
-
-pub fn get_ipc_buffer() -> &'static mut IPCBuffer {
-    IPCBuffer::from_utcb(get())
 }

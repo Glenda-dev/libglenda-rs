@@ -4,6 +4,7 @@ pub mod pagetable;
 pub use method::*;
 
 use crate::ipc::MsgTag;
+use crate::ipc::utcb;
 use crate::syscall::sys_invoke;
 
 #[repr(transparent)]
@@ -161,8 +162,8 @@ impl CapPtr {
     }
 
     pub fn console_put_str(&self, s: &str) -> usize {
-        let ipc_buf = crate::ipc::utcb::get_ipc_buffer();
-        if let Some((offset, len)) = ipc_buf.append_str(s) {
+        let mut utcb = utcb::get();
+        if let Some((offset, len)) = utcb.set_str(s) {
             self.invoke(consolemethod::PUT_STR, [offset, len, 0, 0, 0, 0])
         } else {
             // Buffer overflow

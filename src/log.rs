@@ -20,9 +20,9 @@ impl Console {
 impl fmt::Write for Console {
     fn write_str(&mut self, s: &str) -> fmt::Result {
         if let Some(cap) = self.cap {
-            let ipc_buf = utcb::get_ipc_buffer();
+            let mut ipc_buf = utcb::get().ipc_buffer;
             // We need to handle strings larger than IPC buffer
-            let max_len = utcb::IPC_BUFFER_SIZE;
+            let max_len = utcb::BUFFER_MAX_SIZE;
             let mut offset = 0;
             while offset < s.len() {
                 let end = core::cmp::min(offset + max_len, s.len());
@@ -30,7 +30,7 @@ impl fmt::Write for Console {
 
                 // Write to IPC buffer at offset 0
                 let chunk_len = chunk.len();
-                ipc_buf.0[0..chunk_len].copy_from_slice(chunk.as_bytes());
+                ipc_buf[0..chunk_len].copy_from_slice(chunk.as_bytes());
 
                 // Invoke syscall: PUT_STR(offset, len)
                 cap.invoke(consolemethod::PUT_STR, [0, chunk_len, 0, 0, 0, 0]);
