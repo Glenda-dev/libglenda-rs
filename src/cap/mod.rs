@@ -117,15 +117,14 @@ impl CapPtr {
     }
 
     // --- IPC Methods ---
-    pub fn ipc_send(&self, msg_info: MsgTag, args: &[usize]) -> usize {
-        self.invoke(
-            ipcmethod::SEND,
-            [msg_info.as_usize(), args[0], args[1], args[2], args[3], args[4], 0],
-        )
+    pub fn ipc_send(&self, msg_info: MsgTag, args: Args) -> usize {
+        let utcb = utcb::get();
+        utcb.msg_tag = msg_info;
+        self.invoke(ipcmethod::SEND, args)
     }
 
     pub fn ipc_recv(&self) -> usize {
-        let (ret, badge) = sys_invoke_recv(self.0, ipcmethod::RECV, 0, 0, 0, 0, 0, 0);
+        let (ret, badge) = sys_invoke_recv(self.0, ipcmethod::RECV, 0, 0, 0, 0, 0, 0, 0);
         if ret == 0 {
             badge
         } else {
@@ -134,22 +133,20 @@ impl CapPtr {
         }
     }
 
-    pub fn ipc_call(&self, msg_info: MsgTag, args: &[usize]) -> usize {
-        self.invoke(
-            ipcmethod::CALL,
-            [msg_info.as_usize(), args[0], args[1], args[2], args[3], args[4], args[5]],
-        )
+    pub fn ipc_call(&self, msg_info: MsgTag, args: Args) -> usize {
+        let utcb = utcb::get();
+        utcb.msg_tag = msg_info;
+        self.invoke(ipcmethod::CALL, args)
     }
 
     pub fn ipc_notify(&self, badge: usize) -> usize {
         self.invoke(ipcmethod::NOTIFY, [badge, 0, 0, 0, 0, 0, 0])
     }
 
-    pub fn ipc_reply(&self, msg_info: MsgTag, args: &[usize]) -> usize {
-        self.invoke(
-            replymethod::REPLY,
-            [msg_info.as_usize(), args[0], args[1], args[2], args[3], args[4], args[5]],
-        )
+    pub fn ipc_reply(&self, msg_info: MsgTag, args: Args) -> usize {
+        let utcb = utcb::get();
+        utcb.msg_tag = msg_info;
+        self.invoke(replymethod::REPLY, args)
     }
 
     // --- Console Methods ---
@@ -168,7 +165,7 @@ impl CapPtr {
 
     pub fn console_put_str(&self, s: &str) -> usize {
         let utcb = utcb::get();
-        if let Some((offset, len)) = utcb.set_str(s) {
+        if let Some((offset, len)) = utcb.append_str(s) {
             self.invoke(consolemethod::PUT_STR, [offset, len, 0, 0, 0, 0, 0])
         } else {
             // Buffer overflow
@@ -186,6 +183,7 @@ pub const MMIO_SLOT: usize = 5;
 pub const IRQ_SLOT: usize = 6;
 pub const FAULT_SLOT: usize = 7;
 pub const CONSOLE_SLOT: usize = 8;
+pub const MANIFEST_SLOT: usize = 9;
 
 pub mod rights {
     pub const READ: u8 = 1 << 0;

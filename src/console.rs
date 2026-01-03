@@ -20,7 +20,7 @@ impl Console {
 impl fmt::Write for Console {
     fn write_str(&mut self, s: &str) -> fmt::Result {
         if let Some(cap) = self.cap {
-            utcb::get().set_str(s);
+            utcb::get().append_str(s);
             // Invoke syscall: PUT_STR(offset, len)
             cap.invoke(consolemethod::PUT_STR, [0, s.len(), 0, 0, 0, 0, 0]);
         }

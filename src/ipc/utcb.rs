@@ -14,8 +14,8 @@ pub struct UTCB {
     pub cap_transfer: CapPtr,
     pub recv_window: CapPtr,
     pub tls: usize,
-    pub cursor: usize,
-    pub buffer_size: usize,
+    pub head: usize,
+    pub tail: usize,
     pub ipc_buffer: [u8; BUFFER_MAX_SIZE],
 }
 
@@ -23,39 +23,66 @@ impl UTCB {
     pub fn current() -> &'static mut Self {
         unsafe { &mut *(UTCB_ADDR as *mut UTCB) }
     }
-    pub fn set_str(&mut self, s: &str) -> Option<(usize, usize)> {
-        let len = s.len();
-        if len > BUFFER_MAX_SIZE {
-            return None;
+
+    pub fn available_data(&self) -> usize {
+        if self.tail >= self.head {
+            self.tail - self.head
+        } else {
+            BUFFER_MAX_SIZE - self.head + self.tail
         }
-        // For simplicity, always write at offset 0 for now
-        self.ipc_buffer[0..len].copy_from_slice(s.as_bytes());
-        self.buffer_size = len;
-        Some((0, len))
     }
-    pub fn set_bytes(&mut self, bytes: &[u8]) -> Option<(usize, usize)> {
-        let len = bytes.len();
-        if len > BUFFER_MAX_SIZE {
-            return None;
+
+    pub fn available_space(&self) -> usize {
+        BUFFER_MAX_SIZE - self.available_data() - 1
+    }
+
+    pub fn write(&mut self, data: &[u8]) -> usize {
+        let len = core::cmp::min(data.len(), self.available_space());
+        for i in 0..len {
+            self.ipc_buffer[self.tail] = data[i];
+            self.tail = (self.tail + 1) % BUFFER_MAX_SIZE;
         }
-        self.ipc_buffer[0..len].copy_from_slice(bytes);
-        self.buffer_size = len;
-        Some((0, len))
+        len
     }
+
+    pub fn read(&mut self, data: &mut [u8]) -> usize {
+        let len = core::cmp::min(data.len(), self.available_data());
+        for i in 0..len {
+            data[i] = self.ipc_buffer[self.head];
+            self.head = (self.head + 1) % BUFFER_MAX_SIZE;
+        }
+        len
+    }
+
+    pub fn append_str(&mut self, s: &str) -> Option<(usize, usize)> {
+        let start = self.tail;
+        let len = self.write(s.as_bytes());
+        if len == s.len() { Some((start, len)) } else { None }
+    }
+
+    pub fn append_bytes(&mut self, bytes: &[u8]) -> Option<(usize, usize)> {
+        let start = self.tail;
+        let len = self.write(bytes);
+        if len == bytes.len() { Some((start, len)) } else { None }
+    }
+
     pub fn clear(&mut self) {
         self.msg_tag = MsgTag::empty();
         self.mrs_regs = [0; MAX_MRS];
         self.cap_transfer = CapPtr::null();
         self.recv_window = CapPtr::null();
         self.tls = 0;
-        self.cursor = 0;
-        self.buffer_size = 0;
+        self.head = 0;
+        self.tail = 0;
         for byte in self.ipc_buffer.iter_mut() {
             *byte = 0;
         }
     }
+
     pub fn get_str(&self, offset: usize, len: usize) -> Option<&str> {
-        if offset + len > self.buffer_size {
+        // Note: This old method assumes linear access which might not work with wrap-around.
+        // But for backward compatibility if the caller knows it didn't wrap:
+        if offset + len > BUFFER_MAX_SIZE {
             return None;
         }
         let slice = &self.ipc_buffer[offset..offset + len];

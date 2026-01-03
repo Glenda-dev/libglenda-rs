@@ -44,6 +44,7 @@ pub fn sys_invoke_recv(
     arg3: usize,
     arg4: usize,
     arg5: usize,
+    arg6: usize,
 ) -> (usize, usize) {
     let utcb = crate::ipc::utcb::get();
     utcb.mrs_regs[0] = arg0;
@@ -52,6 +53,7 @@ pub fn sys_invoke_recv(
     utcb.mrs_regs[3] = arg3;
     utcb.mrs_regs[4] = arg4;
     utcb.mrs_regs[5] = arg5;
+    utcb.mrs_regs[6] = arg6;
 
     let mut ret;
     let mut badge;

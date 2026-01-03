@@ -9,6 +9,15 @@ pub const BOOTINFO_SIZE: usize = 4096;
 /// Virtual Address where BootInfo is mapped in Root Task
 pub const BOOTINFO_VA: usize = 0x3F_FFFF_C000;
 
+/// Virtual Address where UTCB is mapped
+pub const UTCB_VA: usize = 0x3F_FFFF_D000;
+
+/// Virtual Address where TrapFrame is mapped
+pub const TRAPFRAME_VA: usize = 0x3F_FFFF_E000;
+
+/// Virtual Address where Trampoline is mapped
+pub const TRAMPOLINE_VA: usize = 0x3F_FFFF_F000;
+
 /// Virtual Address where Initrd is mapped in Root Task
 pub const INITRD_VA: usize = 0x3000_0000;
 
@@ -17,6 +26,9 @@ pub const CONSOLE_CAP: usize = 5;
 
 /// Capability Slot for Initrd Frame
 pub const INITRD_CAP: usize = 6;
+
+/// Capability Slot for Trampoline Frame
+pub const TRAMPOLINE_CAP: usize = 7;
 
 /// Maximum number of untyped memory regions we can describe
 pub const MAX_UNTYPED_REGIONS: usize = 128;
