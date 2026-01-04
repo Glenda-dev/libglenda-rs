@@ -1,6 +1,5 @@
 pub mod method;
 pub mod pagetable;
-
 pub use method::*;
 
 use crate::ipc::MAX_MRS;
@@ -16,6 +15,7 @@ pub type Args = [usize; MAX_MRS];
 #[derive(Debug, Clone, Copy)]
 #[repr(usize)]
 pub enum CapType {
+    Untyped = 0,
     CNode = 1,
     TCB = 2,
     Endpoint = 3,
@@ -96,14 +96,15 @@ impl CapPtr {
     pub fn untyped_retype(
         &self,
         obj_type: CapType,
-        size_bits: usize,
+        pages: usize,
         n_objs: usize,
         dest_cnode: CapPtr,
-        dest_offset: usize,
+        dest_slot: CapPtr,
+        dirty: bool,
     ) -> usize {
         self.invoke(
             untypedmethod::RETYPE,
-            [obj_type as usize, size_bits, n_objs, dest_cnode.0, dest_offset, 0, 0],
+            [obj_type as usize, pages, n_objs, dest_cnode.0, dest_slot.0, dirty as usize, 0],
         )
     }
 
