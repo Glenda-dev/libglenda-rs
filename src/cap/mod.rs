@@ -107,21 +107,6 @@ impl CapPtr {
         )
     }
 
-    pub fn untyped_retype_with_offset(
-        &self,
-        obj_type_raw: usize,
-        size_bits: usize,
-        n_objs: usize,
-        dest_cnode: CapPtr,
-        dest_offset: usize,
-        offset: usize,
-    ) -> usize {
-        self.invoke(
-            untypedmethod::RETYPE_WITH_OFFSET,
-            [obj_type_raw, size_bits, n_objs, dest_cnode.0, dest_offset, offset, 0],
-        )
-    }
-
     // --- PageTable Methods ---
     pub fn pagetable_map(&self, frame: CapPtr, vaddr: usize, rights: usize) -> usize {
         self.invoke(pagetablemethod::MAP, [frame.0, vaddr, rights, 0, 0, 0, 0])
@@ -197,16 +182,14 @@ impl CapPtr {
     }
 }
 
-pub const CSPACE_SLOT: usize = 0;
-pub const VSPACE_SLOT: usize = 1;
-pub const TCB_SLOT: usize = 2;
-pub const UTCB_SLOT: usize = 3;
-pub const MEM_SLOT: usize = 4;
-pub const MMIO_SLOT: usize = 5;
-pub const IRQ_SLOT: usize = 6;
-pub const FAULT_SLOT: usize = 7;
-pub const CONSOLE_SLOT: usize = 8;
-pub const MANIFEST_SLOT: usize = 9;
+// General Slots
+pub const NULL_SLOT: usize = 0;
+pub const CSPACE_SLOT: usize = 1;
+pub const VSPACE_SLOT: usize = 2;
+pub const TCB_SLOT: usize = 3;
+pub const UTCB_SLOT: usize = 4;
+pub const MEM_SLOT: usize = 5;
+pub const FAULT_SLOT: usize = 6;
 
 pub mod rights {
     pub const READ: u8 = 1 << 0;

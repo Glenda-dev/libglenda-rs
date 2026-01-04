@@ -1,8 +1,7 @@
 use super::MsgTag;
 use crate::cap::CapPtr;
+use crate::mem::{UTCB_VA};
 
-pub const UTCB_ADDR: usize = 0x3FFFFFD000;
-pub const PGSIZE: usize = 4096;
 pub const BUFFER_MAX_SIZE: usize = 3 * 1024; // 3KB
 pub const MAX_MRS: usize = 7;
 
@@ -21,7 +20,7 @@ pub struct UTCB {
 
 impl UTCB {
     pub fn current() -> &'static mut Self {
-        unsafe { &mut *(UTCB_ADDR as *mut UTCB) }
+        unsafe { &mut *(UTCB_VA as *mut UTCB) }
     }
 
     pub fn available_data(&self) -> usize {
@@ -97,5 +96,5 @@ impl UTCB {
 }
 
 pub fn get() -> &'static mut UTCB {
-    unsafe { &mut *(UTCB_ADDR as *mut UTCB) }
+    unsafe { &mut *(UTCB_VA as *mut UTCB) }
 }

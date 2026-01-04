@@ -1,5 +1,6 @@
 use crate::allocator;
 use crate::console::{ANSI_RED, ANSI_RESET};
+use crate::mem::{HEAP_SIZE, HEAP_VA};
 use crate::println;
 use core::arch::global_asm;
 
@@ -16,9 +17,6 @@ _start:
     ebreak
     "#
 );
-
-pub const HEAP_VA: usize = 0x2000_0000;
-pub const HEAP_SIZE: usize = 1024 * 1024; // 1 MB
 
 #[unsafe(no_mangle)]
 unsafe extern "C" fn glenda_start() -> ! {
@@ -92,5 +90,6 @@ fn backtrace() {
 }
 
 fn exit(exitcode: usize) -> ! {
+    println!("Program Exited with code {}", exitcode);
     unimplemented!()
 }
