@@ -117,12 +117,16 @@ impl CapPtr {
         self.invoke(pagetablemethod::MAP_TABLE, [table.0, vaddr, level, 0, 0, 0, 0])
     }
 
-    pub fn pagetable_unmap(&self, vaddr: usize) -> usize {
-        self.invoke(pagetablemethod::UNMAP, [vaddr, 0, 0, 0, 0, 0, 0])
+    pub fn pagetable_unmap(&self, vaddr: usize, size: usize) -> usize {
+        self.invoke(pagetablemethod::UNMAP, [vaddr, size, 0, 0, 0, 0, 0])
     }
 
     pub fn pagetable_map_trampoline(&self) -> usize {
         self.invoke(pagetablemethod::MAP_TRAMPOLINE, [0, 0, 0, 0, 0, 0, 0])
+    }
+
+    pub fn pagetable_debug_print(&self) -> usize {
+        self.invoke(pagetablemethod::DEBUG_PRINT, [0, 0, 0, 0, 0, 0, 0])
     }
 
     // --- IPC Methods ---
