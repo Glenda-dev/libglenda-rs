@@ -135,7 +135,7 @@ impl CapPtr {
         self.invoke(pagetablemethod::UNMAP, [vaddr, 0, 0, 0, 0, 0, 0])
     }
 
-    pub fn pagetable_map_trampoline(&self) ->usize{
+    pub fn pagetable_map_trampoline(&self) -> usize {
         self.invoke(pagetablemethod::MAP_TRAMPOLINE, [0, 0, 0, 0, 0, 0, 0])
     }
 

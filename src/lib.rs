@@ -3,7 +3,6 @@
 extern crate alloc;
 
 pub mod allocator;
-pub mod bootinfo;
 pub mod cap;
 pub mod console;
 pub mod crt0;
