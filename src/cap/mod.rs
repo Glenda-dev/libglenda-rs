@@ -100,6 +100,10 @@ impl CapPtr {
         self.invoke(cnodemethod::REVOKE, [slot, 0, 0, 0, 0, 0, 0])
     }
 
+    pub fn cnode_debug_print(&self) -> usize {
+        self.invoke(cnodemethod::DEBUG_PRINT, [0, 0, 0, 0, 0, 0, 0])
+    }
+
     // --- Untyped Methods ---
     pub fn untyped_retype(
         &self,
