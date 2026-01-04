@@ -21,6 +21,18 @@ pub const TRAMPOLINE_VA: usize = 0x3F_FFFF_F000;
 /// Virtual Address where Initrd is mapped in Root Task
 pub const INITRD_VA: usize = 0x3000_0000;
 
+/// Capability Slot for CSpace
+pub const CSPACE_CAP: usize = 0;
+
+/// Capability Slot for VSpace
+pub const VSPACE_CAP: usize = 1;
+
+/// Capability Slot for TCB
+pub const TCB_CAP: usize = 2;
+
+/// Capability Slot for UTCB
+pub const UTCB_CAP: usize = 3;
+
 /// Capability Slot for Console
 pub const CONSOLE_CAP: usize = 5;
 

@@ -3,14 +3,8 @@ use crate::ipc::utcb;
 use core::fmt;
 use spin::Mutex;
 
-pub const ANSI_RESET: &str = "\x1b[0m";
 pub const ANSI_RED: &str = "\x1b[31m";
-pub const ANSI_GREEN: &str = "\x1b[32m";
-pub const ANSI_YELLOW: &str = "\x1b[33m";
-pub const ANSI_BLUE: &str = "\x1b[34m";
-pub const ANSI_MAGENTA: &str = "\x1b[35m";
-pub const ANSI_CYAN: &str = "\x1b[36m";
-pub const ANSI_WHITE: &str = "\x1b[37m";
+pub const ANSI_RESET: &str = "\x1b[0m";
 
 pub struct Console {
     cap: Option<CapPtr>,
@@ -42,6 +36,12 @@ pub static GLOBAL_CONSOLE: Mutex<Console> = Mutex::new(Console::new());
 
 pub fn init(cap: CapPtr) {
     GLOBAL_CONSOLE.lock().init(cap);
+}
+
+/// Force unlock the console mutex.
+/// This is unsafe and should only be used in panic handlers.
+pub unsafe fn force_unlock() {
+    unsafe { GLOBAL_CONSOLE.force_unlock() };
 }
 
 #[doc(hidden)]

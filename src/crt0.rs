@@ -34,6 +34,7 @@ unsafe extern "C" fn glenda_start() -> ! {
 
 #[panic_handler]
 fn panic(info: &core::panic::PanicInfo) -> ! {
+    unsafe { crate::console::force_unlock() };
     println!("{}PANIC{}: {}", ANSI_RED, ANSI_RESET, info);
     backtrace();
     unsafe {
@@ -52,6 +53,7 @@ fn fp() -> usize {
     fp
 }
 fn backtrace() {
+    unsafe { crate::console::force_unlock() };
     println!("--- GLENDA BACKTRACE START ---");
     let mut current_fp = fp();
     let mut depth = 0;
