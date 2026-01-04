@@ -11,6 +11,7 @@ pub const HEAP_PAGES: usize = 256; // 用户堆页面数 256 * 4KB = 1MB
 pub const HEAP_SIZE: usize = HEAP_PAGES * PGSIZE; // 1MB
 pub const HEAP_VA: usize = 0x2000_0000; // 用户堆地址
 pub const RES_VA_BASE: usize = 0x4000_0000; // 启动时提供的资源
+pub const ENTRY_VA: usize = 0x10000; // 用户程序入口地址
 
 /*
 用户地址空间布局：
