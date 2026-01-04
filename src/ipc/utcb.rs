@@ -54,6 +54,22 @@ impl UTCB {
         len
     }
 
+    pub fn read_str(&self, offset: usize, len: usize) -> Option<alloc::string::String> {
+        if len > BUFFER_MAX_SIZE || offset >= BUFFER_MAX_SIZE {
+            return None;
+        }
+        let mut buf = alloc::vec![0u8; len];
+        if offset + len <= BUFFER_MAX_SIZE {
+            buf.copy_from_slice(&self.ipc_buffer[offset..offset + len]);
+        } else {
+            let part1_len = BUFFER_MAX_SIZE - offset;
+            let part2_len = len - part1_len;
+            buf[..part1_len].copy_from_slice(&self.ipc_buffer[offset..]);
+            buf[part1_len..].copy_from_slice(&self.ipc_buffer[..part2_len]);
+        }
+        alloc::string::String::from_utf8(buf).ok()
+    }
+
     pub fn append_str(&mut self, s: &str) -> Option<(usize, usize)> {
         let start = self.tail;
         let len = self.write(s.as_bytes());
@@ -77,16 +93,6 @@ impl UTCB {
         for byte in self.ipc_buffer.iter_mut() {
             *byte = 0;
         }
-    }
-
-    pub fn get_str(&self, offset: usize, len: usize) -> Option<&str> {
-        // Note: This old method assumes linear access which might not work with wrap-around.
-        // But for backward compatibility if the caller knows it didn't wrap:
-        if offset + len > BUFFER_MAX_SIZE {
-            return None;
-        }
-        let slice = &self.ipc_buffer[offset..offset + len];
-        core::str::from_utf8(slice).ok()
     }
 }
 
