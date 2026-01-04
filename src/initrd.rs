@@ -40,7 +40,7 @@ pub struct Initrd<'a> {
 
 impl<'a> Initrd<'a> {
     pub fn new(data: &'a [u8]) -> Result<Self, &'static str> {
-        if data.len() < 12 {
+        if data.len() < 16 {
             return Err("Initrd too small");
         }
 
@@ -77,6 +77,11 @@ impl<'a> Initrd<'a> {
                 data[offset + 7],
                 data[offset + 8],
             ]) as usize;
+
+            // Safety check: ensure file data is within bounds
+            if file_offset + file_size > data.len() {
+                return Err("Initrd entry points to out-of-bounds data");
+            }
 
             // Name parsing
             let name_bytes = &data[offset + 9..offset + 41];
