@@ -6,11 +6,18 @@ use crate::ipc::MAX_MRS;
 use crate::ipc::MsgTag;
 use crate::ipc::utcb;
 use crate::syscall::{sys_invoke, sys_invoke_recv};
+use core::fmt::Debug;
 
 #[repr(transparent)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, PartialEq, Eq)]
 pub struct CapPtr(pub usize);
 pub type Args = [usize; MAX_MRS];
+
+impl Debug for CapPtr {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
 
 #[derive(Debug, Clone, Copy)]
 #[repr(usize)]
@@ -21,8 +28,9 @@ pub enum CapType {
     Endpoint = 3,
     Frame = 4,
     PageTable = 5,
-    Console = 6,
-    IrqHandler = 7,
+    IrqHandler = 6,
+    Console = 7,
+    MMIO = 8,
 }
 
 impl CapPtr {
