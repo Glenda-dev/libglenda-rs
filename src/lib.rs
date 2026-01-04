@@ -17,9 +17,9 @@ pub mod protocol;
 pub mod syscall;
 
 #[panic_handler]
-fn panic(_info: &core::panic::PanicInfo) -> ! {
+fn panic(info: &core::panic::PanicInfo) -> ! {
     unsafe {
-        core::arch::asm!("ebreak");
+        println!("PANIC: {}", info);
         loop {
             core::arch::asm!("wfi");
         }

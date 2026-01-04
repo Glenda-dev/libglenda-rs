@@ -38,7 +38,7 @@ pub fn init(cap: CapPtr) {
 #[doc(hidden)]
 pub fn _print(args: fmt::Arguments) {
     use core::fmt::Write;
-    GLOBAL_CONSOLE.lock().write_fmt(args).unwrap();
+    let _ = GLOBAL_CONSOLE.lock().write_fmt(args);
 }
 
 #[macro_export]
