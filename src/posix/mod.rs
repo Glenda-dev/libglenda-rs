@@ -61,12 +61,15 @@ impl PosixDispatcher {
     }
 }
 
+use crate::cap::{CapPtr, Endpoint};
+
 pub extern "C" fn posix_call(posixd_cap: CapPtr, request: &PosixRequest) -> PosixResponse {
     let utcb = utcb::get();
     let msg_tag = MsgTag::new(request.syscall_id as usize, 5);
     let args = request.args;
 
-    let res = posixd_cap.ipc_call(msg_tag, args);
+    let endpoint = Endpoint::from(posixd_cap);
+    let res = endpoint.call(msg_tag, args);
 
     if res == 0 {
         let err = utcb.mrs_regs[0] as isize;
