@@ -19,7 +19,6 @@ pub struct DriverEntry {
 pub struct TestEntry {
     pub name: String,
     pub binary: String,
-    pub args: Vec<String>,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]

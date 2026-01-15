@@ -98,6 +98,7 @@ pub const FAULT_SLOT: usize = 5;
 pub const CONSOLE_SLOT: usize = 6;
 
 pub mod rights {
+    pub const NONE: u8 = 0;
     pub const READ: u8 = 1 << 0;
     pub const WRITE: u8 = 1 << 1;
     pub const GRANT: u8 = 1 << 2;
