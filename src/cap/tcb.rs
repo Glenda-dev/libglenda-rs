@@ -1,3 +1,5 @@
+use crate::cap::Endpoint;
+
 use super::{CNode, CapPtr, Frame, PageTable, tcbmethod};
 
 #[repr(transparent)]
@@ -24,11 +26,11 @@ impl TCB {
         self.0.invoke(
             tcbmethod::CONFIGURE,
             [
-                cspace.0.bits(),
-                vspace.0.bits(),
-                utcb.0.bits(),
-                trapframe.0.bits(),
-                kstack.0.bits(),
+                cspace.cap().bits(),
+                vspace.cap().bits(),
+                utcb.cap().bits(),
+                trapframe.cap().bits(),
+                kstack.cap().bits(),
                 0,
                 0,
             ],
@@ -43,8 +45,8 @@ impl TCB {
         self.0.invoke(tcbmethod::SET_REGISTERS, [flags, pc, sp, 0, 0, 0, 0])
     }
 
-    pub fn set_fault_handler(&self, fault_ep: CapPtr) -> usize {
-        self.0.invoke(tcbmethod::SET_FAULT_HANDLER, [fault_ep.bits(), 0, 0, 0, 0, 0, 0])
+    pub fn set_fault_handler(&self, fault_ep: Endpoint) -> usize {
+        self.0.invoke(tcbmethod::SET_FAULT_HANDLER, [fault_ep.cap().bits(), 0, 0, 0, 0, 0, 0])
     }
 
     pub fn resume(&self) -> usize {

@@ -1,41 +1,15 @@
-use crate::cap::{CapPtr, method::consolemethod};
-use crate::ipc::utcb;
+use crate::cap::CONSOLE_CAP;
+use crate::cap::Console;
 use core::fmt;
 use spin::Mutex;
 
 pub const ANSI_RED: &str = "\x1b[31m";
 pub const ANSI_RESET: &str = "\x1b[0m";
 
-pub struct Console {
-    cap: Option<CapPtr>,
-}
+pub static GLOBAL_CONSOLE: Mutex<Console> = Mutex::new(Console::null());
 
-impl Console {
-    pub const fn new() -> Self {
-        Self { cap: None }
-    }
-
-    pub fn init(&mut self, cap: CapPtr) {
-        self.cap = Some(cap);
-    }
-}
-
-impl fmt::Write for Console {
-    fn write_str(&mut self, s: &str) -> fmt::Result {
-        if let Some(cap) = self.cap {
-            if let Some((offset, len)) = utcb::get().append_str(s) {
-                // Invoke syscall: PUT_STR(offset, len)
-                cap.invoke(consolemethod::PUT_STR, [offset, len, 0, 0, 0, 0, 0]);
-            }
-        }
-        Ok(())
-    }
-}
-
-pub static GLOBAL_CONSOLE: Mutex<Console> = Mutex::new(Console::new());
-
-pub fn init(cap: CapPtr) {
-    GLOBAL_CONSOLE.lock().init(cap);
+pub fn init() {
+    *GLOBAL_CONSOLE.lock() = CONSOLE_CAP;
 }
 
 /// Force unlock the console mutex.

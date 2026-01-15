@@ -1,7 +1,7 @@
 mod syscall;
 pub use syscall::PosixSyscall;
 
-use crate::cap::CapPtr;
+use crate::cap::{CapPtr, Endpoint};
 use crate::ipc::MsgTag;
 use crate::ipc::utcb;
 
@@ -60,8 +60,6 @@ impl PosixDispatcher {
         PosixResponse::error(-38) // ENOSYS: Function not implemented
     }
 }
-
-use crate::cap::{CapPtr, Endpoint};
 
 pub extern "C" fn posix_call(posixd_cap: CapPtr, request: &PosixRequest) -> PosixResponse {
     let utcb = utcb::get();

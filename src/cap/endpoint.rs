@@ -1,6 +1,5 @@
 use super::{Args, CapPtr, ipcmethod};
 use crate::ipc::{MsgTag, utcb};
-use crate::syscall::sys_invoke_recv;
 
 #[repr(transparent)]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -22,7 +21,7 @@ impl Endpoint {
     }
 
     pub fn recv(&self) -> usize {
-        let (ret, badge) = sys_invoke_recv(self.0.bits(), ipcmethod::RECV, 0, 0, 0, 0, 0, 0, 0);
+        let (ret, badge) = self.0.invoke_recv(ipcmethod::RECV, [0, 0, 0, 0, 0, 0, 0]);
         if ret == 0 {
             badge
         } else {

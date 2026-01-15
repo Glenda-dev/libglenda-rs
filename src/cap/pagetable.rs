@@ -9,6 +9,21 @@ pub mod perms {
     pub const DIRTY: usize = 1 << 7;
 }
 
+#[repr(transparent)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct Perms(usize);
+
+impl Perms {
+    pub const fn from(bits: usize) -> Self {
+        let perm = bits & 0xFF;
+        Self(perm)
+    }
+
+    pub const fn bits(&self) -> usize {
+        self.0
+    }
+}
+
 use super::{CapPtr, Frame, pagetablemethod};
 
 #[repr(transparent)]
@@ -24,12 +39,12 @@ impl PageTable {
         self.0
     }
 
-    pub fn map(&self, frame: Frame, vaddr: usize, rights: usize) -> usize {
-        self.0.invoke(pagetablemethod::MAP, [frame.0.bits(), vaddr, rights, 0, 0, 0, 0])
+    pub fn map(&self, frame: Frame, vaddr: usize, rights: Perms) -> usize {
+        self.0.invoke(pagetablemethod::MAP, [frame.cap().bits(), vaddr, rights.bits(), 0, 0, 0, 0])
     }
 
     pub fn map_table(&self, table: PageTable, vaddr: usize, level: usize) -> usize {
-        self.0.invoke(pagetablemethod::MAP_TABLE, [table.0.bits(), vaddr, level, 0, 0, 0, 0])
+        self.0.invoke(pagetablemethod::MAP_TABLE, [table.cap().bits(), vaddr, level, 0, 0, 0, 0])
     }
 
     pub fn unmap(&self, vaddr: usize, size: usize) -> usize {

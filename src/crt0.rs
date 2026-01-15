@@ -1,4 +1,5 @@
 use crate::allocator;
+use crate::console;
 use crate::console::{ANSI_RED, ANSI_RESET};
 use crate::mem::{HEAP_SIZE, HEAP_VA};
 use crate::println;
@@ -23,7 +24,7 @@ unsafe extern "C" fn glenda_start() -> ! {
     unsafe extern "Rust" {
         fn main() -> usize;
     }
-
+    console::init();
     allocator::init_heap(HEAP_VA, HEAP_SIZE);
     let ret = unsafe { main() };
 

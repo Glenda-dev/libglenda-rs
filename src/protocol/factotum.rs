@@ -27,14 +27,8 @@ pub const GET_PID: usize = 16;
 pub const GET_PPID: usize = 17;
 pub const PS: usize = 18;
 
-// Capability Brokerage
-pub const REQUEST_CAP: usize = 19;
-pub const CAP_TYPE_IRQ: usize = 1;
-pub const CAP_TYPE_ENDPOINT: usize = 2;
-
 // Admin / Loading
-pub const INIT_RESOURCES: usize = 20; // arg0: start_slot, arg1: count
-pub const INIT_IRQ: usize = 23; // arg0: start_slot, arg1: count
+pub const INIT_RESOURCES: usize = 20; // arg0: untyped_start_slot, arg1: untyped_count arg2: irq_start_slot, arg3: irq_count arg4: mmio_start_slot, arg5: mmio_count
 pub const PROCESS_LOAD_IMAGE: usize = 21; // arg0: pid, arg1: frame_cap, arg2: offset, arg3: len, arg4: load_addr
 pub const PROCESS_START: usize = 22; // arg0: pid, arg1: entry, arg2: stack
 pub const SPAWN_SERVICE: usize = 24; // arg0: name_len, arg1: binary_name_len. Name in UTCB buffer.

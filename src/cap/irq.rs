@@ -18,6 +18,6 @@ impl IrqHandler {
     }
 
     pub fn set_notification(&self, notification: Endpoint) -> usize {
-        self.0.invoke(irqmethod::SET_NOTIFICATION, [notification.0.bits(), 0, 0, 0, 0, 0, 0])
+        self.0.invoke(irqmethod::SET_NOTIFICATION, [notification.cap().bits(), 0, 0, 0, 0, 0, 0])
     }
 }

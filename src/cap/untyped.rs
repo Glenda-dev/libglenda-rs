@@ -19,12 +19,20 @@ impl Untyped {
         pages: usize,
         n_objs: usize,
         dest_cnode: CNode,
-        dest_slot: usize,
+        dest_slot: CapPtr,
         dirty: bool,
     ) -> usize {
         self.0.invoke(
             untypedmethod::RETYPE,
-            [obj_type as usize, pages, n_objs, dest_cnode.0.bits(), dest_slot, dirty as usize, 0],
+            [
+                obj_type as usize,
+                pages,
+                n_objs,
+                dest_cnode.cap().bits(),
+                dest_slot.bits(),
+                dirty as usize,
+                0,
+            ],
         )
     }
 }
