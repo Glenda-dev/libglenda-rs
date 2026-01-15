@@ -16,6 +16,9 @@ SECTIONS
     . = ALIGN(0x1000); /* 强制 4KB 对齐，确保下一个段进入新页面 */
 
     .data : {
+        . = ALIGN(4);
+        PROVIDE(__global_pointer$ = . + 0x800);
+        *(.sdata .sdata.*)
         *(.data .data.*)
     }
     . = ALIGN(0x1000); /* 强制 4KB 对齐，确保下一个段进入新页面 */

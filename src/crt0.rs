@@ -10,6 +10,10 @@ global_asm!(
     .section .text.entry
     .globl _start
 _start:
+    .option push
+    .option norelax
+    la gp, __global_pointer$
+    .option pop
     li s0, 0
     # 4. 跳转到 Rust 初始化函数
     call glenda_start
@@ -21,6 +25,18 @@ _start:
 
 #[unsafe(no_mangle)]
 unsafe extern "C" fn glenda_start() -> ! {
+    unsafe extern "C" {
+        static mut __bss_start: u8;
+        static mut __bss_end: u8;
+    }
+
+    unsafe {
+        let start = &raw mut __bss_start;
+        let end = &raw mut __bss_end;
+        let len = end as usize - start as usize;
+        core::ptr::write_bytes(start, 0, len);
+    }
+
     unsafe extern "Rust" {
         fn main() -> usize;
     }
