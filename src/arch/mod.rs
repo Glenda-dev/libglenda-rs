@@ -1,4 +1,4 @@
-mod interface;
+mod api;
 
 #[cfg(target_arch = "riscv64")]
 pub mod riscv64;

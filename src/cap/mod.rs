@@ -22,12 +22,12 @@ pub use untyped::Untyped;
 
 use crate::ipc::MAX_MRS;
 use crate::syscall::{sys_invoke, sys_invoke_recv};
-use core::fmt::Debug;
+use core::fmt::Display;
 
 pub const MAX_SLOTS: usize = 255;
 
 #[repr(transparent)]
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub struct CapPtr(usize);
 pub type Args = [usize; MAX_MRS];
 
@@ -43,7 +43,7 @@ impl CapPtr {
     }
 }
 
-impl Debug for CapPtr {
+impl Display for CapPtr {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         write!(f, "{}", self.0)
     }
