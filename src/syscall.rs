@@ -1,5 +1,5 @@
+use crate::arch::{syscall, syscall_recv};
 use crate::ipc::utcb;
-use core::arch::asm;
 
 #[inline(always)]
 pub fn sys_invoke(
@@ -21,17 +21,7 @@ pub fn sys_invoke(
     utcb.mrs_regs[4] = arg4;
     utcb.mrs_regs[5] = arg5;
     utcb.mrs_regs[6] = arg6;
-
-    let mut ret;
-    unsafe {
-        asm!(
-            "ecall",
-            in("a0") cptr,
-            in("a7") method,
-            lateout("a0") ret,
-        );
-    }
-    ret
+    unsafe { syscall(cptr, method) }
 }
 
 #[inline(always)]
@@ -54,17 +44,5 @@ pub fn sys_invoke_recv(
     utcb.mrs_regs[4] = arg4;
     utcb.mrs_regs[5] = arg5;
     utcb.mrs_regs[6] = arg6;
-
-    let mut ret;
-    let mut badge;
-    unsafe {
-        asm!(
-            "ecall",
-            in("a0") cptr,
-            in("a7") method,
-            lateout("a0") ret,
-            lateout("t0") badge,
-        );
-    }
-    (ret, badge)
+    unsafe { syscall_recv(cptr, method) }
 }
