@@ -43,7 +43,7 @@ pub unsafe fn syscall_recv(cptr: usize, method: usize) -> (usize, usize) {
             in("a0") cptr,
             in("a7") method,
             lateout("a0") ret,
-            lateout("t0") badge,
+            lateout("a1") badge,
         );
     }
     (ret, badge)

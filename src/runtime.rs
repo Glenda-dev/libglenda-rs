@@ -33,14 +33,10 @@ unsafe extern "C" fn glenda_start() -> ! {
 fn panic(info: &core::panic::PanicInfo) -> ! {
     println_unsynced!("{}PANIC{}: {}", ANSI_RED, ANSI_RESET, info);
     backtrace();
-    unsafe {
-        loop {
-            panic_break();
-        }
-    }
+    exit(usize::MAX);
 }
 
-fn exit(code: usize) -> ! {
+pub fn exit(code: usize) -> ! {
     println!("Program exited with code: {}", code);
     unsafe {
         loop {

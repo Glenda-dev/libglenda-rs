@@ -52,15 +52,31 @@ impl Display for CapPtr {
 #[derive(Debug, Clone, Copy)]
 #[repr(usize)]
 pub enum CapType {
-    Untyped = 0,
-    CNode = 1,
+    Empty = 0,
+    Untyped = 1,
     TCB = 2,
     Endpoint = 3,
-    Frame = 4,
-    PageTable = 5,
-    IrqHandler = 6,
-    Console = 7,
-    MMIO = 8,
+    Reply = 4,
+    Frame = 5,
+    PageTable = 6,
+    CNode = 7,
+    IrqHandler = 8,
+    Console = 9,
+    Mmio = 10,
+    VSpace = 11,
+}
+
+pub mod sizes {
+    pub const TCB: usize = 1; // 4 KiB, 1 page
+    pub const ENDPOINT: usize = 1; // 256 B, 1 page
+    pub const REPLY: usize = 1; // 256 B, 1 page
+    pub const FRAME: usize = 1; // 4 KiB, 1 page
+    pub const PAGETABLE: usize = 1; // 4 KiB, 1 page
+    pub const CNODE: usize = 4; // 16 KiB, 4 pages
+    pub const IRQ_HANDLER: usize = 1; // 256 B, 1 page
+    pub const CONSOLE: usize = 1; // 256 B, 1 page
+    pub const MMIO: usize = 1; // 4 KiB, 1 page
+    pub const VSPACE: usize = 1; // 4 KiB, 1 page
 }
 
 impl CapPtr {

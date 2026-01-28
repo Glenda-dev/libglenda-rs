@@ -4,13 +4,7 @@
 
 use core::arch::{asm, global_asm};
 
-global_asm!(
-    r#"
-    .section .text.entry
-    .globl _start
-_start:
-    "#
-);
+global_asm!("");
 
 #[inline(always)]
 pub unsafe fn syscall(cptr: usize, method: usize) -> usize {
