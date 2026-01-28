@@ -60,7 +60,7 @@ pub unsafe fn panic_break() {
 fn fp() -> usize {
     let mut fp: usize;
     unsafe {
-        core::arch::asm!("mv {}, s0", out(reg) fp);
+        asm!("mv {}, s0", out(reg) fp);
     }
     fp
 }
