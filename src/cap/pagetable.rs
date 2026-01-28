@@ -51,8 +51,8 @@ impl PageTable {
         self.0.invoke(pagetablemethod::UNMAP, [vaddr, size, 0, 0, 0, 0, 0])
     }
 
-    pub fn map_trampoline(&self) -> usize {
-        self.0.invoke(pagetablemethod::MAP_TRAMPOLINE, [0, 0, 0, 0, 0, 0, 0])
+    pub fn setup(&self) -> usize {
+        self.0.invoke(pagetablemethod::SETUP, [0, 0, 0, 0, 0, 0, 0])
     }
 
     pub fn debug_print(&self) -> usize {
