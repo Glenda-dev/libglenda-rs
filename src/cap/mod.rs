@@ -110,11 +110,11 @@ impl CapPtr {
 }
 
 // General Slots
-pub const CSPACE_SLOT: usize = 0 << ROOT_CSPACE_SHIFT;
-pub const VSPACE_SLOT: usize = 1 << ROOT_CSPACE_SHIFT;
-pub const TCB_SLOT: usize = 2 << ROOT_CSPACE_SHIFT;
-pub const FAULT_SLOT: usize = 3 << ROOT_CSPACE_SHIFT;
-pub const CONSOLE_SLOT: usize = 4 << ROOT_CSPACE_SHIFT;
+pub const CSPACE_SLOT: usize = 1 << ROOT_CSPACE_SHIFT;
+pub const VSPACE_SLOT: usize = 2 << ROOT_CSPACE_SHIFT;
+pub const TCB_SLOT: usize = 3 << ROOT_CSPACE_SHIFT;
+pub const FAULT_SLOT: usize = 4 << ROOT_CSPACE_SHIFT;
+pub const CONSOLE_SLOT: usize = 5 << ROOT_CSPACE_SHIFT;
 
 pub mod rights {
     pub const NONE: u8 = 0;
