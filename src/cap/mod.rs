@@ -26,7 +26,8 @@ use crate::ipc::MAX_MRS;
 use crate::syscall::{sys_invoke, sys_invoke_recv};
 use core::fmt::Display;
 
-pub const MAX_SLOTS: usize = 255;
+pub const CNODE_BITS: usize = 10;
+pub const MAX_SLOTS: usize = (1 << CNODE_BITS) - 1;
 
 #[repr(transparent)]
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]

@@ -4,3 +4,5 @@ pub const PGSIZE: usize = 4096;
 pub const VA_MAX: usize = 1 << 63;
 // 空地址
 pub const EMPTY_VA: usize = 0x0;
+pub const VPN_MASK: usize = 0x0;
+pub const SHIFTS: [usize; 1] = [0]; // L0
