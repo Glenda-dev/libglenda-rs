@@ -1,5 +1,5 @@
 // Protocol ID
-pub const FACTOTUM_PROTO: usize = 0x0100;
+pub const PROCESS_PROTO: usize = 0x0100;
 
 // Process Lifecycle
 pub const SPAWN: usize = 1;

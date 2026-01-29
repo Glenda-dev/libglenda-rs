@@ -1,2 +1,2 @@
-pub mod factotum;
-pub mod unicorn;
+pub mod device;
+pub mod process;
