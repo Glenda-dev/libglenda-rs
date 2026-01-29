@@ -6,7 +6,6 @@ pub mod allocator;
 pub mod arch;
 pub mod cap;
 pub mod console;
-pub mod elf;
 pub mod error;
 pub mod ipc;
 pub mod manifest;
