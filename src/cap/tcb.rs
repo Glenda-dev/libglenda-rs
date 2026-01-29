@@ -1,6 +1,6 @@
 use crate::cap::Endpoint;
 
-use super::{CNode, CapPtr, Frame, PageTable, VSpace, tcbmethod};
+use super::{CNode, CapPtr, Frame, VSpace, tcbmethod};
 
 #[repr(transparent)]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

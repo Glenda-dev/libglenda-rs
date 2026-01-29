@@ -1,4 +1,4 @@
-use crate::arch::mem::{EMPTY_VA, PGSIZE, VA_MAX};
+use crate::arch::mem::{PGSIZE, VA_MAX};
 use bitflags::bitflags;
 
 pub const TRAMPOLINE_VA: usize = VA_MAX - PGSIZE; // Trampoline 映射地址

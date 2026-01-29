@@ -31,7 +31,7 @@ unsafe extern "C" fn glenda_start() -> ! {
 
 #[panic_handler]
 fn panic(info: &core::panic::PanicInfo) -> ! {
-    println!("{}PANIC{}: {}", ANSI_RED, ANSI_RESET, info);
+    println_unsynced!("{}PANIC{}: {}", ANSI_RED, ANSI_RESET, info);
     backtrace();
     exit(usize::MAX);
 }

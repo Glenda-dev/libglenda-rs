@@ -1,3 +1,4 @@
+use crate::arch::runtime::panic_break;
 use crate::cap::CONSOLE_CAP;
 use crate::cap::Console;
 use core::fmt;
@@ -21,7 +22,10 @@ unsafe fn force_unlock() {
 
 #[doc(hidden)]
 pub fn _print(args: fmt::Arguments) {
-    let _ = GLOBAL_CONSOLE.lock().write_fmt(args);
+    match GLOBAL_CONSOLE.lock().write_fmt(args) {
+        Ok(_) => {}
+        Err(_) => unsafe { panic_break() },
+    }
 }
 
 #[doc(hidden)]
@@ -29,7 +33,10 @@ pub fn _print_unsynced(args: fmt::Arguments) {
     unsafe {
         force_unlock();
     }
-    let _ = GLOBAL_CONSOLE.lock().write_fmt(args);
+    match GLOBAL_CONSOLE.lock().write_fmt(args) {
+        Ok(_) => {}
+        Err(_) => unsafe { panic_break() },
+    }
 }
 
 #[macro_export]

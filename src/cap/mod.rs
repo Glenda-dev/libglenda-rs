@@ -26,7 +26,9 @@ use crate::ipc::MAX_MRS;
 use crate::syscall::{sys_invoke, sys_invoke_recv};
 use core::fmt::Display;
 
-pub const CNODE_BITS: usize = 10;
+pub const CNODE_BITS: usize = 8;
+pub const CPTR_LEN: usize = 64;
+pub const ROOT_CSPACE_SHIFT: usize = CPTR_LEN - CNODE_BITS;
 pub const MAX_SLOTS: usize = (1 << CNODE_BITS) - 1;
 
 #[repr(transparent)]
@@ -65,7 +67,7 @@ pub enum CapType {
     CNode = 7,
     IrqHandler = 8,
     Console = 9,
-    Mmio = 10,
+    MMIO = 10,
     VSpace = 11,
 }
 
@@ -108,13 +110,11 @@ impl CapPtr {
 }
 
 // General Slots
-pub const NULL_SLOT: usize = 0;
-pub const CSPACE_SLOT: usize = 1;
-pub const VSPACE_SLOT: usize = 2;
-pub const TCB_SLOT: usize = 3;
-pub const MEM_SLOT: usize = 4;
-pub const FAULT_SLOT: usize = 5;
-pub const CONSOLE_SLOT: usize = 6;
+pub const CSPACE_SLOT: usize = 0 << ROOT_CSPACE_SHIFT;
+pub const VSPACE_SLOT: usize = 1 << ROOT_CSPACE_SHIFT;
+pub const TCB_SLOT: usize = 2 << ROOT_CSPACE_SHIFT;
+pub const FAULT_SLOT: usize = 3 << ROOT_CSPACE_SHIFT;
+pub const CONSOLE_SLOT: usize = 4 << ROOT_CSPACE_SHIFT;
 
 pub mod rights {
     pub const NONE: u8 = 0;
@@ -132,6 +132,5 @@ pub mod rights {
 pub const CSPACE_CAP: CNode = CNode::from(CapPtr::from(CSPACE_SLOT));
 pub const VSPACE_CAP: VSpace = VSpace::from(CapPtr::from(VSPACE_SLOT));
 pub const TCB_CAP: TCB = TCB::from(CapPtr::from(TCB_SLOT));
-pub const MEM_CAP: Frame = Frame::from(CapPtr::from(MEM_SLOT));
 pub const FAULT_CAP: Endpoint = Endpoint::from(CapPtr::from(FAULT_SLOT));
 pub const CONSOLE_CAP: Console = Console::from(CapPtr::from(CONSOLE_SLOT));
