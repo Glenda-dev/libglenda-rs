@@ -45,8 +45,11 @@ impl TCB {
         self.0.invoke(tcbmethod::SET_REGISTERS, [flags, pc, sp, 0, 0, 0, 0])
     }
 
-    pub fn set_fault_handler(&self, fault_ep: Endpoint) -> usize {
-        self.0.invoke(tcbmethod::SET_FAULT_HANDLER, [fault_ep.cap().bits(), 0, 0, 0, 0, 0, 0])
+    pub fn set_fault_handler(&self, fault_ep: Endpoint, native: bool) -> usize {
+        self.0.invoke(
+            tcbmethod::SET_FAULT_HANDLER,
+            [fault_ep.cap().bits(), native as usize, 0, 0, 0, 0, 0],
+        )
     }
 
     pub fn resume(&self) -> usize {
