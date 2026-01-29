@@ -1,4 +1,5 @@
-pub use crate::arch::mem::{EMPTY_VA, PGSIZE, VA_MAX};
+use crate::arch::mem::{EMPTY_VA, PGSIZE, VA_MAX};
+use bitflags::bitflags;
 
 pub const TRAMPOLINE_VA: usize = VA_MAX - PGSIZE; // Trampoline 映射地址
 pub const TRAPFRAME_VA: usize = TRAMPOLINE_VA - PGSIZE; // Trapframe 映射地址
@@ -28,10 +29,11 @@ code + data (N pages)
 empty space (1 page) 最低的4096字节 不分配物理页，同时不可访问
 */
 
-pub struct Perms(usize);
-
-impl Perms {
-    pub const fn bits(&self) -> usize {
-        self.0
+bitflags! {
+    pub struct Perms: usize {
+        const READ = 1 << 1;
+        const WRITE = 1 << 2;
+        const EXECUTE = 1 << 3;
+        const USER = 1 << 4;
     }
 }
