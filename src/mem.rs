@@ -27,3 +27,11 @@ heap        (M pages) 0x20000000
 code + data (N pages)
 empty space (1 page) 最低的4096字节 不分配物理页，同时不可访问
 */
+
+pub struct Perms(usize);
+
+impl Perms {
+    pub const fn bits(&self) -> usize {
+        self.0
+    }
+}

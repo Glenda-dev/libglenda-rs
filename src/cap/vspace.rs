@@ -1,5 +1,5 @@
-use super::pagetable::Perms;
 use super::{CapPtr, Frame, PageTable, vspacemethod};
+use crate::mem::Perms;
 
 #[repr(transparent)]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -14,8 +14,8 @@ impl VSpace {
         self.0
     }
 
-    pub fn map(&self, frame: Frame, vaddr: usize, rights: Perms) -> usize {
-        self.0.invoke(vspacemethod::MAP, [frame.cap().bits(), vaddr, rights.bits(), 0, 0, 0, 0])
+    pub fn map(&self, frame: Frame, vaddr: usize, perms: Perms) -> usize {
+        self.0.invoke(vspacemethod::MAP, [frame.cap().bits(), vaddr, perms.bits(), 0, 0, 0, 0])
     }
 
     pub fn map_table(&self, table: PageTable, vaddr: usize, level: usize) -> usize {

@@ -1,6 +1,4 @@
-use super::sizes;
 use super::{CNode, CapPtr, CapType, untypedmethod};
-use crate::error::code;
 
 #[repr(transparent)]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -18,7 +16,7 @@ impl Untyped {
     pub fn retype(
         &self,
         obj_type: CapType,
-        size: usize,
+        pages: usize,
         n_objs: usize,
         dest_cnode: CNode,
         dest_slot: CapPtr,
@@ -28,7 +26,7 @@ impl Untyped {
             untypedmethod::RETYPE,
             [
                 obj_type as usize,
-                size,
+                pages,
                 n_objs,
                 dest_cnode.cap().bits(),
                 dest_slot.bits(),
