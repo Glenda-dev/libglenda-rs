@@ -1,4 +1,4 @@
-use crate::arch::{syscall, syscall_recv};
+use crate::arch::syscall::{syscall, syscall_recv};
 use crate::ipc::utcb;
 
 #[inline(always)]
@@ -13,7 +13,7 @@ pub fn sys_invoke(
     arg5: usize,
     arg6: usize,
 ) -> usize {
-    let utcb = utcb::get();
+    let utcb = unsafe { utcb::get() };
     utcb.mrs_regs[0] = arg0;
     utcb.mrs_regs[1] = arg1;
     utcb.mrs_regs[2] = arg2;
@@ -36,7 +36,7 @@ pub fn sys_invoke_recv(
     arg5: usize,
     arg6: usize,
 ) -> (usize, usize) {
-    let utcb = crate::ipc::utcb::get();
+    let utcb = unsafe { utcb::get() };
     utcb.mrs_regs[0] = arg0;
     utcb.mrs_regs[1] = arg1;
     utcb.mrs_regs[2] = arg2;

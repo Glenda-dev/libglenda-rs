@@ -15,7 +15,7 @@ impl Reply {
     }
 
     pub fn reply(&self, msg_info: MsgTag, args: Args) -> usize {
-        let utcb = utcb::get();
+        let utcb = unsafe { utcb::get() };
         utcb.msg_tag = msg_info;
         self.0.invoke(replymethod::REPLY, args)
     }

@@ -24,7 +24,7 @@ impl Console {
     }
 
     pub fn put_str(&self, s: &str) -> usize {
-        let utcb = utcb::get();
+        let utcb = unsafe { utcb::get() };
         if let Some((offset, len)) = utcb.append_str(s) {
             self.0.invoke(consolemethod::PUT_STR, [offset, len, 0, 0, 0, 0, 0])
         } else {

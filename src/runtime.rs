@@ -1,5 +1,5 @@
 use crate::allocator;
-use crate::arch::{backtrace, panic_break};
+use crate::arch::runtime::{backtrace, panic_break};
 use crate::console;
 use crate::console::{ANSI_RED, ANSI_RESET};
 use crate::mem::{HEAP_SIZE, HEAP_VA};
@@ -31,13 +31,13 @@ unsafe extern "C" fn glenda_start() -> ! {
 
 #[panic_handler]
 fn panic(info: &core::panic::PanicInfo) -> ! {
-    println_unsynced!("{}PANIC{}: {}", ANSI_RED, ANSI_RESET, info);
+    println!("{}PANIC{}: {}", ANSI_RED, ANSI_RESET, info);
     backtrace();
     exit(usize::MAX);
 }
 
 pub fn exit(code: usize) -> ! {
-    println!("Program exited with code: {}", code);
+    println!("Program exited with code: {}\n", code);
     unsafe {
         loop {
             panic_break();

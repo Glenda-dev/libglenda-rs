@@ -15,13 +15,13 @@ impl Endpoint {
     }
 
     pub fn send(&self, msg_info: MsgTag, args: Args) -> usize {
-        let utcb = utcb::get();
+        let utcb = unsafe { utcb::get() };
         utcb.msg_tag = msg_info;
         self.0.invoke(ipcmethod::SEND, args)
     }
 
     pub fn recv(&self, reply_slot: usize) -> usize {
-        let utcb = utcb::get();
+        let utcb = unsafe { utcb::get() };
         utcb.recv_window = Endpoint::from(CapPtr::from(reply_slot));
         let (ret, badge) = self.0.invoke_recv(ipcmethod::RECV, [0, 0, 0, 0, 0, 0, 0]);
         if ret == 0 {
@@ -33,7 +33,7 @@ impl Endpoint {
     }
 
     pub fn call(&self, msg_info: MsgTag, args: Args) -> usize {
-        let utcb = utcb::get();
+        let utcb = unsafe { utcb::get() };
         utcb.msg_tag = msg_info;
         self.0.invoke(ipcmethod::CALL, args)
     }

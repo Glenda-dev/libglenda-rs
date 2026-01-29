@@ -1,13 +1,14 @@
-pub mod cnode;
-pub mod console;
-pub mod endpoint;
-pub mod frame;
-pub mod irq;
-pub mod method;
+mod cnode;
+mod console;
+mod endpoint;
+mod frame;
+mod irq;
+mod method;
 pub mod pagetable;
-pub mod reply;
-pub mod tcb;
-pub mod untyped;
+mod reply;
+mod tcb;
+mod untyped;
+mod vspace;
 
 pub use cnode::CNode;
 pub use console::Console;
@@ -19,6 +20,7 @@ pub use pagetable::PageTable;
 pub use reply::Reply;
 pub use tcb::TCB;
 pub use untyped::Untyped;
+pub use vspace::VSpace;
 
 use crate::ipc::MAX_MRS;
 use crate::syscall::{sys_invoke, sys_invoke_recv};
@@ -127,7 +129,7 @@ pub mod rights {
 }
 
 pub const CSPACE_CAP: CNode = CNode::from(CapPtr::from(CSPACE_SLOT));
-pub const VSPACE_CAP: PageTable = PageTable::from(CapPtr::from(VSPACE_SLOT));
+pub const VSPACE_CAP: VSpace = VSpace::from(CapPtr::from(VSPACE_SLOT));
 pub const TCB_CAP: TCB = TCB::from(CapPtr::from(TCB_SLOT));
 pub const MEM_CAP: Frame = Frame::from(CapPtr::from(MEM_SLOT));
 pub const FAULT_CAP: Endpoint = Endpoint::from(CapPtr::from(FAULT_SLOT));

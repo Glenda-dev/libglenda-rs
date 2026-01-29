@@ -1,6 +1,6 @@
 use crate::cap::Endpoint;
 
-use super::{CNode, CapPtr, Frame, PageTable, tcbmethod};
+use super::{CNode, CapPtr, Frame, PageTable, VSpace, tcbmethod};
 
 #[repr(transparent)]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -18,7 +18,7 @@ impl TCB {
     pub fn configure(
         &self,
         cspace: CNode,
-        vspace: PageTable,
+        vspace: VSpace,
         utcb: Frame,
         trapframe: Frame,
         kstack: Frame,

@@ -8,4 +8,19 @@ pub mod code {
     pub const MAPPING_FAILED: usize = 6;
     pub const INVALID_SLOT: usize = 7;
     pub const UNTYPE_OOM: usize = 8;
+    pub const INVALID_ARGS: usize = 9;
+}
+
+#[repr(usize)]
+pub enum Error {
+    Success = code::SUCCESS,
+    InvalidCap = code::INVALID_CAP,
+    PermissionDenied = code::PERMISSION_DENIED,
+    InvalidEndpoint = code::INVALID_ENDPOINT,
+    InvalidObjType = code::INVALID_OBJ_TYPE,
+    InvalidMethod = code::INVALID_METHOD,
+    MappingFailed = code::MAPPING_FAILED,
+    InvalidSlot = code::INVALID_SLOT,
+    UntypeOOM = code::UNTYPE_OOM,
+    InvalidArgs = code::INVALID_ARGS,
 }

@@ -95,6 +95,6 @@ impl UTCB {
     }
 }
 
-pub fn get() -> &'static mut UTCB {
+pub unsafe fn get() -> &'static mut UTCB {
     unsafe { &mut *(UTCB_VA as *mut UTCB) }
 }

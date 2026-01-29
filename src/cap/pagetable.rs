@@ -39,23 +39,7 @@ impl PageTable {
         self.0
     }
 
-    pub fn map(&self, frame: Frame, vaddr: usize, rights: Perms) -> usize {
-        self.0.invoke(pagetablemethod::MAP, [frame.cap().bits(), vaddr, rights.bits(), 0, 0, 0, 0])
-    }
-
     pub fn map_table(&self, table: PageTable, vaddr: usize, level: usize) -> usize {
         self.0.invoke(pagetablemethod::MAP_TABLE, [table.cap().bits(), vaddr, level, 0, 0, 0, 0])
-    }
-
-    pub fn unmap(&self, vaddr: usize, size: usize) -> usize {
-        self.0.invoke(pagetablemethod::UNMAP, [vaddr, size, 0, 0, 0, 0, 0])
-    }
-
-    pub fn setup(&self) -> usize {
-        self.0.invoke(pagetablemethod::SETUP, [0, 0, 0, 0, 0, 0, 0])
-    }
-
-    pub fn debug_print(&self) -> usize {
-        self.0.invoke(pagetablemethod::DEBUG_PRINT, [0, 0, 0, 0, 0, 0, 0])
     }
 }
