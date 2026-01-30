@@ -24,6 +24,7 @@ pub enum Error {
     InvalidSlot = code::INVALID_SLOT,
     UntypeOOM = code::UNTYPE_OOM,
     InvalidArgs = code::INVALID_ARGS,
+    InvalidProtocol,
     InvalidParam,
     CNodeFull,
 }

@@ -3,38 +3,42 @@ pub mod utcb;
 pub use utcb::MAX_MRS;
 pub use utcb::UTCB;
 
+use bitflags::bitflags;
+
 #[derive(Debug, Clone, Copy)]
 #[repr(transparent)]
 pub struct MsgTag(pub usize);
 
 impl MsgTag {
-    pub const FLAG_HAS_CAP: usize = 1 << 4;
-
     pub const fn empty() -> Self {
         Self(0)
     }
 
-    pub fn new(label: usize, length: usize) -> Self {
-        Self((label << 16) | (length & 0xF))
-    }
-
-    pub fn label(&self) -> usize {
-        self.0 >> 16
-    }
-
-    pub fn length(&self) -> usize {
-        self.0 & 0xF
-    }
-
-    pub fn has_cap(&self) -> bool {
-        (self.0 & Self::FLAG_HAS_CAP) != 0
-    }
-
-    pub fn set_has_cap(&mut self) {
-        self.0 |= Self::FLAG_HAS_CAP;
+    pub fn new(proto: usize, label: usize, flags: MsgFlags) -> Self {
+        Self((proto & 0xFFFF) << 24 | (label & 0xFFFF) << 16 | (flags.bits() & 0xFFFF))
     }
 
     pub fn as_usize(&self) -> usize {
         self.0
+    }
+
+    pub fn proto(&self) -> usize {
+        (self.0 >> 24) & 0xFFFF
+    }
+
+    pub fn label(&self) -> usize {
+        (self.0 >> 16) & 0xFFFF
+    }
+
+    pub fn flags(&self) -> MsgFlags {
+        MsgFlags::from_bits_truncate(self.0 & 0xFFFF)
+    }
+}
+
+bitflags! {
+    pub struct MsgFlags: usize {
+        const NONE = 0;
+        const OK = 1 << 0;
+        const ERROR = 1 << 1;
     }
 }

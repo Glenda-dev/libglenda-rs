@@ -1,10 +1,11 @@
+use crate::arch::mem::PGSIZE;
 use core::fmt::Display;
 
 /// Magic number to verify BootInfo validity: 'GLENDA_B'
 pub const BOOTINFO_MAGIC: u32 = 0x99999999;
 
 /// Fixed size of the BootInfo page (usually 4KB)
-pub const BOOTINFO_SIZE: usize = 4096;
+pub const BOOTINFO_SIZE: usize = PGSIZE;
 
 /// Maximum number of untyped memory regions we can describe
 pub const MAX_UNTYPED_REGIONS: usize = 64;

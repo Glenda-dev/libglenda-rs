@@ -18,10 +18,9 @@ serde_json = { version = "1.0", default-features = false, features = ["alloc"] }
 bitflags = "2.10.0"
 
 [features]
-default = ["rt-bare"]
-rt-bare = ["fixed-heap", "kernel-console", "alloc"]
-rt-service = ["kernel-console", "alloc"]
-rt-app = ["alloc"]
+rt-bare = ["fixed-heap", "kernel-console"]
+rt-service = ["kernel-console", "rt-app"]
+rt-app = ["dynamic-heap"]
 fixed-heap = []
+dynamic-heap = []
 kernel-console = []
-alloc = []

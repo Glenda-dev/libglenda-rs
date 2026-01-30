@@ -1,10 +1,9 @@
-use crate::allocator;
-use crate::arch::runtime::{backtrace, panic_break};
+use crate::arch::runtime::backtrace;
 use crate::console;
 use crate::console::{ANSI_RED, ANSI_RESET};
-use crate::mem::HEAP_VA;
-use crate::runtime::HEAP_SIZE;
-use crate::{println, println_unsynced};
+use crate::heap;
+use crate::println_unsynced;
+use crate::runtime::exit;
 
 #[unsafe(no_mangle)]
 unsafe extern "C" fn glenda_start() -> ! {
@@ -24,7 +23,7 @@ unsafe extern "C" fn glenda_start() -> ! {
         fn main() -> usize;
     }
     console::init();
-    init_heap();
+    heap::init();
     let ret = unsafe { main() };
 
     exit(ret)
@@ -35,18 +34,4 @@ fn panic(info: &core::panic::PanicInfo) -> ! {
     println_unsynced!("{}PANIC{}: {}", ANSI_RED, ANSI_RESET, info);
     backtrace();
     exit(usize::MAX);
-}
-
-pub fn exit(code: usize) -> ! {
-    println!("Program exited with code: {}\n", code);
-    unsafe {
-        loop {
-            panic_break();
-        }
-    }
-}
-
-fn init_heap() {
-    #[cfg(feature = "fixed-heap")]
-    allocator::init_heap(HEAP_VA, HEAP_SIZE);
 }
