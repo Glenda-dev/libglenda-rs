@@ -20,9 +20,9 @@ impl Endpoint {
         self.0.invoke(ipcmethod::SEND, args)
     }
 
-    pub fn recv(&self, reply_slot: usize) -> usize {
+    pub fn recv(&self, reply_slot: CapPtr) -> usize {
         let utcb = unsafe { utcb::get() };
-        utcb.recv_window = Endpoint::from(CapPtr::from(reply_slot));
+        utcb.recv_window = Endpoint::from(reply_slot);
         let (ret, badge) = self.0.invoke_recv(ipcmethod::RECV, [0, 0, 0, 0, 0, 0, 0]);
         if ret == 0 {
             badge

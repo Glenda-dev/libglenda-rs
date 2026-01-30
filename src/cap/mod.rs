@@ -29,24 +29,15 @@ use core::fmt::Display;
 pub const CNODE_BITS: usize = 8;
 pub const CPTR_LEN: usize = 64;
 pub const ROOT_CSPACE_SHIFT: usize = CPTR_LEN - CNODE_BITS;
+pub const L1_CSPACE_SHIFT: usize = ROOT_CSPACE_SHIFT - CNODE_BITS;
 pub const MAX_SLOTS: usize = (1 << CNODE_BITS) - 1;
+pub const ROOT_CSPACE_GUARD: usize = CPTR_LEN;
+pub const L1_CSPACE_GUARD: usize = ROOT_CSPACE_GUARD - CNODE_BITS;
 
 #[repr(transparent)]
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub struct CapPtr(usize);
 pub type Args = [usize; MAX_MRS];
-
-impl CapPtr {
-    pub const fn from(slot: usize) -> Self {
-        CapPtr(slot)
-    }
-    pub fn next(&self) -> Self {
-        CapPtr(self.0 + 1)
-    }
-    pub fn prev(&self) -> Self {
-        CapPtr(self.0 - 1)
-    }
-}
 
 impl Display for CapPtr {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
@@ -89,8 +80,8 @@ impl CapPtr {
         Self(0)
     }
 
-    pub const fn new(cptr: usize) -> Self {
-        Self(cptr)
+    pub const fn new(root: usize, l1: usize) -> Self {
+        Self((root << ROOT_CSPACE_SHIFT) | (l1 << L1_CSPACE_SHIFT))
     }
 
     pub fn bits(&self) -> usize {
@@ -110,11 +101,11 @@ impl CapPtr {
 }
 
 // General Slots
-pub const CSPACE_SLOT: usize = 1 << ROOT_CSPACE_SHIFT;
-pub const VSPACE_SLOT: usize = 2 << ROOT_CSPACE_SHIFT;
-pub const TCB_SLOT: usize = 3 << ROOT_CSPACE_SHIFT;
-pub const FAULT_SLOT: usize = 4 << ROOT_CSPACE_SHIFT;
-pub const CONSOLE_SLOT: usize = 5 << ROOT_CSPACE_SHIFT;
+pub const CSPACE_SLOT: usize = 1;
+pub const VSPACE_SLOT: usize = 2;
+pub const TCB_SLOT: usize = 3;
+pub const FAULT_SLOT: usize = 4;
+pub const CONSOLE_SLOT: usize = 5;
 
 pub mod rights {
     pub const NONE: u8 = 0;
@@ -129,8 +120,8 @@ pub mod rights {
     pub const MASTER: u8 = ALL;
 }
 
-pub const CSPACE_CAP: CNode = CNode::from(CapPtr::from(CSPACE_SLOT));
-pub const VSPACE_CAP: VSpace = VSpace::from(CapPtr::from(VSPACE_SLOT));
-pub const TCB_CAP: TCB = TCB::from(CapPtr::from(TCB_SLOT));
-pub const FAULT_CAP: Endpoint = Endpoint::from(CapPtr::from(FAULT_SLOT));
-pub const CONSOLE_CAP: Console = Console::from(CapPtr::from(CONSOLE_SLOT));
+pub const CSPACE_CAP: CNode = CNode::from(CapPtr::new(CSPACE_SLOT, 0));
+pub const VSPACE_CAP: VSpace = VSpace::from(CapPtr::new(VSPACE_SLOT, 0));
+pub const TCB_CAP: TCB = TCB::from(CapPtr::new(TCB_SLOT, 0));
+pub const FAULT_CAP: Endpoint = Endpoint::from(CapPtr::new(FAULT_SLOT, 0));
+pub const CONSOLE_CAP: Console = Console::from(CapPtr::new(CONSOLE_SLOT, 0));
