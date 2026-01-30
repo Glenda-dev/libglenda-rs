@@ -24,15 +24,7 @@ pub const SLEEP: usize = 15;
 
 // Debugging & Inspection
 pub const GET_PID: usize = 16;
-pub const GET_PPID: usize = 17;
 pub const PS: usize = 18;
 
 // Admin / Loading
-pub const INIT_RESOURCES: usize = 20; // arg0: untyped_start_slot, arg1: untyped_count arg2: irq_start_slot, arg3: irq_count arg4: mmio_start_slot, arg5: mmio_count
-pub const PROCESS_LOAD_IMAGE: usize = 21; // arg0: pid, arg1: frame_cap, arg2: offset, arg3: len, arg4: load_addr
-pub const PROCESS_START: usize = 22; // arg0: pid, arg1: entry, arg2: stack
-pub const SPAWN_SERVICE: usize = 24; // arg0: name_len, arg1: binary_name_len. Name in UTCB buffer.
-pub const SPAWN_SERVICE_INITRD: usize = 25; // arg0: name_len. Name in UTCB buffer. Cap: manifest_frame.
-pub const INIT_MANIFEST: usize = 26; // Cap: manifest_frame.
-pub const SPAWN_SERVICE_MANIFEST: usize = 27; // arg0: index.
-pub const SHARE_CAP: usize = 28; // arg0: dest_slot, arg1: target_pid. Cap in transfer.
+pub const SPAWN_SERVICE: usize = 25; // arg0: name_len. Name in UTCB buffer. Cap: manifest_frame.
