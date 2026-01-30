@@ -29,6 +29,7 @@ use crate::syscall::{sys_invoke, sys_invoke_recv};
 use core::fmt::Display;
 
 pub const CNODE_BITS: usize = 8;
+pub const CNODE_PAGES: usize = 4;
 pub const CPTR_LEN: usize = 64;
 pub const ROOT_CSPACE_SHIFT: usize = CPTR_LEN - CNODE_BITS;
 pub const L1_CSPACE_SHIFT: usize = ROOT_CSPACE_SHIFT - CNODE_BITS;

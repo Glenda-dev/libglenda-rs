@@ -1,4 +1,4 @@
-use super::{CapPtr, cnodemethod};
+use super::{CapPtr, Rights, cnodemethod};
 
 #[repr(transparent)]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -13,12 +13,16 @@ impl CNode {
         self.0
     }
 
-    pub fn mint(&self, src: CapPtr, dest_slot: usize, badge: usize, rights: u8) -> usize {
-        self.0.invoke(cnodemethod::MINT, [src.bits(), dest_slot, badge, rights as usize, 0, 0, 0])
+    pub fn mint(&self, src: CapPtr, dest_slot: usize, badge: usize, rights: Rights) -> usize {
+        self.0.invoke(
+            cnodemethod::MINT,
+            [src.bits(), dest_slot, badge, rights.bits() as usize, 0, 0, 0],
+        )
     }
 
-    pub fn copy(&self, src: CapPtr, dest_slot: usize, rights: u8) -> usize {
-        self.0.invoke(cnodemethod::COPY, [src.bits(), dest_slot, rights as usize, 0, 0, 0, 0])
+    pub fn copy(&self, src: CapPtr, dest_slot: usize, rights: Rights) -> usize {
+        self.0
+            .invoke(cnodemethod::COPY, [src.bits(), dest_slot, rights.bits() as usize, 0, 0, 0, 0])
     }
 
     pub fn delete(&self, slot: usize) -> usize {

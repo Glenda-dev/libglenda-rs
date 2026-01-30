@@ -37,8 +37,8 @@ impl TCB {
         )
     }
 
-    pub fn set_priority(&self, priority: usize) -> usize {
-        self.0.invoke(tcbmethod::SET_PRIORITY, [priority, 0, 0, 0, 0, 0, 0])
+    pub fn set_priority(&self, priority: u8) -> usize {
+        self.0.invoke(tcbmethod::SET_PRIORITY, [priority as usize, 0, 0, 0, 0, 0, 0])
     }
 
     pub fn set_registers(&self, pc: usize, sp: usize) -> usize {

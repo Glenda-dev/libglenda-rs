@@ -64,8 +64,14 @@ impl Untyped {
     }
 
     #[inline(always)]
-    pub fn retype_cnode(&self, n_objs: usize, dest_cnode: CNode, dest_slot: CapPtr) -> usize {
-        self.retype(CapType::CNode, 0, n_objs, dest_cnode, dest_slot, false)
+    pub fn retype_cnode(
+        &self,
+        bits: usize,
+        n_objs: usize,
+        dest_cnode: CNode,
+        dest_slot: CapPtr,
+    ) -> usize {
+        self.retype(CapType::CNode, bits, n_objs, dest_cnode, dest_slot, false)
     }
 
     #[inline(always)]
