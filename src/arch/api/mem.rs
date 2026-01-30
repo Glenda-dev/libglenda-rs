@@ -6,3 +6,5 @@ pub const VA_MAX: usize = 1 << 63;
 pub const EMPTY_VA: usize = 0x0;
 pub const VPN_MASK: usize = 0x0;
 pub const SHIFTS: [usize; 1] = [0];
+// 用户空间地址起始
+pub const USER_VA: usize = 0x10000;
