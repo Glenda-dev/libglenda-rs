@@ -62,19 +62,6 @@ pub enum CapType {
     VSpace = 11,
 }
 
-pub mod sizes {
-    pub const TCB: usize = 1; // 4 KiB, 1 page
-    pub const ENDPOINT: usize = 1; // 256 B, 1 page
-    pub const REPLY: usize = 1; // 256 B, 1 page
-    pub const FRAME: usize = 1; // 4 KiB, 1 page
-    pub const PAGETABLE: usize = 1; // 4 KiB, 1 page
-    pub const CNODE: usize = 4; // 16 KiB, 4 pages
-    pub const IRQ_HANDLER: usize = 1; // 256 B, 1 page
-    pub const CONSOLE: usize = 1; // 256 B, 1 page
-    pub const MMIO: usize = 1; // 4 KiB, 1 page
-    pub const VSPACE: usize = 1; // 4 KiB, 1 page
-}
-
 impl CapPtr {
     pub const fn null() -> Self {
         Self(0)
@@ -107,17 +94,17 @@ pub const TCB_SLOT: usize = 3;
 pub const FAULT_SLOT: usize = 4;
 pub const CONSOLE_SLOT: usize = 5;
 
-pub mod rights {
-    pub const NONE: u8 = 0;
-    pub const READ: u8 = 1 << 0;
-    pub const WRITE: u8 = 1 << 1;
-    pub const GRANT: u8 = 1 << 2;
-    pub const SEND: u8 = 1 << 3;
-    pub const RECV: u8 = 1 << 4;
-    pub const CALL: u8 = 1 << 5;
-    pub const ALL: u8 = 0xFF;
-    pub const RW: u8 = READ | WRITE;
-    pub const MASTER: u8 = ALL;
+bitflags::bitflags! {
+    pub struct Rights: u8 {
+        const NONE  = 0;
+        const READ  = 1 << 0;
+        const WRITE = 1 << 1;
+        const GRANT = 1 << 2;
+        const SEND  = 1 << 3;
+        const RECV  = 1 << 4;
+        const CALL  = 1 << 5;
+        const ALL   = 0xFF;
+    }
 }
 
 pub const CSPACE_CAP: CNode = CNode::from(CapPtr::new(CSPACE_SLOT, 0));

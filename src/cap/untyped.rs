@@ -13,10 +13,10 @@ impl Untyped {
         self.0
     }
 
-    pub fn retype(
+    fn retype(
         &self,
         obj_type: CapType,
-        pages: usize,
+        flags: usize,
         n_objs: usize,
         dest_cnode: CNode,
         dest_slot: CapPtr,
@@ -26,7 +26,7 @@ impl Untyped {
             untypedmethod::RETYPE,
             [
                 obj_type as usize,
-                pages,
+                flags,
                 n_objs,
                 dest_cnode.cap().bits(),
                 dest_slot.bits(),
@@ -34,5 +34,58 @@ impl Untyped {
                 0,
             ],
         )
+    }
+
+    #[inline(always)]
+    pub fn retype_untyped(
+        &self,
+        pages: usize,
+        n_objs: usize,
+        dest_cnode: CNode,
+        dest_slot: CapPtr,
+    ) -> usize {
+        self.retype(CapType::Untyped, pages, n_objs, dest_cnode, dest_slot, false)
+    }
+
+    #[inline(always)]
+    pub fn retype_tcb(&self, n_objs: usize, dest_cnode: CNode, dest_slot: CapPtr) -> usize {
+        self.retype(CapType::TCB, 0, n_objs, dest_cnode, dest_slot, false)
+    }
+
+    #[inline(always)]
+    pub fn retype_pagetable(
+        &self,
+        level: usize,
+        n_objs: usize,
+        dest_cnode: CNode,
+        dest_slot: CapPtr,
+    ) -> usize {
+        self.retype(CapType::PageTable, level, n_objs, dest_cnode, dest_slot, false)
+    }
+
+    #[inline(always)]
+    pub fn retype_cnode(&self, n_objs: usize, dest_cnode: CNode, dest_slot: CapPtr) -> usize {
+        self.retype(CapType::CNode, 0, n_objs, dest_cnode, dest_slot, false)
+    }
+
+    #[inline(always)]
+    pub fn retype_frame(
+        &self,
+        pages: usize,
+        n_objs: usize,
+        dest_cnode: CNode,
+        dest_slot: CapPtr,
+    ) -> usize {
+        self.retype(CapType::Frame, pages, n_objs, dest_cnode, dest_slot, false)
+    }
+
+    #[inline(always)]
+    pub fn retype_vspace(&self, n_objs: usize, dest_cnode: CNode, dest_slot: CapPtr) -> usize {
+        self.retype(CapType::VSpace, 0, n_objs, dest_cnode, dest_slot, false)
+    }
+
+    #[inline(always)]
+    pub fn retype_endpoint(&self, n_objs: usize, dest_cnode: CNode, dest_slot: CapPtr) -> usize {
+        self.retype(CapType::Endpoint, 0, n_objs, dest_cnode, dest_slot, false)
     }
 }
