@@ -32,6 +32,11 @@ impl Console {
             1
         }
     }
+
+    pub fn get_char(&self) -> char {
+        let (ret, c) = self.0.invoke_recv(consolemethod::GET_CHAR, [0, 0, 0, 0, 0, 0, 0]);
+        if ret == 0 { c as u8 as char } else { '\0' }
+    }
 }
 
 impl fmt::Write for Console {
