@@ -23,7 +23,7 @@ unsafe extern "C" fn glenda_start() -> ! {
         fn main() -> usize;
     }
     console::init();
-    allocator::init_heap(HEAP_VA, HEAP_SIZE);
+    init_heap();
     let ret = unsafe { main() };
 
     exit(ret)
@@ -43,4 +43,9 @@ pub fn exit(code: usize) -> ! {
             panic_break();
         }
     }
+}
+
+fn init_heap() {
+    #[cfg(feature = "fixed-heap")]
+    allocator::init_heap(HEAP_VA, HEAP_SIZE);
 }

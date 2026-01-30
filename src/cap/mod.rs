@@ -1,4 +1,5 @@
 mod cnode;
+#[cfg(feature = "kernel-console")]
 mod console;
 mod endpoint;
 mod frame;
@@ -11,6 +12,7 @@ mod untyped;
 mod vspace;
 
 pub use cnode::CNode;
+#[cfg(feature = "kernel-console")]
 pub use console::Console;
 pub use endpoint::Endpoint;
 pub use frame::Frame;
@@ -92,7 +94,10 @@ pub const CSPACE_SLOT: usize = 1;
 pub const VSPACE_SLOT: usize = 2;
 pub const TCB_SLOT: usize = 3;
 pub const FAULT_SLOT: usize = 4;
+#[cfg(feature = "kernel-console")]
 pub const CONSOLE_SLOT: usize = 5;
+#[cfg(feature = "rt-bare")]
+pub use crate::runtime::{IRQ_SLOT, MMIO_SLOT, PLATFORM_SLOT, UNTYPED_SLOT};
 
 bitflags::bitflags! {
     pub struct Rights: u8 {
@@ -111,4 +116,7 @@ pub const CSPACE_CAP: CNode = CNode::from(CapPtr::new(CSPACE_SLOT, 0));
 pub const VSPACE_CAP: VSpace = VSpace::from(CapPtr::new(VSPACE_SLOT, 0));
 pub const TCB_CAP: TCB = TCB::from(CapPtr::new(TCB_SLOT, 0));
 pub const FAULT_CAP: Endpoint = Endpoint::from(CapPtr::new(FAULT_SLOT, 0));
+#[cfg(feature = "kernel-console")]
 pub const CONSOLE_CAP: Console = Console::from(CapPtr::new(CONSOLE_SLOT, 0));
+#[cfg(feature = "rt-bare")]
+pub use crate::runtime::{IRQ_CAP, MMIO_CAP, PLATFORM_CAP, UNTYPED_CAP};

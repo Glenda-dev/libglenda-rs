@@ -41,8 +41,8 @@ impl TCB {
         self.0.invoke(tcbmethod::SET_PRIORITY, [priority, 0, 0, 0, 0, 0, 0])
     }
 
-    pub fn set_registers(&self, flags: usize, pc: usize, sp: usize) -> usize {
-        self.0.invoke(tcbmethod::SET_REGISTERS, [flags, pc, sp, 0, 0, 0, 0])
+    pub fn set_registers(&self, pc: usize, sp: usize) -> usize {
+        self.0.invoke(tcbmethod::SET_REGISTERS, [pc, sp, 0, 0, 0, 0, 0])
     }
 
     pub fn set_fault_handler(&self, fault_ep: Endpoint, native: bool) -> usize {

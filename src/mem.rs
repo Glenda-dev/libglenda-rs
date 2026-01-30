@@ -30,6 +30,7 @@ empty space (1 page) 最低的4096字节 不分配物理页，同时不可访问
 */
 
 bitflags! {
+    #[derive(Clone,Copy)]
     pub struct Perms: usize {
         const READ = 1 << 1;
         const WRITE = 1 << 2;
