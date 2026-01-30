@@ -26,7 +26,7 @@ pub use vspace::VSpace;
 
 use crate::arch::mem::PGSIZE;
 use crate::ipc::MAX_MRS;
-use crate::syscall::{sys_invoke, sys_invoke_recv};
+use crate::syscall::sys_invoke;
 use core::fmt::Display;
 
 const SLOT_SIZE: usize = 48; // 每个 Slot 占用 48 字节
@@ -80,12 +80,6 @@ impl CapPtr {
     // --- Generic Invocation ---
     pub(crate) fn invoke(&self, method: usize, args: Args) -> usize {
         sys_invoke(self.0, method, args[0], args[1], args[2], args[3], args[4], args[5], args[6])
-    }
-
-    pub(crate) fn invoke_recv(&self, method: usize, args: Args) -> (usize, usize) {
-        sys_invoke_recv(
-            self.0, method, args[0], args[1], args[2], args[3], args[4], args[5], args[6],
-        )
     }
 }
 
