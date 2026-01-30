@@ -34,8 +34,9 @@ impl Console {
     }
 
     pub fn get_char(&self) -> char {
-        let (ret, c) = self.0.invoke_recv(consolemethod::GET_CHAR, [0, 0, 0, 0, 0, 0, 0]);
-        if ret == 0 { c as u8 as char } else { '\0' }
+        let utcb = unsafe { utcb::get() };
+        let ret = self.0.invoke(consolemethod::GET_CHAR, [0, 0, 0, 0, 0, 0, 0]);
+        if ret == 0 { utcb.mrs_regs[0] as u8 as char } else { '\0' }
     }
 }
 

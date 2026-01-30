@@ -23,9 +23,9 @@ impl Endpoint {
     pub fn recv(&self, reply_slot: CapPtr) -> usize {
         let utcb = unsafe { utcb::get() };
         utcb.recv_window = Endpoint::from(reply_slot);
-        let (ret, badge) = self.0.invoke_recv(ipcmethod::RECV, [0, 0, 0, 0, 0, 0, 0]);
+        let ret = self.0.invoke(ipcmethod::RECV, [0, 0, 0, 0, 0, 0, 0]);
         if ret == 0 {
-            badge
+            utcb.mrs_regs[0]
         } else {
             // TODO: Return Result
             0
