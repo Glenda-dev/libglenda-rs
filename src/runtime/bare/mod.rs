@@ -17,3 +17,8 @@ pub const IRQ_CAP: CNode = CNode::from(CapPtr::new(IRQ_SLOT));
 
 pub const BOOTINFO_VA: usize = RES_VA_BASE;
 pub const INITRD_VA: usize = BOOTINFO_VA + PGSIZE;
+
+pub const STACK_PAGES: usize = 16; // 用户栈页面数 16 * 4KB = 64KB
+pub const STACK_SIZE: usize = STACK_PAGES * PGSIZE; // 64KB
+pub const HEAP_PAGES: usize = 64; // 用户堆页面数 64 * 4KB = 256KB
+pub const HEAP_SIZE: usize = HEAP_PAGES * PGSIZE; // 256KB

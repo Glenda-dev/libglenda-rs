@@ -2,7 +2,8 @@ use crate::allocator;
 use crate::arch::runtime::{backtrace, panic_break};
 use crate::console;
 use crate::console::{ANSI_RED, ANSI_RESET};
-use crate::mem::{HEAP_SIZE, HEAP_VA};
+use crate::mem::HEAP_VA;
+use crate::runtime::HEAP_SIZE;
 use crate::{println, println_unsynced};
 
 #[unsafe(no_mangle)]
