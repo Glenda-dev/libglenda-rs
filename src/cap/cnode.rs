@@ -13,24 +13,26 @@ impl CNode {
         self.0
     }
 
-    pub fn mint(&self, src: CapPtr, dest_slot: usize, badge: usize, rights: Rights) -> usize {
+    pub fn mint(&self, src: CapPtr, dest: CapPtr, badge: usize, rights: Rights) -> usize {
         self.0.invoke(
             cnodemethod::MINT,
-            [src.bits(), dest_slot, badge, rights.bits() as usize, 0, 0, 0],
+            [src.bits(), dest.bits(), badge, rights.bits() as usize, 0, 0, 0],
         )
     }
 
-    pub fn copy(&self, src: CapPtr, dest_slot: usize, rights: Rights) -> usize {
-        self.0
-            .invoke(cnodemethod::COPY, [src.bits(), dest_slot, rights.bits() as usize, 0, 0, 0, 0])
+    pub fn copy(&self, src: CapPtr, dest: CapPtr, rights: Rights) -> usize {
+        self.0.invoke(
+            cnodemethod::COPY,
+            [src.bits(), dest.bits(), rights.bits() as usize, 0, 0, 0, 0],
+        )
     }
 
-    pub fn delete(&self, slot: usize) -> usize {
-        self.0.invoke(cnodemethod::DELETE, [slot, 0, 0, 0, 0, 0, 0])
+    pub fn delete(&self, cptr: CapPtr) -> usize {
+        self.0.invoke(cnodemethod::DELETE, [cptr.bits(), 0, 0, 0, 0, 0, 0])
     }
 
-    pub fn revoke(&self, slot: usize) -> usize {
-        self.0.invoke(cnodemethod::REVOKE, [slot, 0, 0, 0, 0, 0, 0])
+    pub fn revoke(&self, cptr: CapPtr) -> usize {
+        self.0.invoke(cnodemethod::REVOKE, [cptr.bits(), 0, 0, 0, 0, 0, 0])
     }
 
     pub fn debug_print(&self) -> usize {

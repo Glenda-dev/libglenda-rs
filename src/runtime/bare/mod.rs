@@ -7,15 +7,15 @@ use crate::cap::{CNode, CapPtr, Frame};
 use crate::mem::RES_VA_BASE;
 use crate::println;
 
-pub const PLATFORM_SLOT: usize = 6;
-pub const UNTYPED_SLOT: usize = 7;
-pub const MMIO_SLOT: usize = 8;
-pub const IRQ_SLOT: usize = 9;
+pub const PLATFORM_SLOT: CapPtr = CapPtr::from(6);
+pub const UNTYPED_SLOT: CapPtr = CapPtr::from(7);
+pub const MMIO_SLOT: CapPtr = CapPtr::from(8);
+pub const IRQ_SLOT: CapPtr = CapPtr::from(9);
 
-pub const PLATFORM_CAP: Frame = Frame::from(CapPtr::new(PLATFORM_SLOT));
-pub const UNTYPED_CAP: CNode = CNode::from(CapPtr::new(UNTYPED_SLOT));
-pub const MMIO_CAP: CNode = CNode::from(CapPtr::new(MMIO_SLOT));
-pub const IRQ_CAP: CNode = CNode::from(CapPtr::new(IRQ_SLOT));
+pub const PLATFORM_CAP: Frame = Frame::from(PLATFORM_SLOT);
+pub const UNTYPED_CAP: CNode = CNode::from(UNTYPED_SLOT);
+pub const MMIO_CAP: CNode = CNode::from(MMIO_SLOT);
+pub const IRQ_CAP: CNode = CNode::from(IRQ_SLOT);
 
 pub const BOOTINFO_VA: usize = RES_VA_BASE;
 pub const INITRD_VA: usize = BOOTINFO_VA + PGSIZE;

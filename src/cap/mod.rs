@@ -69,7 +69,7 @@ impl CapPtr {
         Self(0)
     }
 
-    pub const fn new(slot: usize) -> Self {
+    pub const fn from(slot: usize) -> Self {
         Self(slot)
     }
 
@@ -84,12 +84,12 @@ impl CapPtr {
 }
 
 // General Slots
-pub const CSPACE_SLOT: usize = 1;
-pub const VSPACE_SLOT: usize = 2;
-pub const TCB_SLOT: usize = 3;
-pub const FAULT_SLOT: usize = 4;
+pub const CSPACE_SLOT: CapPtr = CapPtr::from(1);
+pub const VSPACE_SLOT: CapPtr = CapPtr::from(2);
+pub const TCB_SLOT: CapPtr = CapPtr::from(3);
+pub const FAULT_SLOT: CapPtr = CapPtr::from(4);
 #[cfg(feature = "kernel-console")]
-pub const CONSOLE_SLOT: usize = 5;
+pub const CONSOLE_SLOT: CapPtr = CapPtr::from(5);
 #[cfg(feature = "rt-bare")]
 pub use crate::runtime::{IRQ_SLOT, MMIO_SLOT, PLATFORM_SLOT, UNTYPED_SLOT};
 
@@ -106,11 +106,11 @@ bitflags::bitflags! {
     }
 }
 
-pub const CSPACE_CAP: CNode = CNode::from(CapPtr::new(CSPACE_SLOT));
-pub const VSPACE_CAP: VSpace = VSpace::from(CapPtr::new(VSPACE_SLOT));
-pub const TCB_CAP: TCB = TCB::from(CapPtr::new(TCB_SLOT));
-pub const FAULT_CAP: Endpoint = Endpoint::from(CapPtr::new(FAULT_SLOT));
+pub const CSPACE_CAP: CNode = CNode::from(CSPACE_SLOT);
+pub const VSPACE_CAP: VSpace = VSpace::from(VSPACE_SLOT);
+pub const TCB_CAP: TCB = TCB::from(TCB_SLOT);
+pub const FAULT_CAP: Endpoint = Endpoint::from(FAULT_SLOT);
 #[cfg(feature = "kernel-console")]
-pub const CONSOLE_CAP: Console = Console::from(CapPtr::new(CONSOLE_SLOT));
+pub const CONSOLE_CAP: Console = Console::from(CONSOLE_SLOT);
 #[cfg(feature = "rt-bare")]
 pub use crate::runtime::{IRQ_CAP, MMIO_CAP, PLATFORM_CAP, UNTYPED_CAP};
