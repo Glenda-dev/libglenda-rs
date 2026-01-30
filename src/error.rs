@@ -12,6 +12,7 @@ pub mod code {
 }
 
 #[repr(usize)]
+#[derive(Debug)]
 pub enum Error {
     Success = code::SUCCESS,
     InvalidCap = code::INVALID_CAP,

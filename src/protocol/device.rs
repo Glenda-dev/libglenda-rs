@@ -1,5 +1,5 @@
 // Protocol ID
-pub const DISPLAY_PROTO: usize = 0x0200;
+pub const DEVICE_PROTO: usize = 0x0200;
 
 // Management Interface
 pub const SCAN_BUS: usize = 1;
