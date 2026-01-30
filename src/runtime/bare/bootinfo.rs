@@ -15,6 +15,10 @@ pub struct BootInfo {
     /// Magic number for verification
     pub magic: u32,
 
+    /// Initrd info
+    pub initrd_start: usize,
+    pub initrd_size: usize,
+
     /// Platform Info Desc
     pub info_desc: MemoryRange,
 
@@ -43,6 +47,7 @@ impl Display for BootInfo {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         writeln!(f, "BootInfo {{")?;
         writeln!(f, "    magic: {:#x},", self.magic)?;
+        writeln!(f, "    initrd: start={:#x}, size={:#x},", self.initrd_start, self.initrd_size)?;
         writeln!(
             f,
             "    info_desc: MemoryRange {{ paddr: {:#x}, size: {:#x} }},",

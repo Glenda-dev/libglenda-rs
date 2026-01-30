@@ -15,5 +15,5 @@ pub const UNTYPED_CAP: CNode = CNode::from(CapPtr::new(UNTYPED_SLOT, 0));
 pub const MMIO_CAP: CNode = CNode::from(CapPtr::new(MMIO_SLOT, 0));
 pub const IRQ_CAP: CNode = CNode::from(CapPtr::new(IRQ_SLOT, 0));
 
-pub const BOOTINFO_VA: usize = RES_VA_BASE + PGSIZE;
-pub const INITRD_VA: usize = RES_VA_BASE + 2 * PGSIZE;
+pub const BOOTINFO_VA: usize = RES_VA_BASE;
+pub const INITRD_VA: usize = BOOTINFO_VA + PGSIZE;
