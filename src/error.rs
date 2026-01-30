@@ -24,4 +24,5 @@ pub enum Error {
     UntypeOOM = code::UNTYPE_OOM,
     InvalidArgs = code::INVALID_ARGS,
     InvalidParam,
+    CNodeFull,
 }
