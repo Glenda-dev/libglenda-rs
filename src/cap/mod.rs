@@ -24,18 +24,17 @@ pub use tcb::TCB;
 pub use untyped::Untyped;
 pub use vspace::VSpace;
 
+use crate::arch::mem::PGSIZE;
 use crate::ipc::MAX_MRS;
 use crate::syscall::{sys_invoke, sys_invoke_recv};
 use core::fmt::Display;
 
+const SLOT_SIZE: usize = 48; // 每个 Slot 占用 48 字节
 pub const CNODE_BITS: usize = 8;
-pub const CNODE_PAGES: usize = 4;
-pub const CPTR_LEN: usize = 64;
-pub const ROOT_CSPACE_SHIFT: usize = CPTR_LEN - CNODE_BITS;
-pub const L1_CSPACE_SHIFT: usize = ROOT_CSPACE_SHIFT - CNODE_BITS;
-pub const MAX_SLOTS: usize = (1 << CNODE_BITS) - 1;
-pub const ROOT_CSPACE_GUARD: usize = CPTR_LEN;
-pub const L1_CSPACE_GUARD: usize = ROOT_CSPACE_GUARD - CNODE_BITS;
+pub const CNODE_SIZE: usize = SLOT_SIZE * (1 << CNODE_BITS) + 8;
+pub const CNODE_PAGES: usize = (CNODE_SIZE + PGSIZE - 1) / PGSIZE;
+pub const CNODE_SLOTS: usize = 1 << CNODE_BITS;
+pub const CNODE_MASK: usize = CNODE_SLOTS - 1;
 
 #[repr(transparent)]
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -44,7 +43,7 @@ pub type Args = [usize; MAX_MRS];
 
 impl Display for CapPtr {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        write!(f, "{}", self.0)
+        write!(f, "{:x}", self.0)
     }
 }
 
@@ -70,8 +69,8 @@ impl CapPtr {
         Self(0)
     }
 
-    pub const fn new(root: usize, l1: usize) -> Self {
-        Self((root << ROOT_CSPACE_SHIFT) | (l1 << L1_CSPACE_SHIFT))
+    pub const fn new(slot: usize) -> Self {
+        Self(slot)
     }
 
     pub fn bits(&self) -> usize {
@@ -113,11 +112,11 @@ bitflags::bitflags! {
     }
 }
 
-pub const CSPACE_CAP: CNode = CNode::from(CapPtr::new(CSPACE_SLOT, 0));
-pub const VSPACE_CAP: VSpace = VSpace::from(CapPtr::new(VSPACE_SLOT, 0));
-pub const TCB_CAP: TCB = TCB::from(CapPtr::new(TCB_SLOT, 0));
-pub const FAULT_CAP: Endpoint = Endpoint::from(CapPtr::new(FAULT_SLOT, 0));
+pub const CSPACE_CAP: CNode = CNode::from(CapPtr::new(CSPACE_SLOT));
+pub const VSPACE_CAP: VSpace = VSpace::from(CapPtr::new(VSPACE_SLOT));
+pub const TCB_CAP: TCB = TCB::from(CapPtr::new(TCB_SLOT));
+pub const FAULT_CAP: Endpoint = Endpoint::from(CapPtr::new(FAULT_SLOT));
 #[cfg(feature = "kernel-console")]
-pub const CONSOLE_CAP: Console = Console::from(CapPtr::new(CONSOLE_SLOT, 0));
+pub const CONSOLE_CAP: Console = Console::from(CapPtr::new(CONSOLE_SLOT));
 #[cfg(feature = "rt-bare")]
 pub use crate::runtime::{IRQ_CAP, MMIO_CAP, PLATFORM_CAP, UNTYPED_CAP};
