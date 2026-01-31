@@ -1,9 +1,8 @@
 mod cnode;
-#[cfg(feature = "kernel-console")]
-mod console;
 mod endpoint;
 mod frame;
 mod irq;
+mod kernel;
 mod method;
 pub mod pagetable;
 mod reply;
@@ -12,11 +11,10 @@ mod untyped;
 mod vspace;
 
 pub use cnode::CNode;
-#[cfg(feature = "kernel-console")]
-pub use console::Console;
 pub use endpoint::Endpoint;
 pub use frame::Frame;
 pub use irq::IrqHandler;
+pub use kernel::Kernel;
 pub use method::*;
 pub use pagetable::PageTable;
 pub use reply::Reply;
@@ -59,7 +57,7 @@ pub enum CapType {
     PageTable = 6,
     CNode = 7,
     IrqHandler = 8,
-    Console = 9,
+    Kernel = 9,
     MMIO = 10,
     VSpace = 11,
 }
@@ -87,8 +85,6 @@ impl CapPtr {
 pub const CSPACE_SLOT: CapPtr = CapPtr::from(1);
 pub const VSPACE_SLOT: CapPtr = CapPtr::from(2);
 pub const TCB_SLOT: CapPtr = CapPtr::from(3);
-#[cfg(feature = "kernel-console")]
-pub const CONSOLE_SLOT: CapPtr = CapPtr::from(5);
 
 bitflags::bitflags! {
     pub struct Rights: u8 {
@@ -99,6 +95,7 @@ bitflags::bitflags! {
         const SEND  = 1 << 3;
         const RECV  = 1 << 4;
         const CALL  = 1 << 5;
+        const EXECUTE = 1 << 6; // 允许执行 (仅用于 TCB)
         const ALL   = 0xFF;
     }
 }
@@ -106,5 +103,3 @@ bitflags::bitflags! {
 pub const CSPACE_CAP: CNode = CNode::from(CSPACE_SLOT);
 pub const VSPACE_CAP: VSpace = VSpace::from(VSPACE_SLOT);
 pub const TCB_CAP: TCB = TCB::from(TCB_SLOT);
-#[cfg(feature = "kernel-console")]
-pub const CONSOLE_CAP: Console = Console::from(CONSOLE_SLOT);

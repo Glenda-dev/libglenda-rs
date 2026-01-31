@@ -1,6 +1,6 @@
 use crate::arch::runtime::panic_break;
-use crate::cap::CONSOLE_CAP;
-use crate::cap::Console;
+use crate::cap::Kernel;
+use crate::runtime::KERNEL_CAP;
 use core::fmt;
 use core::fmt::Write;
 use spin::Mutex;
@@ -8,10 +8,10 @@ use spin::Mutex;
 pub const ANSI_RED: &str = "\x1b[31m";
 pub const ANSI_RESET: &str = "\x1b[0m";
 
-pub static GLOBAL_CONSOLE: Mutex<Console> = Mutex::new(Console::null());
+pub static GLOBAL_CONSOLE: Mutex<Kernel> = Mutex::new(Kernel::null());
 
 pub fn init() {
-    *GLOBAL_CONSOLE.lock() = CONSOLE_CAP;
+    *GLOBAL_CONSOLE.lock() = KERNEL_CAP;
 }
 
 /// Force unlock the console mutex.
