@@ -9,7 +9,6 @@ pub mod crt0;
 pub mod error;
 pub mod heap;
 pub mod ipc;
-pub mod manifest;
 pub mod mem;
 pub mod protocol;
 pub mod runtime;

@@ -1,3 +1,4 @@
+pub mod manifest;
 pub mod platform;
 
 use crate::arch::runtime::panic_break;
