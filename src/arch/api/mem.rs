@@ -8,3 +8,5 @@ pub const VPN_MASK: usize = 0x0;
 pub const SHIFTS: [usize; 1] = [0];
 // 用户空间地址起始
 pub const USER_VA: usize = 0x10000;
+// 内核栈大小
+pub const KSTACK_PAGES: usize = 1;
