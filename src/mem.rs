@@ -6,7 +6,6 @@ pub const TRAPFRAME_VA: usize = TRAMPOLINE_VA - PGSIZE; // Trapframe 映射地�
 pub const UTCB_VA: usize = TRAPFRAME_VA - PGSIZE; // UTCB 映射地址 0x3FFFFFD000
 pub const STACK_VA: usize = UTCB_VA - PGSIZE; // 用户栈映射地址
 pub const HEAP_VA: usize = 0x2000_0000; // 用户堆地址
-pub const RES_VA_BASE: usize = 0x4000_0000; // 启动时提供的资源
 pub const ENTRY_VA: usize = USER_VA; // 用户程序入口地址
 
 /*

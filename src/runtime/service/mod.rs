@@ -1,3 +1,7 @@
+#![allow(dead_code)]
+
+pub mod platform;
+
 use crate::arch::runtime::panic_break;
 use crate::cap::{CapPtr, Endpoint, Frame};
 use crate::error::code;
@@ -9,6 +13,8 @@ pub const MONITOR_SLOT: CapPtr = CapPtr::from(4);
 pub const PLATFORM_SLOT: CapPtr = CapPtr::from(6);
 pub const MONITOR_CAP: Endpoint = Endpoint::from(MONITOR_SLOT);
 pub const PLATFORM_CAP: Frame = Frame::from(PLATFORM_SLOT);
+pub const FAULT_SLOT: CapPtr = CapPtr::from(4);
+pub const FAULT_CAP: Endpoint = Endpoint::from(FAULT_SLOT);
 
 pub fn exit(code: usize) -> ! {
     let tag = MsgTag::new(process::PROCESS_PROTO, process::EXIT, MsgFlags::NONE);

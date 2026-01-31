@@ -87,11 +87,8 @@ impl CapPtr {
 pub const CSPACE_SLOT: CapPtr = CapPtr::from(1);
 pub const VSPACE_SLOT: CapPtr = CapPtr::from(2);
 pub const TCB_SLOT: CapPtr = CapPtr::from(3);
-pub const FAULT_SLOT: CapPtr = CapPtr::from(4);
 #[cfg(feature = "kernel-console")]
 pub const CONSOLE_SLOT: CapPtr = CapPtr::from(5);
-#[cfg(feature = "rt-bare")]
-pub use crate::runtime::{IRQ_SLOT, MMIO_SLOT, PLATFORM_SLOT, UNTYPED_SLOT};
 
 bitflags::bitflags! {
     pub struct Rights: u8 {
@@ -109,8 +106,5 @@ bitflags::bitflags! {
 pub const CSPACE_CAP: CNode = CNode::from(CSPACE_SLOT);
 pub const VSPACE_CAP: VSpace = VSpace::from(VSPACE_SLOT);
 pub const TCB_CAP: TCB = TCB::from(TCB_SLOT);
-pub const FAULT_CAP: Endpoint = Endpoint::from(FAULT_SLOT);
 #[cfg(feature = "kernel-console")]
 pub const CONSOLE_CAP: Console = Console::from(CONSOLE_SLOT);
-#[cfg(feature = "rt-bare")]
-pub use crate::runtime::{IRQ_CAP, MMIO_CAP, PLATFORM_CAP, UNTYPED_CAP};
