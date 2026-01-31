@@ -22,8 +22,8 @@ pub const INITRD_VA: usize = 0x5000_0000;
 
 pub const STACK_PAGES: usize = 16; // 用户栈页面数 16 * 4KB = 64KB
 pub const STACK_SIZE: usize = STACK_PAGES * PGSIZE; // 64KB
-pub const HEAP_PAGES: usize = 64; // 用户堆页面数 64 * 4KB = 256KB
-pub const HEAP_SIZE: usize = HEAP_PAGES * PGSIZE; // 256KB
+pub const HEAP_PAGES: usize = 256; // 用户堆页面数 256 * 4KB = 1MB
+pub const HEAP_SIZE: usize = HEAP_PAGES * PGSIZE; // 1MB
 
 pub fn exit(code: usize) -> ! {
     println!("Program exited with code: {}\n", code);
