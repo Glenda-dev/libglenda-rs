@@ -1,9 +1,9 @@
 use crate::arch::runtime::backtrace;
 use crate::console;
 use crate::console::{ANSI_RED, ANSI_RESET};
-use crate::heap;
+use crate::mem::heap;
 use crate::println_unsynced;
-use crate::runtime::exit;
+use crate::sys::exit;
 
 #[unsafe(no_mangle)]
 unsafe extern "C" fn glenda_start() -> ! {
@@ -33,5 +33,5 @@ unsafe extern "C" fn glenda_start() -> ! {
 fn panic(info: &core::panic::PanicInfo) -> ! {
     println_unsynced!("{}PANIC{}: {}", ANSI_RED, ANSI_RESET, info);
     backtrace();
-    exit(usize::MAX);
+    exit(usize::MAX)
 }

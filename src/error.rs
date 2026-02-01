@@ -27,4 +27,5 @@ pub enum Error {
     InvalidProtocol,
     InvalidParam,
     CNodeFull,
+    NotSupported,
 }

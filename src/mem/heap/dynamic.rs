@@ -1,6 +1,6 @@
 use crate::arch::mem::PGSIZE;
 use crate::mem::HEAP_VA;
-use crate::runtime::sbrk;
+use crate::sys::sbrk;
 use buddy_system_allocator::LockedHeap;
 use core::alloc::{GlobalAlloc, Layout};
 struct DynamicAllocator {

@@ -24,7 +24,7 @@ pub use vspace::VSpace;
 
 use crate::arch::mem::PGSIZE;
 use crate::ipc::MAX_MRS;
-use crate::syscall::sys_invoke;
+use crate::sys::sys_invoke;
 use core::fmt::Display;
 
 const SLOT_SIZE: usize = 48; // 每个 Slot 占用 48 字节
@@ -81,11 +81,6 @@ impl CapPtr {
     }
 }
 
-// General Slots
-pub const CSPACE_SLOT: CapPtr = CapPtr::from(1);
-pub const VSPACE_SLOT: CapPtr = CapPtr::from(2);
-pub const TCB_SLOT: CapPtr = CapPtr::from(3);
-
 bitflags::bitflags! {
     pub struct Rights: u8 {
         const NONE  = 0;
@@ -100,6 +95,22 @@ bitflags::bitflags! {
     }
 }
 
+pub const CSPACE_SLOT: CapPtr = CapPtr::from(1);
+pub const VSPACE_SLOT: CapPtr = CapPtr::from(2);
+pub const TCB_SLOT: CapPtr = CapPtr::from(3);
+pub const FAULT_SLOT: CapPtr = CapPtr::from(4);
+pub const KERNEL_SLOT: CapPtr = CapPtr::from(5);
+pub const PLATFORM_SLOT: CapPtr = CapPtr::from(6);
+pub const UNTYPED_SLOT: CapPtr = CapPtr::from(7);
+pub const MMIO_SLOT: CapPtr = CapPtr::from(8);
+pub const IRQ_SLOT: CapPtr = CapPtr::from(9);
+
 pub const CSPACE_CAP: CNode = CNode::from(CSPACE_SLOT);
 pub const VSPACE_CAP: VSpace = VSpace::from(VSPACE_SLOT);
 pub const TCB_CAP: TCB = TCB::from(TCB_SLOT);
+pub const UNTYPED_CAP: CNode = CNode::from(UNTYPED_SLOT);
+pub const MMIO_CAP: CNode = CNode::from(MMIO_SLOT);
+pub const IRQ_CAP: CNode = CNode::from(IRQ_SLOT);
+pub const KERNEL_CAP: Kernel = Kernel::from(KERNEL_SLOT);
+pub const PLATFORM_CAP: Frame = Frame::from(PLATFORM_SLOT);
+pub const FAULT_CAP: Endpoint = Endpoint::from(FAULT_SLOT);

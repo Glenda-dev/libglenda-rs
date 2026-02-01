@@ -1,6 +1,6 @@
 use crate::arch::runtime::panic_break;
+use crate::cap::KERNEL_CAP;
 use crate::cap::Kernel;
-use crate::runtime::KERNEL_CAP;
 use core::fmt;
 use core::fmt::Write;
 use spin::Mutex;

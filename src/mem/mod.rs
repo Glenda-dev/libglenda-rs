@@ -1,3 +1,5 @@
+pub mod heap;
+
 use crate::arch::mem::{PGSIZE, USER_VA, VA_MAX};
 use bitflags::bitflags;
 
@@ -7,6 +9,12 @@ pub const UTCB_VA: usize = TRAPFRAME_VA - PGSIZE; // UTCB 映射地址 0x3FFFFFD
 pub const STACK_VA: usize = UTCB_VA - PGSIZE; // 用户栈映射地址
 pub const HEAP_VA: usize = 0x2000_0000; // 用户堆地址
 pub const ENTRY_VA: usize = USER_VA; // 用户程序入口地址
+pub const BOOTINFO_VA: usize = 0x4000_0000;
+pub const INITRD_VA: usize = 0x5000_0000;
+pub const STACK_PAGES: usize = 16; // 用户栈页面数 16 * 4KB = 64KB
+pub const STACK_SIZE: usize = STACK_PAGES * PGSIZE; // 64KB
+pub const HEAP_PAGES: usize = 256; // 用户堆页面数 256 * 4KB = 1MB
+pub const HEAP_SIZE: usize = HEAP_PAGES * PGSIZE; // 1MB
 
 /*
 用户地址空间布局：
