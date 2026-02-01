@@ -1,4 +1,5 @@
-use super::{CapPtr, Rights, cnodemethod};
+use super::cnodemethod;
+use super::{CapPtr, Rights};
 use crate::error::Error;
 
 #[repr(transparent)]
@@ -14,7 +15,13 @@ impl CNode {
         self.0
     }
 
-    pub fn mint(&self, src: CapPtr, dest: CapPtr, badge: usize, rights: Rights) -> Result<(), Error> {
+    pub fn mint(
+        &self,
+        src: CapPtr,
+        dest: CapPtr,
+        badge: usize,
+        rights: Rights,
+    ) -> Result<(), Error> {
         self.0.invoke(
             cnodemethod::MINT,
             [src.bits(), dest.bits(), badge, rights.bits() as usize, 0, 0, 0],

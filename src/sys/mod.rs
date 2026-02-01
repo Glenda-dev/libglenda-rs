@@ -2,14 +2,14 @@ use crate::arch::runtime::panic_break;
 use crate::arch::syscall::syscall;
 use crate::cap::{CapPtr, Endpoint};
 use crate::error::Error;
-use crate::ipc::{MsgFlags, MsgTag, utcb};
-use crate::protocol::process;
+use crate::ipc::{MsgArgs, MsgFlags, MsgTag};
+use crate::ipc::{proto, utcb};
 
 pub const MONITOR_SLOT: CapPtr = CapPtr::from(4);
 pub const MONITOR_CAP: Endpoint = Endpoint::from(MONITOR_SLOT);
 
 pub fn sbrk(size: usize) -> Result<usize, ()> {
-    let tag = MsgTag::new(process::PROCESS_PROTO, process::SBRK, MsgFlags::NONE);
+    let tag = MsgTag::new(proto::PROCESS_PROTO, proto::process::SBRK, MsgFlags::NONE);
     if MONITOR_CAP.send(tag, [size, 0, 0, 0, 0, 0, 0]).is_ok() {
         let utcb = unsafe { utcb::get() };
         let ret = utcb.mrs_regs[0];
@@ -21,7 +21,7 @@ pub fn sbrk(size: usize) -> Result<usize, ()> {
 
 #[cfg(not(feature = "nosys"))]
 pub fn exit(code: usize) -> ! {
-    let tag = MsgTag::new(process::PROCESS_PROTO, process::EXIT, MsgFlags::NONE);
+    let tag = MsgTag::new(proto::PROCESS_PROTO, proto::process::EXIT, MsgFlags::NONE);
     let _ = MONITOR_CAP.send(tag, [code, 0, 0, 0, 0, 0, 0]);
     loop {
         unsafe {
@@ -42,29 +42,9 @@ pub fn exit(code: usize) -> ! {
 }
 
 #[inline(always)]
-pub fn sys_invoke(
-    cptr: usize,
-    method: usize,
-    arg0: usize,
-    arg1: usize,
-    arg2: usize,
-    arg3: usize,
-    arg4: usize,
-    arg5: usize,
-    arg6: usize,
-) -> Result<(), Error> {
+pub fn sys_invoke(cptr: usize, method: usize, args: MsgArgs) -> Result<(), Error> {
     let utcb = unsafe { utcb::get() };
-    utcb.mrs_regs[0] = arg0;
-    utcb.mrs_regs[1] = arg1;
-    utcb.mrs_regs[2] = arg2;
-    utcb.mrs_regs[3] = arg3;
-    utcb.mrs_regs[4] = arg4;
-    utcb.mrs_regs[5] = arg5;
-    utcb.mrs_regs[6] = arg6;
+    utcb.mrs_regs = args;
     let ret = unsafe { syscall(cptr, method) };
-    if Error::from(ret) == Error::Success {
-        Ok(())
-    } else {
-        Err(Error::from(ret))
-    }
+    if Error::from(ret) == Error::Success { Ok(()) } else { Err(Error::from(ret)) }
 }

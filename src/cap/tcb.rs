@@ -2,6 +2,7 @@ use crate::cap::Endpoint;
 
 use super::{CNode, CapPtr, Frame, VSpace, tcbmethod};
 use crate::error::Error;
+use crate::ipc::MsgArgs;
 
 #[repr(transparent)]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -42,8 +43,8 @@ impl TCB {
         self.0.invoke(tcbmethod::SET_PRIORITY, [priority as usize, 0, 0, 0, 0, 0, 0])
     }
 
-    pub fn set_registers(&self, pc: usize, sp: usize) -> Result<(), Error> {
-        self.0.invoke(tcbmethod::SET_REGISTERS, [pc, sp, 0, 0, 0, 0, 0])
+    pub fn set_entrypoint(&self, pc: usize, sp: usize) -> Result<(), Error> {
+        self.0.invoke(tcbmethod::SET_ENTRYPOINT, [pc, sp, 0, 0, 0, 0, 0])
     }
 
     pub fn set_fault_handler(&self, fault_ep: Endpoint, native: bool) -> Result<(), Error> {
@@ -51,6 +52,10 @@ impl TCB {
             tcbmethod::SET_FAULT_HANDLER,
             [fault_ep.cap().bits(), native as usize, 0, 0, 0, 0, 0],
         )
+    }
+
+    pub fn set_registers(&self, regs: MsgArgs) -> Result<(), Error> {
+        self.0.invoke(tcbmethod::SET_REGISTERS, regs)
     }
 
     pub fn resume(&self) -> Result<(), Error> {

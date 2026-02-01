@@ -164,8 +164,8 @@ impl VSpaceManager {
                     }
 
                     // Unmap
-                    current_vspace.unmap(src_scratch_va, num_pages)?;
-                    current_vspace.unmap(dest_scratch_va, num_pages)?;
+                    current_vspace.unmap(src_scratch_va, num_pages, objects, root_cnode)?;
+                    current_vspace.unmap(dest_scratch_va, num_pages, objects, root_cnode)?;
 
                     // Map to child
                     dest_mgr.map_frame(
@@ -225,16 +225,29 @@ impl VSpaceManager {
         }
     }
 
-    fn unmap_rec(entries: &mut BTreeMap<usize, Box<ShadowNode>>, vaddr: usize, level: usize) {
+    fn unmap_rec(
+        entries: &mut BTreeMap<usize, Box<ShadowNode>>,
+        vaddr: usize,
+        level: usize,
+        objects: &mut dyn IResourceManager,
+        cnode: CNode,
+    ) {
         let idx = index(vaddr, level);
         if let Some(node) = entries.get_mut(&idx) {
             match &mut **node {
                 ShadowNode::Table { entries: sub_entries, .. } => {
-                    if level == 1 {
-                        let idx0 = index(vaddr, 0);
-                        sub_entries.remove(&idx0);
+                    if level == 0 {
+                        // Leaf level (Frame) - Handled below, but structurally we are at Table pointing to Frame?
+                        // Actually in this structure, level 0 is Page Table, entries point to Frames.
+                        if let Some(removed_node) = sub_entries.remove(&index(vaddr, 0)) {
+                            // Free Frame Capability
+                            if let ShadowNode::Frame { cap, .. } = *removed_node {
+                                let _ = cnode.delete(cap);
+                                let _ = objects.free(cap);
+                            }
+                        }
                     } else {
-                        Self::unmap_rec(sub_entries, vaddr, level - 1);
+                        Self::unmap_rec(sub_entries, vaddr, level - 1, objects, cnode);
                     }
                 }
                 _ => {}
@@ -304,11 +317,18 @@ impl IVSpaceManager for VSpaceManager {
         Ok(())
     }
 
-    fn unmap(&mut self, vaddr: usize, pages: usize) -> Result<(), Error> {
+    fn unmap(
+        &mut self,
+        vaddr: usize,
+        pages: usize,
+        objects: &mut dyn IResourceManager,
+        cnode: CNode,
+    ) -> Result<(), Error> {
+        let levels = SHIFTS.len();
         for i in 0..pages {
-            Self::unmap_rec(&mut self.shadow, vaddr + i * PGSIZE, SHIFTS.len() - 1);
+            Self::unmap_rec(&mut self.shadow, vaddr + i * PGSIZE, levels - 1, objects, cnode);
         }
-        if self.root.unmap(vaddr, pages).is_err() {
+        if self.root.unmap(vaddr, pages * PGSIZE).is_err() {
             return Err(Error::MappingFailed);
         }
         Ok(())

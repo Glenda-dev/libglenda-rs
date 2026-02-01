@@ -73,18 +73,26 @@ impl IResourceManager for ResourceManager {
                         block.desc.watermark += pages;
                         return Ok(());
                     }
-                    Err(Error::UntypeOOM) => {
+                    Err(Error::OutOfMemory) => {
                         // This block is out of memory, try next block
                         continue;
                     }
                     Err(Error::InvalidSlot) => return Err(Error::InvalidCap),
                     Err(_) => {
-                        return Err(Error::UntypeOOM);
+                        return Err(Error::OutOfMemory);
                     }
                 }
             }
         }
 
-        Err(Error::UntypeOOM)
+        Err(Error::OutOfMemory)
+    }
+
+    fn free(&mut self, _cap: CapPtr) -> Result<(), Error> {
+        // TODO: Implement proper memory accounting/redzone freeing.
+        // Currently we use a bump pointer allocator for untyped memory,
+        // so we cannot easily reclaim allocated pages without a rewrite.
+        // The capability itself is deleted by the caller (CNode::delete).
+        Ok(())
     }
 }

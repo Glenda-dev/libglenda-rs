@@ -45,7 +45,7 @@ impl ISlotManager for SlotManager {
                 let l0_cptr = CapPtr::from(l0_idx);
                 objects
                     .alloc(CapType::CNode, 1, self.root_cnode, l0_cptr)
-                    .map_err(|_| Error::UntypeOOM)?;
+                    .map_err(|_| Error::OutOfMemory)?;
                 self.l1_cnodes[l1_cache_idx] = true;
             }
 

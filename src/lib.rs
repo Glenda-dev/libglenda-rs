@@ -10,6 +10,5 @@ pub mod error;
 pub mod ipc;
 pub mod manager;
 pub mod mem;
-pub mod protocol;
 pub mod sys;
 pub mod utils;

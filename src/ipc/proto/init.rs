@@ -1,4 +1,3 @@
-pub const INIT_PROTOCOL: usize = 0x0300;
 
 pub const SERVICE_START: usize = 1;
 pub const SERVICE_STOP: usize = 2;

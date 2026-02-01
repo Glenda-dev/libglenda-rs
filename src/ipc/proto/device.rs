@@ -1,6 +1,3 @@
-// Protocol ID
-pub const DEVICE_PROTO: usize = 0x0200;
-
 // Management Interface
 pub const SCAN_BUS: usize = 1;
 pub const LOAD_DRIVER: usize = 2;

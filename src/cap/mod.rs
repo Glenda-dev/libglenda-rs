@@ -24,7 +24,7 @@ pub use vspace::VSpace;
 
 use crate::arch::mem::PGSIZE;
 use crate::error::Error;
-use crate::ipc::MAX_MRS;
+use crate::ipc::MsgArgs;
 use crate::sys::sys_invoke;
 use core::fmt::Display;
 
@@ -38,7 +38,30 @@ pub const CNODE_MASK: usize = CNODE_SLOTS - 1;
 #[repr(transparent)]
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub struct CapPtr(usize);
-pub type Args = [usize; MAX_MRS];
+
+impl CapPtr {
+    pub const fn null() -> Self {
+        Self(0)
+    }
+
+    pub const fn from(slot: usize) -> Self {
+        Self(slot)
+    }
+
+    pub fn bits(&self) -> usize {
+        self.0
+    }
+
+    pub const fn is_null(&self) -> bool {
+        self.0 == 0
+    }
+
+    // --- Generic Invocation ---
+    #[inline(always)]
+    pub(crate) fn invoke(&self, method: usize, args: MsgArgs) -> Result<(), Error> {
+        sys_invoke(self.0, method, args)
+    }
+}
 
 impl Display for CapPtr {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
@@ -61,25 +84,6 @@ pub enum CapType {
     Kernel = 9,
     MMIO = 10,
     VSpace = 11,
-}
-
-impl CapPtr {
-    pub const fn null() -> Self {
-        Self(0)
-    }
-
-    pub const fn from(slot: usize) -> Self {
-        Self(slot)
-    }
-
-    pub fn bits(&self) -> usize {
-        self.0
-    }
-
-    // --- Generic Invocation ---
-    pub(crate) fn invoke(&self, method: usize, args: Args) -> Result<(), Error> {
-        sys_invoke(self.0, method, args[0], args[1], args[2], args[3], args[4], args[5], args[6])
-    }
 }
 
 bitflags::bitflags! {

@@ -1,5 +1,4 @@
 // Protocol ID
-pub const PROCESS_PROTO: usize = 0x0100;
 
 // Process Lifecycle
 pub const SPAWN: usize = 1;

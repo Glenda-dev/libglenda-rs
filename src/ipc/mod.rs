@@ -1,44 +1,6 @@
+pub mod msg;
+pub mod proto;
 pub mod utcb;
 
-pub use utcb::MAX_MRS;
-pub use utcb::UTCB;
-
-use bitflags::bitflags;
-
-#[derive(Debug, Clone, Copy)]
-#[repr(transparent)]
-pub struct MsgTag(pub usize);
-
-impl MsgTag {
-    pub const fn empty() -> Self {
-        Self(0)
-    }
-
-    pub fn new(proto: usize, label: usize, flags: MsgFlags) -> Self {
-        Self((proto & 0xFFFF) << 24 | (label & 0xFFFF) << 16 | (flags.bits() & 0xFFFF))
-    }
-
-    pub fn as_usize(&self) -> usize {
-        self.0
-    }
-
-    pub fn proto(&self) -> usize {
-        (self.0 >> 24) & 0xFFFF
-    }
-
-    pub fn label(&self) -> usize {
-        (self.0 >> 16) & 0xFFFF
-    }
-
-    pub fn flags(&self) -> MsgFlags {
-        MsgFlags::from_bits_truncate(self.0 & 0xFFFF)
-    }
-}
-
-bitflags! {
-    pub struct MsgFlags: usize {
-        const NONE = 0;
-        const OK = 1 << 0;
-        const ERROR = 1 << 1;
-    }
-}
+pub use msg::{MsgFlags, MsgTag};
+pub use utcb::{MsgArgs, UTCB};

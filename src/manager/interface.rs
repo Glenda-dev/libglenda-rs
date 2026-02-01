@@ -1,8 +1,31 @@
-use crate::cap::{CNode, CapPtr, CapType, Frame};
+use crate::cap::{CNode, CapPtr, CapType, Endpoint, Frame, Reply};
 use crate::error::Error;
+use crate::ipc::{MsgArgs, MsgFlags};
 use crate::manager::device::DeviceNode;
 use crate::mem::Perms;
 use crate::utils::platform::PlatformInfo;
+
+/// SystemService interfaces for the system services.
+pub trait ISystemService {
+    fn init(&mut self) -> Result<(), Error>;
+    fn listen(&mut self, ep: Endpoint, reply: Reply) -> Result<(), Error>;
+    fn run(&mut self) -> Result<(), Error>;
+    fn dispatch(
+        &mut self,
+        badge: usize,
+        label: usize,
+        proto: usize,
+        flgas: MsgFlags,
+        msg: MsgArgs,
+    ) -> Result<usize, Error>;
+    fn reply(
+        &mut self,
+        label: usize,
+        proto: usize,
+        flags: MsgFlags,
+        msg: MsgArgs,
+    ) -> Result<(), Error>;
+}
 
 /// ResourceManager is responsible for allocating kernel objects from untyped memory.
 pub trait IResourceManager {
@@ -13,6 +36,8 @@ pub trait IResourceManager {
         dest_cnode: CNode,
         dest_slot: CapPtr,
     ) -> Result<(), Error>;
+
+    fn free(&mut self, cap: CapPtr) -> Result<(), Error>;
 }
 
 /// SlotManager is responsible for managing capability slots.
@@ -33,7 +58,14 @@ pub trait IVSpaceManager {
         dest_cnode: CNode,
     ) -> Result<(), Error>;
 
-    fn unmap(&mut self, vaddr: usize, pages: usize) -> Result<(), Error>;
+    /// Unmap memory and free resources
+    fn unmap(
+        &mut self,
+        vaddr: usize,
+        pages: usize,
+        objects: &mut dyn IResourceManager,
+        cnode: CNode,
+    ) -> Result<(), Error>;
 }
 
 /// ProcessManager provides high-level process control.
@@ -69,4 +101,13 @@ pub trait IPciService {
 pub trait IDmaService {
     fn alloc_dma(&mut self, size: usize) -> Result<usize, Error>;
     fn free_dma(&mut self, paddr: usize, size: usize);
+}
+
+pub trait IFaultService {
+    fn handle_page_fault(
+        &mut self,
+        pid: usize,
+        vaddr: usize,
+        error_code: usize,
+    ) -> Result<(), Error>;
 }
