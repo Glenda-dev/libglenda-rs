@@ -1,4 +1,5 @@
 use super::{CNode, CapPtr, CapType, untypedmethod};
+use crate::error::Error;
 
 #[repr(transparent)]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -20,7 +21,7 @@ impl Untyped {
         dest_cnode: CNode,
         dest_slot: CapPtr,
         dirty: bool,
-    ) -> usize {
+    ) -> Result<(), Error> {
         self.0.invoke(
             untypedmethod::RETYPE,
             [
@@ -36,37 +37,37 @@ impl Untyped {
     }
 
     #[inline(always)]
-    pub fn retype_untyped(&self, pages: usize, dest_cnode: CNode, dest_slot: CapPtr) -> usize {
+    pub fn retype_untyped(&self, pages: usize, dest_cnode: CNode, dest_slot: CapPtr) -> Result<(), Error> {
         self.retype(CapType::Untyped, pages, dest_cnode, dest_slot, false)
     }
 
     #[inline(always)]
-    pub fn retype_tcb(&self, dest_cnode: CNode, dest_slot: CapPtr) -> usize {
+    pub fn retype_tcb(&self, dest_cnode: CNode, dest_slot: CapPtr) -> Result<(), Error> {
         self.retype(CapType::TCB, 0, dest_cnode, dest_slot, false)
     }
 
     #[inline(always)]
-    pub fn retype_pagetable(&self, level: usize, dest_cnode: CNode, dest_slot: CapPtr) -> usize {
+    pub fn retype_pagetable(&self, level: usize, dest_cnode: CNode, dest_slot: CapPtr) -> Result<(), Error> {
         self.retype(CapType::PageTable, level, dest_cnode, dest_slot, false)
     }
 
     #[inline(always)]
-    pub fn retype_cnode(&self, dest_cnode: CNode, dest_slot: CapPtr) -> usize {
+    pub fn retype_cnode(&self, dest_cnode: CNode, dest_slot: CapPtr) -> Result<(), Error> {
         self.retype(CapType::CNode, 0, dest_cnode, dest_slot, false)
     }
 
     #[inline(always)]
-    pub fn retype_frame(&self, pages: usize, dest_cnode: CNode, dest_slot: CapPtr) -> usize {
+    pub fn retype_frame(&self, pages: usize, dest_cnode: CNode, dest_slot: CapPtr) -> Result<(), Error> {
         self.retype(CapType::Frame, pages, dest_cnode, dest_slot, false)
     }
 
     #[inline(always)]
-    pub fn retype_vspace(&self, dest_cnode: CNode, dest_slot: CapPtr) -> usize {
+    pub fn retype_vspace(&self, dest_cnode: CNode, dest_slot: CapPtr) -> Result<(), Error> {
         self.retype(CapType::VSpace, 0, dest_cnode, dest_slot, false)
     }
 
     #[inline(always)]
-    pub fn retype_endpoint(&self, dest_cnode: CNode, dest_slot: CapPtr) -> usize {
+    pub fn retype_endpoint(&self, dest_cnode: CNode, dest_slot: CapPtr) -> Result<(), Error> {
         self.retype(CapType::Endpoint, 0, dest_cnode, dest_slot, false)
     }
 }

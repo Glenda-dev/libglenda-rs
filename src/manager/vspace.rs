@@ -1,7 +1,7 @@
 use super::interface::{IResourceManager, ISlotManager, IVSpaceManager};
 use crate::arch::mem::{PGSIZE, SHIFTS, VPN_MASK};
 use crate::cap::{CNode, CapPtr, CapType, Frame, PageTable, VSpace};
-use crate::error::{Error, code};
+use crate::error::Error;
 use crate::mem::Perms;
 use alloc::boxed::Box;
 use alloc::collections::BTreeMap;
@@ -29,7 +29,7 @@ impl VSpaceManager {
     }
 
     pub fn setup(&self) -> Result<(), Error> {
-        if self.root.setup() != code::SUCCESS {
+        if self.root.setup().is_err() {
             return Err(Error::MappingFailed);
         }
         Ok(())
@@ -198,7 +198,7 @@ impl VSpaceManager {
             objects.alloc(CapType::PageTable, target_level, dest_cnode, slot)?;
             let pt = PageTable::from(slot);
 
-            if pivot_root.map_table(pt, vaddr, level) != 0 {
+            if pivot_root.map_table(pt, vaddr, level).is_err() {
                 return Err(Error::MappingFailed);
             }
             entries.insert(idx, Box::new(ShadowNode::new_table(slot)));
@@ -274,7 +274,7 @@ impl IVSpaceManager for VSpaceManager {
             }
         }
 
-        if self.root.map(frame, vaddr, perms) != code::SUCCESS {
+        if self.root.map(frame, vaddr, perms).is_err() {
             return Err(Error::MappingFailed);
         }
 
@@ -308,7 +308,7 @@ impl IVSpaceManager for VSpaceManager {
         for i in 0..pages {
             Self::unmap_rec(&mut self.shadow, vaddr + i * PGSIZE, SHIFTS.len() - 1);
         }
-        if self.root.unmap(vaddr, pages) != code::SUCCESS {
+        if self.root.unmap(vaddr, pages).is_err() {
             return Err(Error::MappingFailed);
         }
         Ok(())

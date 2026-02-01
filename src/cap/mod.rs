@@ -23,6 +23,7 @@ pub use untyped::Untyped;
 pub use vspace::VSpace;
 
 use crate::arch::mem::PGSIZE;
+use crate::error::Error;
 use crate::ipc::MAX_MRS;
 use crate::sys::sys_invoke;
 use core::fmt::Display;
@@ -76,7 +77,7 @@ impl CapPtr {
     }
 
     // --- Generic Invocation ---
-    pub(crate) fn invoke(&self, method: usize, args: Args) -> usize {
+    pub(crate) fn invoke(&self, method: usize, args: Args) -> Result<(), Error> {
         sys_invoke(self.0, method, args[0], args[1], args[2], args[3], args[4], args[5], args[6])
     }
 }

@@ -1,4 +1,5 @@
 use super::{Args, CapPtr, ipcmethod};
+use crate::error::Error;
 use crate::ipc::{MsgTag, utcb};
 
 #[repr(transparent)]
@@ -14,31 +15,30 @@ impl Endpoint {
         self.0
     }
 
-    pub fn send(&self, msg_info: MsgTag, args: Args) -> usize {
+    pub fn send(&self, msg_info: MsgTag, args: Args) -> Result<(), Error> {
         let utcb = unsafe { utcb::get() };
         utcb.msg_tag = msg_info;
         self.0.invoke(ipcmethod::SEND, args)
     }
 
-    pub fn recv(&self, reply_slot: CapPtr) -> usize {
+    pub fn recv(&self, reply_slot: CapPtr) -> Result<usize, Error> {
         let utcb = unsafe { utcb::get() };
         utcb.recv_window = Endpoint::from(reply_slot);
         let ret = self.0.invoke(ipcmethod::RECV, [0, 0, 0, 0, 0, 0, 0]);
-        if ret == 0 {
-            utcb.mrs_regs[0]
+        if ret.is_ok() {
+            Ok(utcb.mrs_regs[0])
         } else {
-            // TODO: Return Result
-            0
+            Err(ret.unwrap_err())
         }
     }
 
-    pub fn call(&self, msg_info: MsgTag, args: Args) -> usize {
+    pub fn call(&self, msg_info: MsgTag, args: Args) -> Result<(), Error> {
         let utcb = unsafe { utcb::get() };
         utcb.msg_tag = msg_info;
         self.0.invoke(ipcmethod::CALL, args)
     }
 
-    pub fn notify(&self, badge: usize) -> usize {
+    pub fn notify(&self, badge: usize) -> Result<(), Error> {
         self.0.invoke(ipcmethod::NOTIFY, [badge, 0, 0, 0, 0, 0, 0])
     }
 }

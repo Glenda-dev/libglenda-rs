@@ -1,4 +1,5 @@
 use super::{Args, CapPtr, replymethod};
+use crate::error::Error;
 use crate::ipc::{MsgTag, utcb};
 
 #[repr(transparent)]
@@ -14,7 +15,7 @@ impl Reply {
         self.0
     }
 
-    pub fn reply(&self, msg_info: MsgTag, args: Args) -> usize {
+    pub fn reply(&self, msg_info: MsgTag, args: Args) -> Result<(), Error> {
         let utcb = unsafe { utcb::get() };
         utcb.msg_tag = msg_info;
         self.0.invoke(replymethod::REPLY, args)

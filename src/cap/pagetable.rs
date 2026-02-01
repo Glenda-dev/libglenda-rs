@@ -14,6 +14,7 @@ impl Perms {
 }
 
 use super::{CapPtr, pagetablemethod};
+use crate::error::Error;
 
 #[repr(transparent)]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -28,7 +29,7 @@ impl PageTable {
         self.0
     }
 
-    pub fn map_table(&self, table: PageTable, vaddr: usize, level: usize) -> usize {
+    pub fn map_table(&self, table: PageTable, vaddr: usize, level: usize) -> Result<(), Error> {
         self.0.invoke(pagetablemethod::MAP_TABLE, [table.cap().bits(), vaddr, level, 0, 0, 0, 0])
     }
 }

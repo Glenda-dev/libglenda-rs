@@ -1,4 +1,5 @@
 use super::{CapPtr, Frame, PageTable, vspacemethod};
+use crate::error::Error;
 use crate::mem::Perms;
 
 #[repr(transparent)]
@@ -14,23 +15,23 @@ impl VSpace {
         self.0
     }
 
-    pub fn map(&self, frame: Frame, vaddr: usize, perms: Perms) -> usize {
+    pub fn map(&self, frame: Frame, vaddr: usize, perms: Perms) -> Result<(), Error> {
         self.0.invoke(vspacemethod::MAP, [frame.cap().bits(), vaddr, perms.bits(), 0, 0, 0, 0])
     }
 
-    pub fn map_table(&self, table: PageTable, vaddr: usize, level: usize) -> usize {
+    pub fn map_table(&self, table: PageTable, vaddr: usize, level: usize) -> Result<(), Error> {
         self.0.invoke(vspacemethod::MAP_TABLE, [table.cap().bits(), vaddr, level, 0, 0, 0, 0])
     }
 
-    pub fn unmap(&self, vaddr: usize, size: usize) -> usize {
+    pub fn unmap(&self, vaddr: usize, size: usize) -> Result<(), Error> {
         self.0.invoke(vspacemethod::UNMAP, [vaddr, size, 0, 0, 0, 0, 0])
     }
 
-    pub fn setup(&self) -> usize {
+    pub fn setup(&self) -> Result<(), Error> {
         self.0.invoke(vspacemethod::SETUP, [0, 0, 0, 0, 0, 0, 0])
     }
 
-    pub fn debug_print(&self) -> usize {
+    pub fn debug_print(&self) -> Result<(), Error> {
         self.0.invoke(vspacemethod::DEBUG_PRINT, [0, 0, 0, 0, 0, 0, 0])
     }
 }

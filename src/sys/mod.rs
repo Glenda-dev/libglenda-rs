@@ -1,7 +1,7 @@
 use crate::arch::runtime::panic_break;
 use crate::arch::syscall::syscall;
 use crate::cap::{CapPtr, Endpoint};
-use crate::error::code;
+use crate::error::Error;
 use crate::ipc::{MsgFlags, MsgTag, utcb};
 use crate::protocol::process;
 
@@ -10,8 +10,7 @@ pub const MONITOR_CAP: Endpoint = Endpoint::from(MONITOR_SLOT);
 
 pub fn sbrk(size: usize) -> Result<usize, ()> {
     let tag = MsgTag::new(process::PROCESS_PROTO, process::SBRK, MsgFlags::NONE);
-    let ret = MONITOR_CAP.send(tag, [size, 0, 0, 0, 0, 0, 0]);
-    if ret == code::SUCCESS {
+    if MONITOR_CAP.send(tag, [size, 0, 0, 0, 0, 0, 0]).is_ok() {
         let utcb = unsafe { utcb::get() };
         let ret = utcb.mrs_regs[0];
         if ret > 0 { Ok(ret) } else { Err(()) }
@@ -23,7 +22,7 @@ pub fn sbrk(size: usize) -> Result<usize, ()> {
 #[cfg(not(feature = "nosys"))]
 pub fn exit(code: usize) -> ! {
     let tag = MsgTag::new(process::PROCESS_PROTO, process::EXIT, MsgFlags::NONE);
-    MONITOR_CAP.send(tag, [code, 0, 0, 0, 0, 0, 0]);
+    let _ = MONITOR_CAP.send(tag, [code, 0, 0, 0, 0, 0, 0]);
     loop {
         unsafe {
             panic_break();
@@ -53,7 +52,7 @@ pub fn sys_invoke(
     arg4: usize,
     arg5: usize,
     arg6: usize,
-) -> usize {
+) -> Result<(), Error> {
     let utcb = unsafe { utcb::get() };
     utcb.mrs_regs[0] = arg0;
     utcb.mrs_regs[1] = arg1;
@@ -62,5 +61,10 @@ pub fn sys_invoke(
     utcb.mrs_regs[4] = arg4;
     utcb.mrs_regs[5] = arg5;
     utcb.mrs_regs[6] = arg6;
-    unsafe { syscall(cptr, method) }
+    let ret = unsafe { syscall(cptr, method) };
+    if Error::from(ret) == Error::Success {
+        Ok(())
+    } else {
+        Err(Error::from(ret))
+    }
 }
