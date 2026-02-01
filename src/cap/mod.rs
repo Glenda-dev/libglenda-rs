@@ -99,7 +99,7 @@ bitflags::bitflags! {
 pub const CSPACE_SLOT: CapPtr = CapPtr::from(1);
 pub const VSPACE_SLOT: CapPtr = CapPtr::from(2);
 pub const TCB_SLOT: CapPtr = CapPtr::from(3);
-pub const FAULT_SLOT: CapPtr = CapPtr::from(4);
+pub const MONITOR_SLOT: CapPtr = CapPtr::from(4);
 pub const KERNEL_SLOT: CapPtr = CapPtr::from(5);
 pub const PLATFORM_SLOT: CapPtr = CapPtr::from(6);
 pub const UNTYPED_SLOT: CapPtr = CapPtr::from(7);
@@ -114,4 +114,4 @@ pub const MMIO_CAP: CNode = CNode::from(MMIO_SLOT);
 pub const IRQ_CAP: CNode = CNode::from(IRQ_SLOT);
 pub const KERNEL_CAP: Kernel = Kernel::from(KERNEL_SLOT);
 pub const PLATFORM_CAP: Frame = Frame::from(PLATFORM_SLOT);
-pub const FAULT_CAP: Endpoint = Endpoint::from(FAULT_SLOT);
+pub const MONITOR_CAP: Endpoint = Endpoint::from(MONITOR_SLOT);
