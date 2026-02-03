@@ -1,3 +1,4 @@
+pub mod align;
 pub mod bootinfo;
 pub mod initrd;
 pub mod manifest;
