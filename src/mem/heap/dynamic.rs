@@ -42,7 +42,6 @@ pub fn init() {
 
 /// 动态扩展堆内存
 pub fn expand(size: usize) -> Result<(), ()> {
-    // ...existing code...
     if let Ok(old_break) = sbrk(size) {
         unsafe {
             HEAP_ALLOCATOR.inner.lock().add_to_heap(old_break, old_break + size);
