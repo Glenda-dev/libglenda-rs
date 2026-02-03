@@ -109,6 +109,7 @@ pub const PLATFORM_SLOT: CapPtr = CapPtr::from(6);
 pub const UNTYPED_SLOT: CapPtr = CapPtr::from(7);
 pub const MMIO_SLOT: CapPtr = CapPtr::from(8);
 pub const IRQ_SLOT: CapPtr = CapPtr::from(9);
+pub const REPLY_SLOT: CapPtr = CapPtr::from(10);
 
 pub const CSPACE_CAP: CNode = CNode::from(CSPACE_SLOT);
 pub const VSPACE_CAP: VSpace = VSpace::from(VSPACE_SLOT);
@@ -119,3 +120,4 @@ pub const IRQ_CAP: CNode = CNode::from(IRQ_SLOT);
 pub const KERNEL_CAP: Kernel = Kernel::from(KERNEL_SLOT);
 pub const PLATFORM_CAP: Frame = Frame::from(PLATFORM_SLOT);
 pub const MONITOR_CAP: Endpoint = Endpoint::from(MONITOR_SLOT);
+pub const REPLY_CAP: Reply = Reply::from(REPLY_SLOT);
