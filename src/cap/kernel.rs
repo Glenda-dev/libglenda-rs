@@ -22,8 +22,9 @@ impl Kernel {
 
     pub fn console_put_str(&self, s: &str) -> Result<(), Error> {
         let utcb = unsafe { UTCB::get() };
-        if let Some((offset, len)) = utcb.append_str(s) {
-            self.0.invoke(kernelmethod::CONSOLE_PUT_STR, [offset, len, 0, 0, 0, 0, 0])
+        let len = utcb.write(s.as_bytes());
+        if len == s.len() {
+            self.0.invoke(kernelmethod::CONSOLE_PUT_STR, [0; 7])
         } else {
             // Buffer overflow
             Err(Error::Unknown)

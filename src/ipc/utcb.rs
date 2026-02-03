@@ -59,35 +59,6 @@ impl UTCB {
         len
     }
 
-    #[warn(deprecated_in_future)]
-    pub fn read_str(&self, offset: usize, len: usize) -> Option<alloc::string::String> {
-        if len > BUFFER_MAX_SIZE || offset >= BUFFER_MAX_SIZE {
-            return None;
-        }
-        let mut buf = alloc::vec![0u8; len];
-        if offset + len <= BUFFER_MAX_SIZE {
-            buf.copy_from_slice(&self.ipc_buffer[offset..offset + len]);
-        } else {
-            let part1_len = BUFFER_MAX_SIZE - offset;
-            let part2_len = len - part1_len;
-            buf[..part1_len].copy_from_slice(&self.ipc_buffer[offset..]);
-            buf[part1_len..].copy_from_slice(&self.ipc_buffer[..part2_len]);
-        }
-        alloc::string::String::from_utf8(buf).ok()
-    }
-
-    pub fn append_str(&mut self, s: &str) -> Option<(usize, usize)> {
-        let start = self.tail;
-        let len = self.write(s.as_bytes());
-        if len == s.len() { Some((start, len)) } else { None }
-    }
-
-    pub fn append_bytes(&mut self, bytes: &[u8]) -> Option<(usize, usize)> {
-        let start = self.tail;
-        let len = self.write(bytes);
-        if len == bytes.len() { Some((start, len)) } else { None }
-    }
-
     pub fn clear(&mut self) {
         self.msg_tag = MsgTag::empty();
         self.mrs_regs = [0; MAX_MRS];
