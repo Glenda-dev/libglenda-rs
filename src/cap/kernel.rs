@@ -37,6 +37,22 @@ impl Kernel {
         if ret.is_ok() { utcb.mrs_regs[0] as u8 as char } else { '\0' }
     }
 
+    pub fn console_get_str(&self) -> Result<alloc::string::String, Error> {
+        let utcb = unsafe { UTCB::get() };
+        // 清空 UTCB 以便接收数据
+        utcb.clear();
+        let ret = self.0.invoke(kernelmethod::CONSOLE_GET_STR, [0; 7]);
+        if ret.is_ok() {
+            // MR0 contains length
+            let len = utcb.mrs_regs[0];
+            let mut buf = alloc::vec![0u8; len];
+            utcb.read(&mut buf);
+            alloc::string::String::from_utf8(buf).map_err(|_| Error::Unknown)
+        } else {
+            Err(ret.unwrap_err())
+        }
+    }
+
     pub fn shell(&self) -> Result<(), Error> {
         self.0.invoke(kernelmethod::SHELL, [0, 0, 0, 0, 0, 0, 0])
     }
