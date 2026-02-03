@@ -24,6 +24,3 @@ pub const SLEEP: usize = 15;
 // Debugging & Inspection
 pub const GET_PID: usize = 16;
 pub const PS: usize = 18;
-
-// Admin / Loading
-pub const SPAWN_SERVICE: usize = 25; // arg0: name_len. Name in UTCB buffer. Cap: manifest_frame.
