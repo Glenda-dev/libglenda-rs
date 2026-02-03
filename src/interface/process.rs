@@ -10,10 +10,7 @@ pub trait ProcessService {
 
 /// FaultService handles faults for processes.
 pub trait FaultService {
-    fn handle_page_fault(
-        &mut self,
-        pid: usize,
-        vaddr: usize,
-        error_code: usize,
-    ) -> Result<(), Error>;
+    fn page_fault(&mut self, pid: usize, addr: usize, pc: usize, cause: usize)
+    -> Result<(), Error>;
+    fn fault(&mut self, pid: usize, cause: usize, value: usize, pc: usize) -> Result<(), Error>;
 }
