@@ -35,8 +35,10 @@ impl VSpaceManager {
         Ok(())
     }
 
-    pub fn mark_existing(&mut self, vaddr: usize) {
-        Self::mark_existing_rec(&mut self.shadow, vaddr, SHIFTS.len() - 1);
+    pub fn mark_existing(&mut self, vaddr: usize, size: usize) {
+        for offset in (0..size).step_by(PGSIZE) {
+            Self::mark_existing_rec(&mut self.shadow, vaddr + offset, SHIFTS.len() - 1);
+        }
     }
 
     fn mark_existing_rec(
