@@ -26,7 +26,7 @@ impl Endpoint {
     pub fn recv(&self, reply_slot: CapPtr) -> Result<usize, Error> {
         let utcb = unsafe { UTCB::get() };
         utcb.recv_window = reply_slot;
-        let ret = self.0.invoke(ipcmethod::RECV, [0, 0, 0, 0, 0, 0, 0]);
+        let ret = self.0.invoke(ipcmethod::RECV, [0, 0, 0, 0, 0,0, 0, 0]);
         if ret.is_ok() { Ok(utcb.mrs_regs[0]) } else { Err(ret.unwrap_err()) }
     }
 
@@ -37,6 +37,6 @@ impl Endpoint {
     }
 
     pub fn notify(&self, badge: usize) -> Result<(), Error> {
-        self.0.invoke(ipcmethod::NOTIFY, [badge, 0, 0, 0, 0, 0, 0])
+        self.0.invoke(ipcmethod::NOTIFY, [badge, 0, 0, 0, 0,0, 0, 0])
     }
 }

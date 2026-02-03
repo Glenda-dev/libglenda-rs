@@ -30,6 +30,6 @@ impl PageTable {
     }
 
     pub fn map_table(&self, table: PageTable, vaddr: usize, level: usize) -> Result<(), Error> {
-        self.0.invoke(pagetablemethod::MAP_TABLE, [table.cap().bits(), vaddr, level, 0, 0, 0, 0])
+        self.0.invoke(pagetablemethod::MAP_TABLE, [table.cap().bits(), vaddr, level, 0, 0, 0, 0, 0])
     }
 }

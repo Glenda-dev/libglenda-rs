@@ -3,7 +3,7 @@ use crate::cap::CapPtr;
 use crate::mem::UTCB_VA;
 
 pub const BUFFER_MAX_SIZE: usize = 3 * 1024; // 3KB
-pub const MAX_MRS: usize = 7;
+pub const MAX_MRS: usize = 8;
 
 pub type MsgArgs = [usize; MAX_MRS];
 

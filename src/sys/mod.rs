@@ -9,7 +9,7 @@ pub const MONITOR_CAP: Endpoint = Endpoint::from(MONITOR_SLOT);
 
 pub fn sbrk(size: usize) -> Result<usize, ()> {
     let tag = MsgTag::new(proto::PROCESS_PROTO, proto::process::SBRK, MsgFlags::NONE);
-    if MONITOR_CAP.send(tag, [size, 0, 0, 0, 0, 0, 0]).is_ok() {
+    if MONITOR_CAP.send(tag, [size, 0, 0, 0, 0,0, 0, 0]).is_ok() {
         let utcb = unsafe { UTCB::get() };
         let ret = utcb.mrs_regs[0];
         if ret > 0 { Ok(ret) } else { Err(()) }
@@ -20,14 +20,14 @@ pub fn sbrk(size: usize) -> Result<usize, ()> {
 
 pub fn exit(code: usize) -> ! {
     let tag = MsgTag::new(proto::PROCESS_PROTO, proto::process::EXIT, MsgFlags::NONE);
-    let _ = MONITOR_CAP.send(tag, [code, 0, 0, 0, 0, 0, 0]);
+    let _ = MONITOR_CAP.send(tag, [code, 0, 0, 0, 0,0, 0, 0]);
     unreachable!("Failed to exit with code {}", code);
 }
 
 #[warn(deprecated_in_future)]
 pub fn init() -> usize {
     let tag = MsgTag::new(proto::PROCESS_PROTO, proto::process::INIT, MsgFlags::NONE);
-    MONITOR_CAP.send(tag, [0, 0, 0, 0, 0, 0, 0]).expect("Failed to init");
+    MONITOR_CAP.send(tag, [0, 0, 0, 0, 0,0, 0, 0]).expect("Failed to init");
     let utcb = unsafe { UTCB::get() };
     use crate::println;
     println!("Received {}", utcb.mrs_regs[0]);

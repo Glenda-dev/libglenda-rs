@@ -15,10 +15,10 @@ impl IrqHandler {
     }
 
     pub fn ack(&self) -> Result<(), Error> {
-        self.0.invoke(irqmethod::ACK, [0, 0, 0, 0, 0, 0, 0])
+        self.0.invoke(irqmethod::ACK, [0, 0, 0, 0, 0,0, 0, 0])
     }
 
     pub fn set_notification(&self, notification: Endpoint) -> Result<(), Error> {
-        self.0.invoke(irqmethod::SET_NOTIFICATION, [notification.cap().bits(), 0, 0, 0, 0, 0, 0])
+        self.0.invoke(irqmethod::SET_NOTIFICATION, [notification.cap().bits(), 0, 0, 0, 0,0, 0, 0])
     }
 }

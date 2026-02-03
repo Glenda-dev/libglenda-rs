@@ -1,6 +1,7 @@
 use super::{CapPtr, kernelmethod};
 use crate::error::Error;
 use crate::ipc::UTCB;
+use crate::ipc::utcb::MAX_MRS;
 use core::fmt;
 
 #[repr(transparent)]
@@ -24,7 +25,7 @@ impl Kernel {
         let utcb = unsafe { UTCB::get() };
         let len = utcb.write(s.as_bytes());
         if len == s.len() {
-            self.0.invoke(kernelmethod::CONSOLE_PUT_STR, [0; 7])
+            self.0.invoke(kernelmethod::CONSOLE_PUT_STR, [0; MAX_MRS])
         } else {
             // Buffer overflow
             Err(Error::Unknown)
@@ -33,7 +34,7 @@ impl Kernel {
 
     pub fn console_get_char(&self) -> char {
         let utcb = unsafe { UTCB::get() };
-        let ret = self.0.invoke(kernelmethod::CONSOLE_GET_CHAR, [0, 0, 0, 0, 0, 0, 0]);
+        let ret = self.0.invoke(kernelmethod::CONSOLE_GET_CHAR, [0; MAX_MRS]);
         if ret.is_ok() { utcb.mrs_regs[0] as u8 as char } else { '\0' }
     }
 
@@ -41,7 +42,7 @@ impl Kernel {
         let utcb = unsafe { UTCB::get() };
         // 清空 UTCB 以便接收数据
         utcb.clear();
-        let ret = self.0.invoke(kernelmethod::CONSOLE_GET_STR, [0; 7]);
+        let ret = self.0.invoke(kernelmethod::CONSOLE_GET_STR, [0; MAX_MRS]);
         if ret.is_ok() {
             // MR0 contains length
             let len = utcb.mrs_regs[0];
@@ -54,7 +55,7 @@ impl Kernel {
     }
 
     pub fn shell(&self) -> Result<(), Error> {
-        self.0.invoke(kernelmethod::SHELL, [0, 0, 0, 0, 0, 0, 0])
+        self.0.invoke(kernelmethod::SHELL, [0; MAX_MRS])
     }
 }
 

@@ -23,7 +23,7 @@ impl Untyped {
     ) -> Result<(), Error> {
         self.0.invoke(
             untypedmethod::RETYPE,
-            [obj_type as usize, flags, dest_cnode.cap().bits(), dest_slot.bits(), 0, 0, 0],
+            [obj_type as usize, flags, dest_cnode.cap().bits(), dest_slot.bits(), 0,0, 0, 0],
         )
     }
 
