@@ -21,8 +21,12 @@ pub struct UTCB {
 }
 
 impl UTCB {
-    pub fn current() -> &'static mut Self {
+    pub unsafe fn get() -> &'static mut Self {
         unsafe { &mut *(UTCB_VA as *mut UTCB) }
+    }
+
+    pub unsafe fn from(addr: usize) -> &'static mut Self {
+        unsafe { &mut *(addr as *mut UTCB) }
     }
 
     pub fn available_data(&self) -> usize {
@@ -97,6 +101,7 @@ impl UTCB {
     }
 }
 
+#[expect(deprecated_in_future)]
 pub unsafe fn get() -> &'static mut UTCB {
     unsafe { &mut *(UTCB_VA as *mut UTCB) }
 }
