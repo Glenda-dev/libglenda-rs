@@ -235,22 +235,17 @@ impl VSpaceManager {
         cnode: CNode,
     ) {
         let idx = index(vaddr, level);
-        if let Some(node) = entries.get_mut(&idx) {
+        if level == 0 {
+            if let Some(removed_node) = entries.remove(&idx) {
+                if let ShadowNode::Frame { cap, .. } = *removed_node {
+                    let _ = cnode.delete(cap);
+                    let _ = objects.free(cap);
+                }
+            }
+        } else if let Some(node) = entries.get_mut(&idx) {
             match &mut **node {
                 ShadowNode::Table { entries: sub_entries, .. } => {
-                    if level == 0 {
-                        // Leaf level (Frame) - Handled below, but structurally we are at Table pointing to Frame?
-                        // Actually in this structure, level 0 is Page Table, entries point to Frames.
-                        if let Some(removed_node) = sub_entries.remove(&index(vaddr, 0)) {
-                            // Free Frame Capability
-                            if let ShadowNode::Frame { cap, .. } = *removed_node {
-                                let _ = cnode.delete(cap);
-                                let _ = objects.free(cap);
-                            }
-                        }
-                    } else {
-                        Self::unmap_rec(sub_entries, vaddr, level - 1, objects, cnode);
-                    }
+                    Self::unmap_rec(sub_entries, vaddr, level - 1, objects, cnode);
                 }
                 _ => {}
             }
