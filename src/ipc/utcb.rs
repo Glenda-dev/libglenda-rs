@@ -59,6 +59,7 @@ impl UTCB {
         len
     }
 
+    #[warn(deprecated_in_future)]
     pub fn read_str(&self, offset: usize, len: usize) -> Option<alloc::string::String> {
         if len > BUFFER_MAX_SIZE || offset >= BUFFER_MAX_SIZE {
             return None;
