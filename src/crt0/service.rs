@@ -1,8 +1,12 @@
 use crate::arch::mem::PGSIZE;
-use crate::mem::HEAP_VA;
-use crate::sys::sbrk;
+use crate::arch::runtime::backtrace;
+use crate::console;
+use crate::console::{ANSI_RED, ANSI_RESET};
+use crate::println_unsynced;
+use crate::sys::{exit, init, sbrk};
 use buddy_system_allocator::LockedHeap;
 use core::alloc::{GlobalAlloc, Layout};
+
 struct DynamicAllocator {
     inner: LockedHeap<32>,
 }
@@ -33,13 +37,6 @@ unsafe impl GlobalAlloc for DynamicAllocator {
     }
 }
 
-/// 初始化初始堆空间
-pub fn init() {
-    unsafe {
-        HEAP_ALLOCATOR.inner.lock().init(HEAP_VA, 0);
-    }
-}
-
 /// 动态扩展堆内存
 pub fn expand(size: usize) -> Result<(), ()> {
     if let Ok(old_break) = sbrk(size) {
@@ -50,4 +47,39 @@ pub fn expand(size: usize) -> Result<(), ()> {
     } else {
         Err(())
     }
+}
+
+#[unsafe(no_mangle)]
+unsafe extern "C" fn glenda_start() -> ! {
+    unsafe extern "C" {
+        static mut __bss_start: u8;
+        static mut __bss_end: u8;
+    }
+
+    unsafe {
+        let start = &raw mut __bss_start;
+        let end = &raw mut __bss_end;
+        let len = end as usize - start as usize;
+        core::ptr::write_bytes(start, 0, len);
+    }
+
+    unsafe extern "Rust" {
+        fn main() -> usize;
+    }
+    console::init();
+
+    let heap = init();
+    unsafe {
+        HEAP_ALLOCATOR.inner.lock().init(heap, 0);
+    }
+
+    let ret = unsafe { main() };
+    exit(ret);
+}
+
+#[panic_handler]
+fn panic(info: &core::panic::PanicInfo) -> ! {
+    println_unsynced!("{}PANIC{}: {}", ANSI_RED, ANSI_RESET, info);
+    backtrace();
+    exit(usize::MAX)
 }

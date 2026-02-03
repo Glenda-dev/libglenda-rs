@@ -25,7 +25,7 @@ impl Endpoint {
 
     pub fn recv(&self, reply_slot: CapPtr) -> Result<usize, Error> {
         let utcb = unsafe { utcb::get() };
-        utcb.recv_window = Endpoint::from(reply_slot);
+        utcb.recv_window = reply_slot;
         let ret = self.0.invoke(ipcmethod::RECV, [0, 0, 0, 0, 0, 0, 0]);
         if ret.is_ok() { Ok(utcb.mrs_regs[0]) } else { Err(ret.unwrap_err()) }
     }

@@ -14,7 +14,7 @@ pub trait SystemService {
         proto: usize,
         flags: MsgFlags,
         msg: MsgArgs,
-    ) -> Result<usize, Error>;
+    ) -> Result<MsgArgs, Error>;
     fn reply(
         &mut self,
         label: usize,

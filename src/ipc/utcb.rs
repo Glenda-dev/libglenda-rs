@@ -13,7 +13,7 @@ pub struct UTCB {
     pub msg_tag: MsgTag,
     pub mrs_regs: [usize; MAX_MRS],
     pub cap_transfer: CapPtr,
-    pub recv_window: Endpoint,
+    pub recv_window: CapPtr,
     pub tls: usize,
     pub head: usize,
     pub tail: usize,
@@ -92,7 +92,7 @@ impl UTCB {
         self.msg_tag = MsgTag::empty();
         self.mrs_regs = [0; MAX_MRS];
         self.cap_transfer = CapPtr::null();
-        self.recv_window = Endpoint::from(CapPtr::null());
+        self.recv_window = CapPtr::null();
         self.tls = 0;
         self.head = 0;
         self.tail = 0;

@@ -23,4 +23,6 @@ pub const SLEEP: usize = 15;
 
 // Debugging & Inspection
 pub const GET_PID: usize = 16;
-pub const PS: usize = 18;
+pub const PS: usize = 17;
+
+pub const INIT: usize = 99;
