@@ -22,4 +22,5 @@ pub trait SystemService {
         flags: MsgFlags,
         msg: MsgArgs,
     ) -> Result<(), Error>;
+    fn exit();
 }
