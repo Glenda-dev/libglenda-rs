@@ -45,8 +45,8 @@ impl TCB {
         self.0.invoke(tcbmethod::SET_PRIORITY, [priority as usize, 0, 0, 0, 0, 0, 0, 0])
     }
 
-    pub fn set_entrypoint(&self, pc: usize, sp: usize) -> Result<(), Error> {
-        self.0.invoke(tcbmethod::SET_ENTRYPOINT, [pc, sp, 0, 0, 0, 0, 0, 0])
+    pub fn set_entrypoint(&self, pc: usize, sp: usize, tp: usize) -> Result<(), Error> {
+        self.0.invoke(tcbmethod::SET_ENTRYPOINT, [pc, sp, tp, 0, 0, 0, 0, 0])
     }
 
     pub fn set_fault_handler(&self, fault_ep: Endpoint, native: bool) -> Result<(), Error> {

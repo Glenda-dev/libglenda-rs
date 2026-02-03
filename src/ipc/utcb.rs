@@ -15,7 +15,6 @@ pub struct UTCB {
     pub cap_transfer: CapPtr,
     pub recv_window: CapPtr,
     pub badge: Badge,
-    pub tls: usize,
     pub head: usize,
     pub tail: usize,
     pub ipc_buffer: [u8; BUFFER_MAX_SIZE],
@@ -65,7 +64,6 @@ impl UTCB {
         self.mrs_regs = [0; MAX_MRS];
         self.cap_transfer = CapPtr::null();
         self.recv_window = CapPtr::null();
-        self.tls = 0;
         self.head = 0;
         self.tail = 0;
         for byte in self.ipc_buffer.iter_mut() {
