@@ -1,4 +1,4 @@
-use super::interface::IDeviceManager;
+use crate::interface::DeviceService;
 use crate::utils::platform::{DeviceKind, PlatformInfo};
 use alloc::string::String;
 use alloc::vec::Vec;
@@ -62,7 +62,7 @@ impl DeviceManager {
     }
 }
 
-impl IDeviceManager for DeviceManager {
+impl DeviceService for DeviceManager {
     fn get_node(&self, id: usize) -> Option<&DeviceNode> {
         self.nodes.iter().find(|n| n.id == id)
     }

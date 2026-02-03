@@ -1,28 +1,28 @@
-use super::interface::{IResourceManager, ISlotManager};
 use crate::cap::CNODE_SIZE;
 use crate::cap::{CNode, CapPtr, CapType};
 use crate::error::Error;
+use crate::interface::{CSpaceService, ResourceService};
 
 const L0_DIRECT_LIMIT: usize = 64;
 const L1_START_SLOT: usize = L0_DIRECT_LIMIT + 1;
 const L1_SLOTS: usize = CNODE_SIZE - L1_START_SLOT; // 192
 
-/// SlotManager manages the allocation of capability slots in a process's CSpace.
+/// CSpaceManager manages the allocation of capability slots in a process's CSpace.
 /// It supports multi-level CNode hierarchy.
-pub struct SlotManager {
+pub struct CSpaceManager {
     root_cnode: CNode,
     next_index: usize,
     l1_cnodes: [bool; L1_SLOTS],
 }
 
-impl SlotManager {
+impl CSpaceManager {
     pub fn new(root: CNode, start_index: usize) -> Self {
         Self { root_cnode: root, next_index: start_index, l1_cnodes: [false; L1_SLOTS] }
     }
 }
 
-impl ISlotManager for SlotManager {
-    fn alloc(&mut self, objects: &mut dyn IResourceManager) -> Result<CapPtr, Error> {
+impl CSpaceService for CSpaceManager {
+    fn alloc(&mut self, objects: &mut dyn ResourceService) -> Result<CapPtr, Error> {
         let index = self.next_index;
         self.next_index += 1;
 

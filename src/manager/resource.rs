@@ -1,7 +1,7 @@
-use super::interface::IResourceManager;
 use crate::cap::{CNODE_BITS, CNODE_PAGES, UNTYPED_SLOT};
 use crate::cap::{CNode, CapPtr, CapType, Untyped};
 use crate::error::Error;
+use crate::interface::ResourceService;
 use crate::utils::BootInfo;
 use crate::utils::bootinfo::MAX_UNTYPED_REGIONS;
 use crate::utils::bootinfo::UntypedRegion;
@@ -45,7 +45,7 @@ impl ResourceManager {
     }
 }
 
-impl IResourceManager for ResourceManager {
+impl ResourceService for ResourceManager {
     fn alloc(
         &mut self,
         obj_type: CapType,

@@ -7,6 +7,7 @@ pub mod cap;
 pub mod console;
 pub mod crt0;
 pub mod error;
+pub mod interface;
 pub mod ipc;
 pub mod manager;
 pub mod mem;

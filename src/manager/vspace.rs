@@ -1,7 +1,7 @@
-use super::interface::{IResourceManager, ISlotManager, IVSpaceManager};
 use crate::arch::mem::{PGSIZE, SHIFTS, VPN_MASK};
 use crate::cap::{CNode, CapPtr, CapType, Frame, PageTable, VSpace};
 use crate::error::Error;
+use crate::interface::{CSpaceService, ResourceService, VSpaceService};
 use crate::mem::Perms;
 use alloc::boxed::Box;
 use alloc::collections::BTreeMap;
@@ -61,8 +61,8 @@ impl VSpaceManager {
     pub fn clone_space(
         &self,
         dest_mgr: &mut VSpaceManager,
-        objects: &mut dyn IResourceManager,
-        slots: &mut dyn ISlotManager,
+        objects: &mut dyn ResourceService,
+        slots: &mut dyn CSpaceService,
         root_cnode: CNode,
         src_scratch_va: usize,
         dest_scratch_va: usize,
@@ -86,8 +86,8 @@ impl VSpaceManager {
         &self,
         entries: &BTreeMap<usize, Box<ShadowNode>>,
         dest_mgr: &mut VSpaceManager,
-        objects: &mut dyn IResourceManager,
-        slots: &mut dyn ISlotManager,
+        objects: &mut dyn ResourceService,
+        slots: &mut dyn CSpaceService,
         root_cnode: CNode,
         base_vaddr: usize,
         level: usize,
@@ -181,8 +181,8 @@ impl VSpaceManager {
         entries: &'a mut BTreeMap<usize, Box<ShadowNode>>,
         vaddr: usize,
         level: usize,
-        objects: &mut dyn IResourceManager,
-        slots: &mut dyn ISlotManager,
+        objects: &mut dyn ResourceService,
+        slots: &mut dyn CSpaceService,
         dest_cnode: CNode,
         pivot_root: VSpace,
     ) -> Result<&'a mut BTreeMap<usize, Box<ShadowNode>>, Error> {
@@ -229,7 +229,7 @@ impl VSpaceManager {
         entries: &mut BTreeMap<usize, Box<ShadowNode>>,
         vaddr: usize,
         level: usize,
-        objects: &mut dyn IResourceManager,
+        objects: &mut dyn ResourceService,
         cnode: CNode,
     ) {
         let idx = index(vaddr, level);
@@ -256,15 +256,15 @@ impl VSpaceManager {
     }
 }
 
-impl IVSpaceManager for VSpaceManager {
+impl VSpaceService for VSpaceManager {
     fn map_frame(
         &mut self,
         frame: Frame,
         vaddr: usize,
         perms: Perms,
         pages: usize,
-        objects: &mut dyn IResourceManager,
-        slots: &mut dyn ISlotManager,
+        objects: &mut dyn ResourceService,
+        slots: &mut dyn CSpaceService,
         dest_cnode: CNode,
     ) -> Result<(), Error> {
         let levels = SHIFTS.len();
@@ -321,7 +321,7 @@ impl IVSpaceManager for VSpaceManager {
         &mut self,
         vaddr: usize,
         pages: usize,
-        objects: &mut dyn IResourceManager,
+        objects: &mut dyn ResourceService,
         cnode: CNode,
     ) -> Result<(), Error> {
         let levels = SHIFTS.len();
