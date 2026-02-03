@@ -1,4 +1,4 @@
-use super::MsgTag;
+use super::{Badge, MsgTag};
 use crate::cap::CapPtr;
 use crate::mem::UTCB_VA;
 
@@ -14,6 +14,7 @@ pub struct UTCB {
     pub mrs_regs: [usize; MAX_MRS],
     pub cap_transfer: CapPtr,
     pub recv_window: CapPtr,
+    pub badge: Badge,
     pub tls: usize,
     pub head: usize,
     pub tail: usize,

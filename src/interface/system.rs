@@ -1,6 +1,6 @@
 use crate::cap::{CapPtr, Endpoint};
 use crate::error::Error;
-use crate::ipc::{MsgArgs, MsgFlags};
+use crate::ipc::{Badge, MsgArgs, MsgFlags};
 
 /// SystemService interfaces for the system services.
 pub trait SystemService {
@@ -9,7 +9,7 @@ pub trait SystemService {
     fn run(&mut self) -> Result<(), Error>;
     fn dispatch(
         &mut self,
-        badge: usize,
+        badge: Badge,
         label: usize,
         proto: usize,
         flags: MsgFlags,

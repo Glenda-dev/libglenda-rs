@@ -1,6 +1,7 @@
 use super::cnodemethod;
 use super::{CapPtr, Rights};
 use crate::error::Error;
+use crate::ipc::Badge;
 
 #[repr(transparent)]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -19,12 +20,12 @@ impl CNode {
         &self,
         src: CapPtr,
         dest: CapPtr,
-        badge: usize,
+        badge: Badge,
         rights: Rights,
     ) -> Result<(), Error> {
         self.0.invoke(
             cnodemethod::MINT,
-            [src.bits(), dest.bits(), badge, rights.bits() as usize, 0, 0, 0],
+            [src.bits(), dest.bits(), badge.bits(), rights.bits() as usize, 0, 0, 0],
         )
     }
 
