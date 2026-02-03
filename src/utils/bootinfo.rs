@@ -43,7 +43,7 @@ impl Display for BootInfo {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         writeln!(f, "BootInfo:")?;
         writeln!(f, "  Magic: 0x{:08x}", self.magic)?;
-        writeln!(f, "  Initrd: start=0x{:x}, size=0x{:x}", self.initrd_start, self.initrd_size)?;
+        writeln!(f, "  Initrd: start={:#x}, size={:#x}", self.initrd_start, self.initrd_size)?;
         writeln!(f, "  Untyped Regions (count={}):", self.untyped_count)?;
         for i in 0..self.untyped_count {
             writeln!(f, "    {}", self.untyped_list[i])?;
@@ -68,7 +68,7 @@ pub struct MemoryRange {
 
 impl Display for MemoryRange {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        write!(f, "MemoryRange {{ paddr: 0x{:x}, size: 0x{:x} }}", self.paddr, self.size)
+        write!(f, "MemoryRange {{ paddr: {:#x}, size: {:#x} }}", self.paddr, self.size)
     }
 }
 
@@ -84,7 +84,7 @@ impl Display for UntypedRegion {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         write!(
             f,
-            "UntypedRegion {{ start: 0x{:x}, pages: {}, watermark: {} }}",
+            "UntypedRegion {{ start: {:#x}, pages: {}, watermark: {} }}",
             self.start, self.pages, self.watermark
         )
     }
