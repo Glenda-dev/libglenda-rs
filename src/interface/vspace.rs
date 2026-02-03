@@ -24,4 +24,15 @@ pub trait VSpaceService {
         objects: &mut dyn ResourceService,
         cnode: CNode,
     ) -> Result<(), Error>;
+    fn map_scratch(
+        &mut self,
+        frame: Frame,
+        perms: Perms,
+        pages: usize,
+        objects: &mut dyn ResourceService,
+        slots: &mut dyn CSpaceService,
+        dest_cnode: CNode,
+    ) -> Result<usize, Error>;
+
+    fn is_mapped(&self, vaddr: usize, level: usize) -> bool;
 }

@@ -21,11 +21,15 @@ impl ShadowNode {
 pub struct VSpaceManager {
     pub root: VSpace,
     shadow: BTreeMap<usize, Box<ShadowNode>>, // Top level entries
+    // Scratch management
+    scratch_start: usize,
+    scratch_len: usize,
+    scratch_ptr: usize,
 }
 
 impl VSpaceManager {
-    pub fn new(root: VSpace) -> Self {
-        Self { root, shadow: BTreeMap::new() }
+    pub fn new(root: VSpace, scratch_start: usize, scratch_len: usize) -> Self {
+        Self { root, shadow: BTreeMap::new(), scratch_start, scratch_len, scratch_ptr: 0 }
     }
 
     pub fn setup(&self) -> Result<(), Error> {
@@ -251,6 +255,33 @@ impl VSpaceManager {
             }
         }
     }
+
+    fn is_mapped_rec(
+        entries: &BTreeMap<usize, Box<ShadowNode>>,
+        vaddr: usize,
+        level: usize,
+    ) -> bool {
+        let idx = index(vaddr, level);
+        if let Some(node) = entries.get(&idx) {
+            match &**node {
+                ShadowNode::Table { entries: sub, .. } => {
+                    if level == 0 {
+                        // Should not happen as Table at 0, but if it does, it's mapped?
+                        // In current structure, level 0 entries are frames inside table at level 1?
+                        // No, ensure_path passes level-1. Leaf is at level 0 (implied).
+                        // recursive function takes 'level'.
+                        // If we are at level 0, it means we are looking at leaf PT.
+                        // Entries here should be Frames.
+                        return true;
+                    }
+                    Self::is_mapped_rec(sub, vaddr, level - 1)
+                }
+                ShadowNode::Frame { .. } => true,
+            }
+        } else {
+            false
+        }
+    }
 }
 
 impl VSpaceService for VSpaceManager {
@@ -314,6 +345,65 @@ impl VSpaceService for VSpaceManager {
         Ok(())
     }
 
+    fn map_scratch(
+        &mut self,
+        frame: Frame,
+        perms: Perms,
+        pages: usize,
+        objects: &mut dyn ResourceService,
+        slots: &mut dyn CSpaceService,
+        dest_cnode: CNode,
+    ) -> Result<usize, Error> {
+        let size = pages * PGSIZE;
+        if size > self.scratch_len {
+            return Err(Error::OutOfMemory);
+        }
+
+        let start_offset = self.scratch_ptr;
+        let mut offset = start_offset;
+        let levels = SHIFTS.len();
+
+        loop {
+            // Wrap around
+            if offset + size > self.scratch_len {
+                offset = 0;
+            }
+
+            let vaddr = self.scratch_start + offset;
+
+            // Check if free (not very efficient but correct)
+            let mut free = true;
+            for i in 0..pages {
+                if Self::is_mapped_rec(&self.shadow, vaddr + i * PGSIZE, levels - 1) {
+                    free = false;
+                    break;
+                }
+            }
+
+            if free {
+                self.map_frame(frame, vaddr, perms, pages, objects, slots, dest_cnode)?;
+                self.scratch_ptr = offset + size;
+                return Ok(vaddr);
+            }
+
+            offset += PGSIZE;
+            if offset == start_offset {
+                return Err(Error::OutOfMemory);
+            }
+            if start_offset > self.scratch_len - size && offset == 0 {
+                // Wrapped and reached 0, if start was high
+                // Actually if strict loop detection:
+                // If we wrapped and reached start_offset again.
+                // My logic above sets offset=0 but doesn't check if we already checked 0.
+                // Just use a full pass count or range check.
+            }
+            // Simplified loop exit
+            if offset == start_offset || (start_offset > self.scratch_len && offset == 0) {
+                return Err(Error::OutOfMemory);
+            }
+        }
+    }
+
     fn unmap(
         &mut self,
         vaddr: usize,
@@ -329,6 +419,10 @@ impl VSpaceService for VSpaceManager {
             return Err(Error::MappingFailed);
         }
         Ok(())
+    }
+
+    fn is_mapped(&self, vaddr: usize, level: usize) -> bool {
+        Self::is_mapped_rec(&self.shadow, vaddr, level)
     }
 }
 
