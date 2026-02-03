@@ -1,5 +1,5 @@
 use super::MsgTag;
-use crate::cap::{CapPtr, Endpoint};
+use crate::cap::CapPtr;
 use crate::mem::UTCB_VA;
 
 pub const BUFFER_MAX_SIZE: usize = 3 * 1024; // 3KB
@@ -100,9 +100,4 @@ impl UTCB {
             *byte = 0;
         }
     }
-}
-
-#[expect(deprecated_in_future)]
-pub unsafe fn get() -> &'static mut UTCB {
-    unsafe { &mut *(UTCB_VA as *mut UTCB) }
 }

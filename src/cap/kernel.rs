@@ -1,6 +1,6 @@
 use super::{CapPtr, kernelmethod};
 use crate::error::Error;
-use crate::ipc::utcb;
+use crate::ipc::UTCB;
 use core::fmt;
 
 #[repr(transparent)]
@@ -21,7 +21,7 @@ impl Kernel {
     }
 
     pub fn console_put_str(&self, s: &str) -> Result<(), Error> {
-        let utcb = unsafe { utcb::get() };
+        let utcb = unsafe { UTCB::get() };
         if let Some((offset, len)) = utcb.append_str(s) {
             self.0.invoke(kernelmethod::CONSOLE_PUT_STR, [offset, len, 0, 0, 0, 0, 0])
         } else {
@@ -31,7 +31,7 @@ impl Kernel {
     }
 
     pub fn console_get_char(&self) -> char {
-        let utcb = unsafe { utcb::get() };
+        let utcb = unsafe { UTCB::get() };
         let ret = self.0.invoke(kernelmethod::CONSOLE_GET_CHAR, [0, 0, 0, 0, 0, 0, 0]);
         if ret.is_ok() { utcb.mrs_regs[0] as u8 as char } else { '\0' }
     }

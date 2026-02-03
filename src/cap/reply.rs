@@ -1,6 +1,6 @@
 use super::{CapPtr, replymethod};
 use crate::error::Error;
-use crate::ipc::utcb;
+use crate::ipc::UTCB;
 use crate::ipc::{MsgArgs, MsgTag};
 
 #[repr(transparent)]
@@ -17,7 +17,7 @@ impl Reply {
     }
 
     pub fn reply(&self, msg_info: MsgTag, args: MsgArgs) -> Result<(), Error> {
-        let utcb = unsafe { utcb::get() };
+        let utcb = unsafe { UTCB::get() };
         utcb.msg_tag = msg_info;
         self.0.invoke(replymethod::REPLY, args)
     }

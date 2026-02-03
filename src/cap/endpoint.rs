@@ -1,7 +1,7 @@
 use super::CapPtr;
 use super::ipcmethod;
 use crate::error::Error;
-use crate::ipc::utcb;
+use crate::ipc::UTCB;
 use crate::ipc::{MsgArgs, MsgTag};
 
 #[repr(transparent)]
@@ -18,20 +18,20 @@ impl Endpoint {
     }
 
     pub fn send(&self, msg_info: MsgTag, args: MsgArgs) -> Result<(), Error> {
-        let utcb = unsafe { utcb::get() };
+        let utcb = unsafe { UTCB::get() };
         utcb.msg_tag = msg_info;
         self.0.invoke(ipcmethod::SEND, args)
     }
 
     pub fn recv(&self, reply_slot: CapPtr) -> Result<usize, Error> {
-        let utcb = unsafe { utcb::get() };
+        let utcb = unsafe { UTCB::get() };
         utcb.recv_window = reply_slot;
         let ret = self.0.invoke(ipcmethod::RECV, [0, 0, 0, 0, 0, 0, 0]);
         if ret.is_ok() { Ok(utcb.mrs_regs[0]) } else { Err(ret.unwrap_err()) }
     }
 
     pub fn call(&self, msg_info: MsgTag, args: MsgArgs) -> Result<(), Error> {
-        let utcb = unsafe { utcb::get() };
+        let utcb = unsafe { UTCB::get() };
         utcb.msg_tag = msg_info;
         self.0.invoke(ipcmethod::CALL, args)
     }
