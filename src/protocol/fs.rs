@@ -79,7 +79,7 @@ pub struct Stat {
 }
 
 #[repr(C)]
-#[derive(Debug, Clone, Copy, Default)]
+#[derive(Debug, Clone, Copy)]
 pub struct DEntry {
     pub d_ino: u64,
     pub d_off: i64,

@@ -1,6 +1,7 @@
 use super::{Badge, MsgTag};
 use crate::cap::CapPtr;
 use crate::mem::UTCB_VA;
+use alloc::vec::Vec;
 use core::mem::MaybeUninit;
 use serde::{Serialize, de::DeserializeOwned};
 
@@ -138,13 +139,37 @@ impl UTCB {
 
         if written == size_bytes { Ok(core::mem::size_of::<usize>() + written) } else { Err(()) }
     }
+
+    pub unsafe fn read_vec<T: Sized + Copy>(&mut self) -> Result<Vec<T>, ()> {
+        let len: usize = (unsafe { self.read_obj() })?;
+
+        let size_bytes = len * core::mem::size_of::<T>();
+        if self.available_data() < size_bytes {
+            return Err(());
+        }
+
+        let mut vec: Vec<T> = Vec::with_capacity(len);
+        let ptr = vec.as_mut_ptr() as *mut u8;
+        let slice = unsafe { core::slice::from_raw_parts_mut(ptr, size_bytes) };
+
+        let read = self.read(slice);
+        if read == size_bytes {
+            unsafe {
+                vec.set_len(len);
+            }
+            Ok(vec)
+        } else {
+            Err(())
+        }
+    }
+
     pub unsafe fn write_postcard<T: Serialize>(&mut self, obj: &T) -> Result<usize, ()> {
         let vec = postcard::to_allocvec(obj).map_err(|_| ())?;
         unsafe { self.write_vec(&vec) }
     }
 
     pub unsafe fn read_postcard<T: DeserializeOwned>(&mut self) -> Result<T, ()> {
-        let vec = self.read_vec::<u8>()?;
+        let vec = unsafe { self.read_vec::<u8>() }?;
         postcard::from_bytes(&vec).map_err(|_| ())
     }
 }

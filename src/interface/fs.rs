@@ -1,5 +1,5 @@
 use crate::error::Error;
-use crate::ipc::proto::fs::{DEntry, OpenFlags, Stat};
+use crate::protocol::fs::{DEntry, OpenFlags, Stat};
 use alloc::vec::Vec;
 
 /// FileSystemService provides high-level access to the file system (Namespace operations).
