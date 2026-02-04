@@ -27,6 +27,7 @@ pub enum Error {
     NotImplemented = 21,
     OutOfSlots = 22,
     NotInitialized = 23,
+    DeviceError = 24,
     Unknown = 255,
 }
 
