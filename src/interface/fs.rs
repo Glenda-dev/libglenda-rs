@@ -21,6 +21,21 @@ pub trait FileSystemService {
     fn stat_path(&mut self, path: &str) -> Result<Stat, Error>;
 }
 
+/// FileSystemJournalService provides transaction support for file systems.
+pub trait FileSystemJournalService {
+    /// Start a transaction. Returns transaction ID.
+    fn transaction_start(&mut self) -> Result<u64, Error>;
+
+    /// Commit a transaction.
+    fn transaction_commit(&mut self, tid: u64) -> Result<(), Error>;
+
+    /// Abort a transaction.
+    fn transaction_abort(&mut self, tid: u64) -> Result<(), Error>;
+
+    /// Log a block write operation within a transaction.
+    fn log_block(&mut self, tid: u64, block_num: u64, data: &[u8]) -> Result<(), Error>;
+}
+
 /// FileHandleService provides operations on an open file handle.
 pub trait FileHandleService {
     /// Read data from file at specified offset.
