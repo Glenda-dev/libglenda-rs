@@ -1,7 +1,9 @@
 pub mod cspace;
 pub mod device;
+pub mod driver;
 pub mod fs;
 pub mod memory;
+pub mod network;
 pub mod process;
 pub mod resource;
 pub mod system;
@@ -9,8 +11,10 @@ pub mod vspace;
 
 pub use cspace::*;
 pub use device::*;
+pub use driver::*;
 pub use fs::*;
 pub use memory::*;
+pub use network::*;
 pub use process::*;
 pub use resource::*;
 pub use system::*;

@@ -20,10 +20,6 @@ pub trait DmaService {
     fn free_dma(&mut self, paddr: usize, size: usize);
 }
 
-pub trait DriverService {
-    fn init(&mut self, node: DeviceNode);
-}
-
 /// PciDevice provides PCI config space access.
 pub trait PciDevice {
     fn read_config(&self, offset: usize, size: usize) -> Result<u32, Error>;
