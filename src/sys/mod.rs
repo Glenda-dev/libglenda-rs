@@ -29,8 +29,6 @@ pub fn init() -> usize {
     let tag = MsgTag::new(protocol::PROCESS_PROTO, protocol::process::INIT, MsgFlags::NONE);
     MONITOR_CAP.send(tag, [0, 0, 0, 0, 0, 0, 0, 0]).expect("Failed to init");
     let utcb = unsafe { UTCB::get() };
-    use crate::println;
-    println!("Received {}", utcb.mrs_regs[0]);
     utcb.mrs_regs[0]
 }
 
