@@ -26,6 +26,7 @@ impl From<u8> for PayloadType {
 }
 
 #[derive(Debug, Clone)]
+#
 pub struct Entry {
     pub type_: PayloadType,
     pub offset: usize,
