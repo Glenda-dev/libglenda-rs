@@ -1,26 +1,23 @@
 use crate::arch::mem::PGSIZE;
 use core::fmt::Display;
 use serde::{Deserialize, Serialize};
-
-/// Magic number to verify BootInfo validity: 'GLENDA_B'
-pub const BOOTINFO_MAGIC: u32 = 0x99999999;
-
 /// Fixed size of the BootInfo page (usually 4KB)
 pub const BOOTINFO_SIZE: usize = PGSIZE;
 
 /// Maximum number of untyped memory regions we can describe
-pub const MAX_UNTYPED_REGIONS: usize = 8;
+pub const MAX_UNTYPED_REGIONS: usize = 4;
 pub const MAX_MMIO_REGIONS: usize = 64;
 
 #[repr(C)]
 #[derive(Debug, Clone, Copy)]
 pub struct BootInfo {
-    /// Magic number for verification
-    pub magic: u32,
-
     //// Initrd memory region
     pub initrd_start: usize,
     pub initrd_size: usize,
+
+    pub version: u32,
+    pub build: [u8; 64],
+    pub git_hash: [u8; 8],
 
     /// Number of valid entries in `untyped_list`
     pub untyped_count: usize,
@@ -43,7 +40,18 @@ pub struct BootInfo {
 impl Display for BootInfo {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         writeln!(f, "BootInfo:")?;
-        writeln!(f, "  Magic: 0x{:08x}", self.magic)?;
+        writeln!(
+            f,
+            "  Version: {}.{}.{}",
+            (self.version >> 24) & 0xFF,
+            (self.version >> 16) & 0xFF,
+            self.version & 0xFFFF
+        )?;
+        let build_str =
+            core::str::from_utf8(&self.build).unwrap_or("unknown").trim_matches(char::from(0));
+        writeln!(f, "  Build: {}", build_str)?;
+        let hash_str = core::str::from_utf8(&self.git_hash).unwrap_or("unknown");
+        writeln!(f, "  Git Hash: {}", hash_str)?;
         writeln!(f, "  Initrd: start={:#x}, size={:#x}", self.initrd_start, self.initrd_size)?;
         writeln!(f, "  Untyped Regions (count={}):", self.untyped_count)?;
         for i in 0..self.untyped_count {

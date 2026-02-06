@@ -162,6 +162,7 @@ impl PlatformInfo {
         Self {
             model_name: [0; 64],
             cpu_count: 0,
+            clock_freq: 0,
             arch: [0; 16],
             bootargs: [0; 256],
             initrd: MemoryRegion { start: 0, size: 0, region_type: MemoryType::Reserved },
