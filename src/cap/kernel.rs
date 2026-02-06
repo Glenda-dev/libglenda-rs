@@ -23,6 +23,7 @@ impl Kernel {
 
     pub fn console_put_str(&self, s: &str) -> Result<(), Error> {
         let utcb = unsafe { UTCB::get() };
+        utcb.clear();
         let len = utcb.write(s.as_bytes());
         if len == s.len() {
             self.0.invoke(kernelmethod::CONSOLE_PUT_STR, [0; MAX_MRS])

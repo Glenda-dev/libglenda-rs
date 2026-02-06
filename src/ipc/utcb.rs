@@ -40,6 +40,13 @@ impl UTCB {
     }
 
     pub fn write(&mut self, data: &[u8]) -> usize {
+        let len = core::cmp::min(data.len(), BUFFER_MAX_SIZE);
+        self.ipc_buffer[..len].copy_from_slice(&data[..len]);
+        self.size = len;
+        len
+    }
+
+    pub fn append(&mut self, data: &[u8]) -> usize {
         let len = core::cmp::min(data.len(), self.available_space());
         if len > 0 {
             self.ipc_buffer[self.size..self.size + len].copy_from_slice(&data[..len]);
