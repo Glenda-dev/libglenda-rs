@@ -57,6 +57,12 @@ impl Kernel {
     pub fn shell(&self) -> Result<(), Error> {
         self.0.invoke(kernelmethod::SHELL, [0; MAX_MRS])
     }
+
+    pub fn get_time(&self) -> Result<usize, Error> {
+        self.0.invoke(kernelmethod::SHELL, [0; MAX_MRS])?;
+        let utcb = unsafe { UTCB::get() };
+        Ok(utcb.mrs_regs[0])
+    }
 }
 
 impl fmt::Write for Kernel {
