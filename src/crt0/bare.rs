@@ -1,13 +1,9 @@
-use crate::arch::mem::PGSIZE;
 use crate::arch::runtime::{backtrace, panic_break};
 use crate::console;
 use crate::console::{ANSI_RED, ANSI_RESET};
+use crate::mem::{HEAP_SIZE, HEAP_VA};
 use crate::println_unsynced;
 use buddy_system_allocator::LockedHeap;
-
-pub const HEAP_PAGES: usize = 256; // 用户堆页面数 256 * 4KB = 1MB
-pub const HEAP_SIZE: usize = HEAP_PAGES * PGSIZE; // 1MB
-pub const HEAP_VA: usize = 0x2000_0000; // 用户堆地址
 
 #[global_allocator]
 static HEAP_ALLOCATOR: LockedHeap<32> = LockedHeap::empty();

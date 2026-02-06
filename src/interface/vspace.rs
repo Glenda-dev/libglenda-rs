@@ -24,6 +24,8 @@ pub trait VSpaceService {
         objects: &mut dyn ResourceService,
         cnode: CNode,
     ) -> Result<(), Error>;
+
+    /// Map a frame into the scratch region and return the virtual address
     fn map_scratch(
         &mut self,
         frame: Frame,

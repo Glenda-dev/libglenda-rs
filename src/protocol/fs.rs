@@ -1,28 +1,18 @@
-//! VFS Protocol Definition
-//!
-//! Protocol ID range: 0x500 - 0x5FF
-//!
-//! This protocol defines interactions for Virtual File System operations.
-//! It covers both namespace operations (open, mkdir) and file handle operations (read, write).
-
-pub const PROTOCOL_ID: usize = 0x500;
-
 // Namespace Operations (Invoked on Root/Current Dir Capability)
-pub const OPEN: usize = 1; // args: [flags, mode], cap: [], string: path -> cap: handle
-pub const MKDIR: usize = 2; // args: [mode], string: path
-pub const UNLINK: usize = 3; // args: [], string: path
-pub const RENAME: usize = 4; // args: [], string: old_path | string: new_path (Note: complex marshaling)
-pub const STAT_PATH: usize = 5; // args: [], string: path -> buffer: stat
-
+pub const OPEN: usize = 0x1; // args: [flags, mode], cap: [], string: path -> cap: handle
+pub const MKDIR: usize = 0x2; // args: [mode], string: path
+pub const UNLINK: usize = 0x3; // args: [], string: path
+pub const RENAME: usize = 0x4; // args: [], string: old_path | string: new_path (Note: complex marshaling)
+pub const STAT_PATH: usize = 0x5; // args: [], string: path -> buffer: stat
 // File Handle Operations (Invoked on open file Capability)
-pub const READ: usize = 10; // args: [size, offset] -> bytes
-pub const WRITE: usize = 11; // args: [size, offset], bytes -> written
-pub const CLOSE: usize = 12; // args: []
-pub const STAT: usize = 13; // args: [] -> buffer: stat
-pub const GETDENTS: usize = 14; // args: [count] -> buffer: dirents
-pub const SEEK: usize = 15; // args: [offset, whence] -> new_offset
-pub const SYNC: usize = 16; // args: []
-pub const TRUNCATE: usize = 17; // args: [size]
+pub const READ: usize = 0x10; // args: [size, offset] -> bytes
+pub const WRITE: usize = 0x11; // args: [size, offset], bytes -> written
+pub const CLOSE: usize = 0x12; // args: []
+pub const STAT: usize = 0x13; // args: [] -> buffer: stat
+pub const GETDENTS: usize = 0x14; // args: [count] -> buffer: dirents
+pub const SEEK: usize = 0x15; // args: [offset, whence] -> new_offset
+pub const SYNC: usize = 0x16; // args: []
+pub const TRUNCATE: usize = 0x17; // args: [size]
 
 use bitflags::bitflags;
 

@@ -7,20 +7,20 @@
 pub const PROTOCOL_ID: usize = 0x600;
 
 // Network Management / Factory Operations (Invoked on Gopher service capability)
-pub const SOCKET: usize = 1; // args: [domain, type, protocol] -> cap: socket
+pub const SOCKET: usize = 0x01; // args: [domain, type, protocol] -> cap: socket
 
 // Socket Operations (Invoked on open socket capability)
-pub const BIND: usize = 10;
-pub const LISTEN: usize = 11;
-pub const ACCEPT: usize = 12; // -> cap: new_socket
-pub const CONNECT: usize = 13;
-pub const SEND: usize = 14;
-pub const RECV: usize = 15;
-pub const CLOSE: usize = 16;
-pub const GET_SOCKNAME: usize = 17;
-pub const GET_PEERNAME: usize = 18;
-pub const SET_SOCKOPT: usize = 19;
-pub const GET_SOCKOPT: usize = 20;
+pub const BIND: usize = 0x10;
+pub const LISTEN: usize = 0x11;
+pub const ACCEPT: usize = 0x12; // -> cap: new_socket
+pub const CONNECT: usize = 0x13;
+pub const SEND: usize = 0x14;
+pub const RECV: usize = 0x15;
+pub const CLOSE: usize = 0x16;
+pub const GET_SOCKNAME: usize = 0x17;
+pub const GET_PEERNAME: usize = 0x18;
+pub const SET_SOCKOPT: usize = 0x19;
+pub const GET_SOCKOPT: usize = 0x1A;
 
 // Address Familes (Domain)
 pub const AF_INET: i32 = 2;

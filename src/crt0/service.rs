@@ -2,8 +2,9 @@ use crate::arch::mem::PGSIZE;
 use crate::arch::runtime::backtrace;
 use crate::console;
 use crate::console::{ANSI_RED, ANSI_RESET};
+use crate::mem::{HEAP_SIZE, HEAP_VA};
 use crate::println_unsynced;
-use crate::sys::{exit, init, sbrk};
+use crate::sys::{exit, sbrk};
 use buddy_system_allocator::LockedHeap;
 use core::alloc::{GlobalAlloc, Layout};
 
@@ -67,10 +68,8 @@ unsafe extern "C" fn glenda_start() -> ! {
         fn main() -> usize;
     }
     console::init();
-
-    let heap = init();
     unsafe {
-        HEAP_ALLOCATOR.inner.lock().init(heap, 0);
+        HEAP_ALLOCATOR.inner.lock().init(HEAP_VA, HEAP_SIZE);
     }
 
     let ret = unsafe { main() };

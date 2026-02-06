@@ -6,8 +6,11 @@ pub const TRAPFRAME_VA: usize = TRAMPOLINE_VA - PGSIZE; // Trapframe 映射地�
 pub const UTCB_VA: usize = TRAPFRAME_VA - PGSIZE; // UTCB 映射地址 0x3FFFFFD000
 pub const STACK_VA: usize = UTCB_VA - PGSIZE; // 用户栈映射地址
 pub const ENTRY_VA: usize = USER_VA; // 用户程序入口地址
+pub const HEAP_VA: usize = 0x2000_0000; // 用户堆地址
 pub const BOOTINFO_VA: usize = 0x4000_0000;
 pub const INITRD_VA: usize = 0x5000_0000;
+pub const HEAP_PAGES: usize = 256; // 用户堆页面数 256 * 4KB = 1MB
+pub const HEAP_SIZE: usize = HEAP_PAGES * PGSIZE; // 1MB
 
 /*
 用户地址空间布局：
@@ -17,7 +20,7 @@ UTCB        (1 page)
 ustack      (N pages)
 ------------
 BootInfo    (1 page)  0x40000000
-Initrd      (N pages) 0x40001000
+Initrd      (N pages) 0x50000000
 ————————————
 heap        (M pages) 0x20000000
 -------------

@@ -1,9 +1,9 @@
 //! PCI/PCIe Protocol (0x30E)
 
-pub const READ_CONFIG: usize = 1; // arg0: offset, arg1: size
-pub const WRITE_CONFIG: usize = 2; // arg0: offset, arg1: val, arg2: size
-pub const ENABLE_BUS_MASTER: usize = 3;
-pub const ENABLE_MSI: usize = 4; // arg0: vector, arg1: dest_id
+pub const READ_CONFIG: usize = 0x01; // arg0: offset, arg1: size
+pub const WRITE_CONFIG: usize = 0x02; // arg0: offset, arg1: val, arg2: size
+pub const ENABLE_BUS_MASTER: usize = 0x03;
+pub const ENABLE_MSI: usize = 0x04; // arg0: vector, arg1: dest_id
 
 // Standard Config Space Offsets
 pub const PCI_VENDOR_ID: usize = 0x00;

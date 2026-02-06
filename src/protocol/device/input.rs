@@ -1,6 +1,6 @@
 //! Input Device Protocol (0x305)
 
-pub const READ_EVENT: usize = 1;
+pub const READ_EVENT: usize = 0x1;
 
 // Event Types
 pub const EV_SYN: u16 = 0x00;

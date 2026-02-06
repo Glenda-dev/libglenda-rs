@@ -3,7 +3,6 @@ pub mod fb;
 pub mod gpio;
 pub mod i2c;
 pub mod input;
-pub mod iommu;
 pub mod net;
 pub mod pci;
 pub mod rng;
