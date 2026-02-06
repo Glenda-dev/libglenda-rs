@@ -18,8 +18,7 @@ pub struct UTCB {
     pub cap_transfer: CapPtr,
     pub recv_window: CapPtr,
     pub badge: Badge,
-    pub head: usize,
-    pub tail: usize,
+    pub size: usize,
     pub ipc_buffer: [u8; BUFFER_MAX_SIZE],
 }
 
@@ -33,31 +32,26 @@ impl UTCB {
     }
 
     pub fn available_data(&self) -> usize {
-        if self.tail >= self.head {
-            self.tail - self.head
-        } else {
-            BUFFER_MAX_SIZE - self.head + self.tail
-        }
+        self.size
     }
 
     pub fn available_space(&self) -> usize {
-        BUFFER_MAX_SIZE - self.available_data() - 1
+        BUFFER_MAX_SIZE - self.size
     }
 
     pub fn write(&mut self, data: &[u8]) -> usize {
         let len = core::cmp::min(data.len(), self.available_space());
-        for i in 0..len {
-            self.ipc_buffer[self.tail] = data[i];
-            self.tail = (self.tail + 1) % BUFFER_MAX_SIZE;
+        if len > 0 {
+            self.ipc_buffer[self.size..self.size + len].copy_from_slice(&data[..len]);
+            self.size += len;
         }
         len
     }
 
     pub fn read(&mut self, data: &mut [u8]) -> usize {
         let len = core::cmp::min(data.len(), self.available_data());
-        for i in 0..len {
-            data[i] = self.ipc_buffer[self.head];
-            self.head = (self.head + 1) % BUFFER_MAX_SIZE;
+        if len > 0 {
+            data[..len].copy_from_slice(&self.ipc_buffer[..len]);
         }
         len
     }
@@ -67,11 +61,7 @@ impl UTCB {
         self.mrs_regs = [0; MAX_MRS];
         self.cap_transfer = CapPtr::null();
         self.recv_window = CapPtr::null();
-        self.head = 0;
-        self.tail = 0;
-        for byte in self.ipc_buffer.iter_mut() {
-            *byte = 0;
-        }
+        self.size = 0;
     }
 
     pub unsafe fn write_obj<T: Sized + Copy>(&mut self, obj: &T) -> Result<usize, ()> {
