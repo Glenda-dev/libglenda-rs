@@ -28,6 +28,7 @@ pub enum Error {
     OutOfSlots = 22,
     NotInitialized = 23,
     DeviceError = 24,
+    HasCap = 25,
     Unknown = 255,
 }
 

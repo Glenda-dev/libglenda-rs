@@ -1,5 +1,6 @@
 use crate::arch::mem::PGSIZE;
 use core::fmt::Display;
+use serde::{Deserialize, Serialize};
 
 /// Magic number to verify BootInfo validity: 'GLENDA_B'
 pub const BOOTINFO_MAGIC: u32 = 0x99999999;
@@ -57,7 +58,7 @@ impl Display for BootInfo {
 }
 
 #[repr(C)]
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub struct MemoryRange {
     /// Physical address of the memory region
     pub paddr: usize,
@@ -73,7 +74,7 @@ impl Display for MemoryRange {
 }
 
 #[repr(C)]
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub struct UntypedRegion {
     pub start: usize,
     pub pages: usize,

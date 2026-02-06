@@ -1,5 +1,7 @@
 use crate::arch::mem::PGSIZE;
 use core::fmt;
+use serde::{Deserialize, Serialize};
+use serde_big_array::BigArray;
 
 pub const MAX_MEMORY_REGIONS: usize = 16;
 pub const MAX_DEVICES: usize = 64;
@@ -8,15 +10,17 @@ pub const PLATFORM_INFO_PAGES: usize = (PLATFORM_INFO_SIZE + PGSIZE - 1) / PGSIZ
 /// 平台硬件信息摘要
 /// 这个结构体设计为架构无关，可以从 DTB (RISC-V/ARM) 或 ACPI (x86) 转换而来
 #[repr(C)]
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Serialize, Deserialize)]
 pub struct PlatformInfo {
     /// 平台名称 (例如 "QEMU Virt", "SiFive Unleashed")
+    #[serde(with = "BigArray")]
     pub model_name: [u8; 64],
 
     /// 平台架构 (例如 "riscv64", "x86_64")
     pub arch: [u8; 16],
 
     /// 引导参数字符串
+    #[serde(with = "BigArray")]
     pub bootargs: [u8; 256],
 
     /// initrd 物理内存区域
@@ -33,6 +37,7 @@ pub struct PlatformInfo {
     pub memory_region_count: usize,
 
     /// 关键设备列表 (中断控制器, 串口等)
+    #[serde(with = "BigArray")]
     pub devices: [DeviceDesc; MAX_DEVICES],
     pub device_count: usize,
 }
@@ -58,7 +63,7 @@ impl fmt::Debug for PlatformInfo {
 
 /// 描述一块物理内存区域
 #[repr(C)]
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub struct MemoryRegion {
     pub start: usize,
     pub size: usize,
@@ -66,7 +71,7 @@ pub struct MemoryRegion {
 }
 
 #[repr(u32)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum MemoryType {
     Ram = 1,
     Mmio = 2,
@@ -75,10 +80,11 @@ pub enum MemoryType {
 
 /// 描述一个硬件设备资源
 #[repr(C)]
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Serialize, Deserialize)]
 pub struct DeviceDesc {
     /// 设备兼容性字符串 (例如 "ns16550a", "virtio,mmio")
     /// 用于驱动匹配
+    #[serde(with = "BigArray")]
     pub compatible: [u8; 64],
 
     /// MMIO 物理基地址
@@ -128,7 +134,7 @@ impl fmt::Debug for DisplayOptionIdx {
 }
 
 #[repr(u32)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum DeviceKind {
     Unknown = 0,
     Uart = 1,
@@ -139,7 +145,7 @@ pub enum DeviceKind {
 }
 
 #[repr(u32)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum BusType {
     System = 0, // 系统主总线 (System Bus)
     Pci = 1,

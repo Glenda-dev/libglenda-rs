@@ -1,15 +1,18 @@
+pub mod auth;
 pub mod device;
 pub mod fs;
 pub mod generic;
 pub mod init;
 pub mod kernel;
+pub mod linux;
 pub mod network;
 pub mod process;
 
 // Protocol ID
+pub const AUTH_PROTO: usize = 0x0700;
 pub const NETWORK_PROTO: usize = 0x0600;
 pub const FS_PROTO: usize = 0x0500;
-pub const INIT_PROTOCOL: usize = 0x0400;
+pub const INIT_PROTO: usize = 0x0400;
 pub const DEVICE_PROTO: usize = 0x0300;
 pub const PROCESS_PROTO: usize = 0x0200;
 pub const KERNEL_PROTO: usize = 0x0100;
