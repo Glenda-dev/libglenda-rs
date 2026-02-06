@@ -24,3 +24,16 @@ pub trait SystemService {
     ) -> Result<(), Error>;
     fn stop(&mut self);
 }
+
+/// SystemClient interfaces for system services.
+pub trait SystemClient {
+    fn connect(&mut self, ep: Endpoint, reply: CapPtr) -> Result<(), Error>;
+    fn disconnect(&mut self);
+    fn send(
+        &mut self,
+        label: usize,
+        proto: usize,
+        flags: MsgFlags,
+        msg: MsgArgs,
+    ) -> Result<(), Error>;
+}

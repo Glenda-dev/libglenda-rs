@@ -10,7 +10,7 @@ pub mod process;
 pub mod resource;
 
 // Protocol ID
-pub const AUTH_PROTO: usize = 0x08r00;
+pub const AUTH_PROTO: usize = 0x0800;
 pub const NETWORK_PROTO: usize = 0x0700;
 pub const FS_PROTO: usize = 0x0600;
 pub const INIT_PROTO: usize = 0x0500;

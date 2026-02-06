@@ -3,6 +3,7 @@ pub const ALLOC: usize = 0x01;
 pub const FREE: usize = 0x02;
 pub const GET_RESOURCE: usize = 0x03;
 pub const GET_CAP: usize = 0x04;
+pub const GET_FILE: usize = 0x05;
 // VSpace management
 pub const MAP: usize = 0x10;
 pub const UNMAP: usize = 0x11;

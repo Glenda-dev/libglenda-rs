@@ -1,7 +1,9 @@
+use super::{CSpaceService, VSpaceService};
 use crate::arch::mem::{PGSIZE, SHIFTS, VPN_MASK};
 use crate::cap::{CNode, CapPtr, CapType, Frame, PageTable, VSpace};
 use crate::error::Error;
-use crate::interface::{CSpaceService, ResourceService, VSpaceService};
+use crate::interface::ResourceService;
+use crate::ipc::Badge;
 use crate::mem::Perms;
 use alloc::boxed::Box;
 use alloc::collections::BTreeMap;
@@ -132,7 +134,7 @@ impl VSpaceManager {
 
                     // Alloc slot and object
                     let new_slot = slots.alloc(objects)?;
-                    objects.alloc(CapType::Frame, 1, root_cnode, new_slot)?;
+                    objects.alloc(Badge::null(), CapType::Frame, 1, root_cnode, new_slot)?;
                     let new_frame = Frame::from(new_slot);
 
                     // Map both to copy
@@ -201,7 +203,7 @@ impl VSpaceManager {
         if !entries.contains_key(&idx) {
             let slot = slots.alloc(objects)?;
             let target_level = level - 1;
-            objects.alloc(CapType::PageTable, target_level, dest_cnode, slot)?;
+            objects.alloc(Badge::null(), CapType::PageTable, target_level, dest_cnode, slot)?;
             let pt = PageTable::from(slot);
 
             if pivot_root.map_table(pt, vaddr, level).is_err() {
@@ -243,7 +245,7 @@ impl VSpaceManager {
             if let Some(removed_node) = entries.remove(&idx) {
                 if let ShadowNode::Frame { cap, .. } = *removed_node {
                     let _ = cnode.delete(cap);
-                    let _ = objects.free(cap);
+                    let _ = objects.free(Badge::null(), cap);
                 }
             }
         } else if let Some(node) = entries.get_mut(&idx) {

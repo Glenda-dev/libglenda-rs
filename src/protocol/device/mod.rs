@@ -50,6 +50,11 @@ pub const ALLOC_DMA: usize = 13;
 pub const BUS_PCI: usize = 1;
 pub const BUS_PLATFORM: usize = 2; // DTB
 
+use crate::utils::platform::DeviceKind;
+use alloc::string::String;
+use alloc::vec::Vec;
+use serde::{Deserialize, Serialize};
+
 #[repr(C)]
 #[derive(Debug, Clone, Copy)]
 pub struct DeviceInfo {
@@ -63,4 +68,22 @@ pub struct DeviceInfo {
     pub dev: u8,
     pub func: u8,
     pub irq_line: u8,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Device {
+    pub id: usize,
+    pub dev_type: DeviceKind,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DeviceNode {
+    pub id: usize,
+    pub compatible: String,
+    pub base_addr: usize,
+    pub size: usize,
+    pub irq: u32,
+    pub kind: DeviceKind,
+    pub parent_id: Option<usize>,
+    pub children: Vec<usize>,
 }

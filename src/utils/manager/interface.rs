@@ -1,8 +1,12 @@
-use super::{CSpaceService, ResourceService};
-use crate::cap::{CNode, Frame};
+use crate::cap::{CNode, CapPtr, Frame};
 use crate::error::Error;
+use crate::interface::ResourceService;
 use crate::mem::Perms;
 
+/// CSpaceService is responsible for managing capability slots.
+pub trait CSpaceService {
+    fn alloc(&mut self, objects: &mut dyn ResourceService) -> Result<CapPtr, Error>;
+}
 /// VSpaceService is responsible for managing virtual memory mappings.
 pub trait VSpaceService {
     fn map_frame(

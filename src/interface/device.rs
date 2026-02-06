@@ -1,5 +1,5 @@
 use crate::error::Error;
-use crate::manager::device::DeviceNode;
+use crate::protocol::device::DeviceNode;
 use crate::protocol::device::fb::FbInfo;
 use crate::protocol::device::input::InputEvent;
 use crate::protocol::device::pci::PciAddress;

@@ -1,13 +1,33 @@
-pub const START: usize = 1;
-pub const STOP: usize = 2;
-pub const RESTART: usize = 3;
-pub const RELOAD: usize = 4;
-pub const QUERY: usize = 5;
-pub const LIST: usize = 6;
+use alloc::string::String;
+use serde::{Deserialize, Serialize};
+
+pub const START: usize = 0x01;
+pub const STOP: usize = 0x02;
+pub const RESTART: usize = 0x03;
+pub const RELOAD: usize = 0x04;
+pub const QUERY: usize = 0x05;
+pub const LIST: usize = 0x06;
+
+pub const REPORT: usize = 0x10;
 
 #[repr(C)]
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct ServiceStatus {
-    pub running: bool,
+    pub name: String,
+    pub running: ServiceState,
     pub pid: usize,
+}
+
+impl ServiceStatus {
+    pub fn new(name: String, pid: usize) -> Self {
+        Self { name, running: ServiceState::Starting, pid }
+    }
+}
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+pub enum ServiceState {
+    Starting = 0,
+    Running = 1,
+    Stopped = 2,
+    Exited = 3,
 }
