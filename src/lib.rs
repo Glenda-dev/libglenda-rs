@@ -4,6 +4,7 @@ extern crate alloc;
 
 pub mod arch;
 pub mod cap;
+pub mod client;
 pub mod console;
 pub mod crt0;
 pub mod error;
