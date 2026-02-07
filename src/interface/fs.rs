@@ -21,6 +21,13 @@ pub trait FileSystemService {
     fn stat_path(&mut self, path: &str) -> Result<Stat, Error>;
 }
 
+/// PipeService provides creating anonymous pipes.
+pub trait PipeService {
+    /// Create a pipe.
+    /// Returns a pair of capability handles (read_end, write_end).
+    fn pipe(&mut self) -> Result<(usize, usize), Error>;
+}
+
 /// FileSystemJournalService provides transaction support for file systems.
 pub trait FileSystemJournalService {
     /// Start a transaction. Returns transaction ID.

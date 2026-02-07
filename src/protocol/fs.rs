@@ -14,6 +14,9 @@ pub const SEEK: usize = 0x15; // args: [offset, whence] -> new_offset
 pub const SYNC: usize = 0x16; // args: []
 pub const TRUNCATE: usize = 0x17; // args: [size]
 
+// Pipe Operations
+pub const PIPE: usize = 0x20; // -> [read_cap, write_cap]
+
 use bitflags::bitflags;
 
 // Flags for OPEN

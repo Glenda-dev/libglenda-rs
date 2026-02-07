@@ -3,6 +3,7 @@ use crate::ipc::{Badge, MsgArgs};
 
 /// ProcessService provides high-level process control.
 pub trait ProcessService {
+    fn get_pid(&mut self) -> Result<usize, Error>;
     fn spawn(&mut self, name: &str) -> Result<usize, Error>;
     fn fork(&mut self, pid: Badge) -> Result<usize, Error>;
     fn exit(&mut self, pid: Badge, code: usize) -> Result<(), Error>;
