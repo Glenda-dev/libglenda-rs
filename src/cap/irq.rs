@@ -1,5 +1,6 @@
 use super::{CapPtr, Endpoint, irqmethod};
 use crate::error::Error;
+use crate::ipc::UTCB;
 
 #[repr(transparent)]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -15,10 +16,12 @@ impl IrqHandler {
     }
 
     pub fn ack(&self) -> Result<(), Error> {
-        self.0.invoke(irqmethod::ACK, [0, 0, 0, 0, 0,0, 0, 0])
+        self.0.invoke(irqmethod::ACK)
     }
 
     pub fn set_notification(&self, notification: Endpoint) -> Result<(), Error> {
-        self.0.invoke(irqmethod::SET_NOTIFICATION, [notification.cap().bits(), 0, 0, 0, 0,0, 0, 0])
+        let utcb = unsafe { UTCB::get() };
+        utcb.mrs_regs[0] = notification.cap().bits();
+        self.0.invoke(irqmethod::SET_NOTIFICATION)
     }
 }

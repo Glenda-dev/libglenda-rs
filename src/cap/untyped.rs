@@ -1,5 +1,6 @@
 use super::{CNode, CapPtr, CapType, untypedmethod};
 use crate::error::Error;
+use crate::ipc::UTCB;
 
 #[repr(transparent)]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -21,10 +22,12 @@ impl Untyped {
         dest_cnode: CNode,
         dest_slot: CapPtr,
     ) -> Result<(), Error> {
-        self.0.invoke(
-            untypedmethod::RETYPE,
-            [obj_type as usize, flags, dest_cnode.cap().bits(), dest_slot.bits(), 0,0, 0, 0],
-        )
+        let utcb = unsafe { UTCB::get() };
+        utcb.mrs_regs[0] = obj_type as usize;
+        utcb.mrs_regs[1] = flags;
+        utcb.mrs_regs[2] = dest_cnode.cap().bits();
+        utcb.mrs_regs[3] = dest_slot.bits();
+        self.0.invoke(untypedmethod::RETYPE)
     }
 
     #[inline(always)]

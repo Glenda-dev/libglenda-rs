@@ -1,38 +1,36 @@
-use crate::cap::{Endpoint, CapPtr};
+use crate::cap::{CapPtr, Endpoint, Reply};
 use crate::error::Error;
-use crate::ipc::{MsgArgs, MsgFlags, MsgTag, UTCB};
 use crate::interface::{InitService, SystemClient};
-use crate::protocol::{INIT_PROTO, init::{self, ServiceStatus, ServiceState}};
+use crate::ipc::{MsgFlags, MsgTag, UTCB};
+use crate::protocol::{
+    INIT_PROTO,
+    init::{self, ServiceState, ServiceStatus},
+};
 use alloc::string::String;
 use alloc::vec::Vec;
 
 pub struct InitClient {
     endpoint: Endpoint,
+    reply: Reply,
 }
 
 impl InitClient {
-    pub const fn new(endpoint: Endpoint) -> Self {
-        Self { endpoint }
+    pub const fn new() -> Self {
+        Self { endpoint: Endpoint::from(CapPtr::null()), reply: Reply::from(CapPtr::null()) }
     }
 }
 
 impl SystemClient for InitClient {
-    fn connect(&mut self, ep: Endpoint, _reply: CapPtr) -> Result<(), Error> {
+    fn connect(&mut self, ep: Endpoint, reply: CapPtr) -> Result<(), Error> {
         self.endpoint = ep;
+        self.reply = Reply::from(reply);
         Ok(())
     }
 
     fn disconnect(&mut self) {}
 
-    fn send(
-        &mut self,
-        label: usize,
-        proto: usize,
-        flags: MsgFlags,
-        msg: MsgArgs,
-    ) -> Result<(), Error> {
-        let tag = MsgTag::new(proto, label, flags);
-        self.endpoint.send(tag, msg)
+    fn send(&mut self, info: MsgTag) -> Result<(), Error> {
+        self.endpoint.send(info)
     }
 }
 
@@ -42,8 +40,9 @@ impl InitService for InitClient {
         let utcb = unsafe { UTCB::get() };
         utcb.msg_tag = tag;
         utcb.write(service.as_bytes());
-        
-        self.endpoint.cap().invoke(crate::cap::ipcmethod::CALL, [0; 8])
+        utcb.mrs_regs = [0; 8];
+
+        self.endpoint.cap().invoke(crate::cap::ipcmethod::CALL)
     }
 
     fn stop_service(&mut self, service: String) -> Result<(), Error> {
@@ -51,8 +50,9 @@ impl InitService for InitClient {
         let utcb = unsafe { UTCB::get() };
         utcb.msg_tag = tag;
         utcb.write(service.as_bytes());
-        
-        self.endpoint.cap().invoke(crate::cap::ipcmethod::CALL, [0; 8])
+        utcb.mrs_regs = [0; 8];
+
+        self.endpoint.cap().invoke(crate::cap::ipcmethod::CALL)
     }
 
     fn restart_service(&mut self, service: String) -> Result<(), Error> {
@@ -60,8 +60,9 @@ impl InitService for InitClient {
         let utcb = unsafe { UTCB::get() };
         utcb.msg_tag = tag;
         utcb.write(service.as_bytes());
-        
-        self.endpoint.cap().invoke(crate::cap::ipcmethod::CALL, [0; 8])
+        utcb.mrs_regs = [0; 8];
+
+        self.endpoint.cap().invoke(crate::cap::ipcmethod::CALL)
     }
 
     fn reload_service(&mut self, service: String) -> Result<(), Error> {
@@ -69,8 +70,9 @@ impl InitService for InitClient {
         let utcb = unsafe { UTCB::get() };
         utcb.msg_tag = tag;
         utcb.write(service.as_bytes());
-        
-        self.endpoint.cap().invoke(crate::cap::ipcmethod::CALL, [0; 8])
+        utcb.mrs_regs = [0; 8];
+
+        self.endpoint.cap().invoke(crate::cap::ipcmethod::CALL)
     }
 
     fn query_service(&self, service: String) -> Result<ServiceStatus, Error> {
@@ -78,9 +80,10 @@ impl InitService for InitClient {
         let utcb = unsafe { UTCB::get() };
         utcb.msg_tag = tag;
         utcb.write(service.as_bytes());
-        
-        self.endpoint.cap().invoke(crate::cap::ipcmethod::CALL, [0; 8])?;
-        
+        utcb.mrs_regs = [0; 8];
+
+        self.endpoint.cap().invoke(crate::cap::ipcmethod::CALL)?;
+
         unsafe { utcb.read_postcard::<ServiceStatus>().map_err(|_| Error::Unknown) }
     }
 
@@ -89,17 +92,18 @@ impl InitService for InitClient {
         let utcb = unsafe { UTCB::get() };
         utcb.msg_tag = tag;
         utcb.mrs_regs = [pid, stat as usize, 0, 0, 0, 0, 0, 0];
-        
-        self.endpoint.cap().invoke(crate::cap::ipcmethod::SEND, utcb.mrs_regs)
+
+        self.endpoint.cap().invoke(crate::cap::ipcmethod::SEND)
     }
 
     fn list_services(&self) -> Result<Vec<(String, ServiceStatus)>, Error> {
         let tag = MsgTag::new(INIT_PROTO, init::LIST, MsgFlags::NONE);
         let utcb = unsafe { UTCB::get() };
         utcb.msg_tag = tag;
-        
-        self.endpoint.cap().invoke(crate::cap::ipcmethod::CALL, [0; 8])?;
-        
+        utcb.mrs_regs = [0; 8];
+
+        self.endpoint.cap().invoke(crate::cap::ipcmethod::CALL)?;
+
         unsafe { utcb.read_postcard::<Vec<(String, ServiceStatus)>>().map_err(|_| Error::Unknown) }
     }
 }

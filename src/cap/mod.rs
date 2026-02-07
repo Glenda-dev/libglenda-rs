@@ -24,9 +24,9 @@ pub use vspace::VSpace;
 
 use crate::arch::mem::PGSIZE;
 use crate::error::Error;
-use crate::ipc::MsgArgs;
 use crate::sys::sys_invoke;
 use core::fmt::Display;
+use core::mem::transmute;
 
 const SLOT_SIZE: usize = 48; // 每个 Slot 占用 48 字节
 pub const CNODE_BITS: usize = 8;
@@ -58,8 +58,8 @@ impl CapPtr {
 
     // --- Generic Invocation ---
     #[inline(always)]
-    pub(crate) fn invoke(&self, method: usize, args: MsgArgs) -> Result<(), Error> {
-        sys_invoke(self.0, method, args)
+    pub(crate) fn invoke(&self, method: usize) -> Result<(), Error> {
+        sys_invoke(self.0, method)
     }
 }
 
@@ -83,6 +83,18 @@ pub enum CapType {
     IrqHandler = 8,
     Kernel = 9,
     VSpace = 10,
+}
+
+impl From<usize> for CapType {
+    fn from(val: usize) -> Self {
+        unsafe { transmute::<usize, CapType>(val) }
+    }
+}
+
+impl Into<usize> for CapType {
+    fn into(self) -> usize {
+        self as usize
+    }
 }
 
 bitflags::bitflags! {

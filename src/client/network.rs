@@ -1,7 +1,7 @@
-use crate::cap::{Endpoint, CapPtr};
+use crate::cap::{CapPtr, Endpoint};
 use crate::error::Error;
-use crate::ipc::{MsgArgs, MsgFlags, MsgTag, UTCB};
 use crate::interface::{NetworkService, SocketService, SystemClient};
+use crate::ipc::{MsgFlags, MsgTag, UTCB};
 use crate::protocol::{NETWORK_PROTO, network};
 
 pub struct NetworkClient {
@@ -22,15 +22,8 @@ impl SystemClient for NetworkClient {
 
     fn disconnect(&mut self) {}
 
-    fn send(
-        &mut self,
-        label: usize,
-        proto: usize,
-        flags: MsgFlags,
-        msg: MsgArgs,
-    ) -> Result<(), Error> {
-        let tag = MsgTag::new(proto, label, flags);
-        self.endpoint.send(tag, msg)
+    fn send(&mut self, info: MsgTag) -> Result<(), Error> {
+        self.endpoint.send(info)
     }
 }
 
@@ -40,9 +33,9 @@ impl NetworkService for NetworkClient {
         let utcb = unsafe { UTCB::get() };
         utcb.msg_tag = tag;
         utcb.mrs_regs = [domain as usize, socket_type as usize, protocol as usize, 0, 0, 0, 0, 0];
-        
-        self.endpoint.cap().invoke(crate::cap::ipcmethod::CALL, utcb.mrs_regs)?;
-        
+
+        self.endpoint.cap().invoke(crate::cap::ipcmethod::CALL)?;
+
         Ok(utcb.mrs_regs[0])
     }
 }
@@ -53,8 +46,9 @@ impl SocketService for NetworkClient {
         let utcb = unsafe { UTCB::get() };
         utcb.msg_tag = tag;
         utcb.write(address);
-        
-        self.endpoint.cap().invoke(crate::cap::ipcmethod::CALL, [0; 8])
+        utcb.mrs_regs = [0; 8];
+
+        self.endpoint.cap().invoke(crate::cap::ipcmethod::CALL)
     }
 
     fn listen(&mut self, backlog: i32) -> Result<(), Error> {
@@ -62,17 +56,18 @@ impl SocketService for NetworkClient {
         let utcb = unsafe { UTCB::get() };
         utcb.msg_tag = tag;
         utcb.mrs_regs = [backlog as usize, 0, 0, 0, 0, 0, 0, 0];
-        
-        self.endpoint.cap().invoke(crate::cap::ipcmethod::CALL, utcb.mrs_regs)
+
+        self.endpoint.cap().invoke(crate::cap::ipcmethod::CALL)
     }
 
     fn accept(&mut self) -> Result<usize, Error> {
         let tag = MsgTag::new(NETWORK_PROTO, network::ACCEPT, MsgFlags::NONE);
         let utcb = unsafe { UTCB::get() };
         utcb.msg_tag = tag;
-        
-        self.endpoint.cap().invoke(crate::cap::ipcmethod::CALL, [0; 8])?;
-        
+        utcb.mrs_regs = [0; 8];
+
+        self.endpoint.cap().invoke(crate::cap::ipcmethod::CALL)?;
+
         Ok(utcb.mrs_regs[0])
     }
 
@@ -81,8 +76,9 @@ impl SocketService for NetworkClient {
         let utcb = unsafe { UTCB::get() };
         utcb.msg_tag = tag;
         utcb.write(address);
-        
-        self.endpoint.cap().invoke(crate::cap::ipcmethod::CALL, [0; 8])
+        utcb.mrs_regs = [0; 8];
+
+        self.endpoint.cap().invoke(crate::cap::ipcmethod::CALL)
     }
 
     fn send(&mut self, data: &[u8], flags: i32) -> Result<usize, Error> {
@@ -91,9 +87,9 @@ impl SocketService for NetworkClient {
         utcb.msg_tag = tag;
         let len = utcb.write(data);
         utcb.mrs_regs = [len, flags as usize, 0, 0, 0, 0, 0, 0];
-        
-        self.endpoint.cap().invoke(crate::cap::ipcmethod::CALL, utcb.mrs_regs)?;
-        
+
+        self.endpoint.cap().invoke(crate::cap::ipcmethod::CALL)?;
+
         Ok(utcb.mrs_regs[0])
     }
 
@@ -102,9 +98,9 @@ impl SocketService for NetworkClient {
         let utcb = unsafe { UTCB::get() };
         utcb.msg_tag = tag;
         utcb.mrs_regs = [buffer.len(), flags as usize, 0, 0, 0, 0, 0, 0];
-        
-        self.endpoint.cap().invoke(crate::cap::ipcmethod::CALL, utcb.mrs_regs)?;
-        
+
+        self.endpoint.cap().invoke(crate::cap::ipcmethod::CALL)?;
+
         let len = utcb.mrs_regs[0];
         buffer[..len].copy_from_slice(&utcb.ipc_buffer[..len]);
         Ok(len)
@@ -114,17 +110,19 @@ impl SocketService for NetworkClient {
         let tag = MsgTag::new(NETWORK_PROTO, network::CLOSE, MsgFlags::NONE);
         let utcb = unsafe { UTCB::get() };
         utcb.msg_tag = tag;
-        
-        self.endpoint.cap().invoke(crate::cap::ipcmethod::CALL, [0; 8])
+        utcb.mrs_regs = [0; 8];
+
+        self.endpoint.cap().invoke(crate::cap::ipcmethod::CALL)
     }
 
     fn get_sockname(&self, address: &mut [u8]) -> Result<usize, Error> {
         let tag = MsgTag::new(NETWORK_PROTO, network::GET_SOCKNAME, MsgFlags::NONE);
         let utcb = unsafe { UTCB::get() };
         utcb.msg_tag = tag;
-        
-        self.endpoint.cap().invoke(crate::cap::ipcmethod::CALL, [0; 8])?;
-        
+        utcb.mrs_regs = [0; 8];
+
+        self.endpoint.cap().invoke(crate::cap::ipcmethod::CALL)?;
+
         let len = utcb.mrs_regs[0];
         address[..len].copy_from_slice(&utcb.ipc_buffer[..len]);
         Ok(len)
@@ -134,9 +132,10 @@ impl SocketService for NetworkClient {
         let tag = MsgTag::new(NETWORK_PROTO, network::GET_PEERNAME, MsgFlags::NONE);
         let utcb = unsafe { UTCB::get() };
         utcb.msg_tag = tag;
-        
-        self.endpoint.cap().invoke(crate::cap::ipcmethod::CALL, [0; 8])?;
-        
+        utcb.mrs_regs = [0; 8];
+
+        self.endpoint.cap().invoke(crate::cap::ipcmethod::CALL)?;
+
         let len = utcb.mrs_regs[0];
         address[..len].copy_from_slice(&utcb.ipc_buffer[..len]);
         Ok(len)
@@ -148,8 +147,8 @@ impl SocketService for NetworkClient {
         utcb.msg_tag = tag;
         utcb.write(optval);
         utcb.mrs_regs = [level as usize, optname as usize, 0, 0, 0, 0, 0, 0];
-        
-        self.endpoint.cap().invoke(crate::cap::ipcmethod::CALL, utcb.mrs_regs)
+
+        self.endpoint.cap().invoke(crate::cap::ipcmethod::CALL)
     }
 
     fn getsockopt(&self, level: i32, optname: i32, optval: &mut [u8]) -> Result<usize, Error> {
@@ -157,9 +156,9 @@ impl SocketService for NetworkClient {
         let utcb = unsafe { UTCB::get() };
         utcb.msg_tag = tag;
         utcb.mrs_regs = [level as usize, optname as usize, optval.len(), 0, 0, 0, 0, 0];
-        
-        self.endpoint.cap().invoke(crate::cap::ipcmethod::CALL, utcb.mrs_regs)?;
-        
+
+        self.endpoint.cap().invoke(crate::cap::ipcmethod::CALL)?;
+
         let len = utcb.mrs_regs[0];
         optval[..len].copy_from_slice(&utcb.ipc_buffer[..len]);
         Ok(len)

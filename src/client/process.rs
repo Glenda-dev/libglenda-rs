@@ -1,7 +1,7 @@
 use crate::cap::{CapPtr, Endpoint};
 use crate::error::Error;
 use crate::interface::{ProcessService, SystemClient};
-use crate::ipc::{Badge, MsgArgs, MsgFlags, MsgTag, UTCB};
+use crate::ipc::{Badge, MsgFlags, MsgTag, UTCB};
 use crate::protocol::{PROCESS_PROTO, process};
 
 pub struct ProcessClient {
@@ -22,34 +22,29 @@ impl SystemClient for ProcessClient {
 
     fn disconnect(&mut self) {}
 
-    fn send(
-        &mut self,
-        label: usize,
-        proto: usize,
-        flags: MsgFlags,
-        msg: MsgArgs,
-    ) -> Result<(), Error> {
-        let tag = MsgTag::new(proto, label, flags);
-        self.endpoint.send(tag, msg)
+    fn send(&mut self, info: MsgTag) -> Result<(), Error> {
+        self.endpoint.send(info)
     }
 }
 
 impl ProcessService for ProcessClient {
-    fn get_pid(&mut self) -> Result<usize, Error> {
+    fn get_pid(&mut self, pid: Badge) -> Result<usize, Error> {
         let tag = MsgTag::new(PROCESS_PROTO, process::GET_PID, MsgFlags::NONE);
         let utcb = unsafe { UTCB::get() };
         utcb.msg_tag = tag;
-        self.endpoint.cap().invoke(crate::cap::ipcmethod::CALL, [0; 8])?;
+        utcb.mrs_regs = [0; 8];
+        self.endpoint.cap().invoke(crate::cap::ipcmethod::CALL)?;
         Ok(utcb.mrs_regs[0])
     }
 
-    fn spawn(&mut self, name: &str) -> Result<usize, Error> {
+    fn spawn(&mut self, pid: Badge, name: &str) -> Result<usize, Error> {
         let tag = MsgTag::new(PROCESS_PROTO, process::SPAWN, MsgFlags::NONE);
         let utcb = unsafe { UTCB::get() };
         utcb.msg_tag = tag;
         utcb.write(name.as_bytes());
+        utcb.mrs_regs = [0; 8];
 
-        self.endpoint.cap().invoke(crate::cap::ipcmethod::CALL, [0; 8])?;
+        self.endpoint.cap().invoke(crate::cap::ipcmethod::CALL)?;
 
         Ok(utcb.mrs_regs[0])
     }
@@ -60,7 +55,7 @@ impl ProcessService for ProcessClient {
         utcb.msg_tag = tag;
         utcb.mrs_regs = [pid.bits(), 0, 0, 0, 0, 0, 0, 0];
 
-        self.endpoint.cap().invoke(crate::cap::ipcmethod::CALL, utcb.mrs_regs)?;
+        self.endpoint.cap().invoke(crate::cap::ipcmethod::CALL)?;
 
         Ok(utcb.mrs_regs[0])
     }
@@ -71,7 +66,7 @@ impl ProcessService for ProcessClient {
         utcb.msg_tag = tag;
         utcb.mrs_regs = [pid.bits(), code, 0, 0, 0, 0, 0, 0];
 
-        self.endpoint.cap().invoke(crate::cap::ipcmethod::SEND, utcb.mrs_regs)
+        self.endpoint.cap().invoke(crate::cap::ipcmethod::SEND)
     }
 
     fn load_image(&mut self, pid: Badge, elf_data: &[u8]) -> Result<(usize, usize), Error> {
@@ -83,7 +78,7 @@ impl ProcessService for ProcessClient {
         // For now we assume the caller handled it if it fits, or this is just a protocol definition.
         // Usually, load_image might use a Frame capability instead of raw data in IPC buffer.
 
-        self.endpoint.cap().invoke(crate::cap::ipcmethod::CALL, utcb.mrs_regs)?;
+        self.endpoint.cap().invoke(crate::cap::ipcmethod::CALL)?;
 
         Ok((utcb.mrs_regs[0], utcb.mrs_regs[1]))
     }

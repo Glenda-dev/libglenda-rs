@@ -14,7 +14,7 @@ pub type MsgArgs = [usize; MAX_MRS];
 #[derive(Debug, Clone, Copy)]
 pub struct UTCB {
     pub msg_tag: MsgTag,
-    pub mrs_regs: [usize; MAX_MRS],
+    pub mrs_regs: MsgArgs,
     pub cap_transfer: CapPtr,
     pub recv_window: CapPtr,
     pub badge: Badge,
@@ -120,7 +120,7 @@ impl UTCB {
         }
 
         // 写入长度
-        self.write_obj(&len)?;
+        (unsafe { self.write_obj(&len) })?;
 
         // 写入数据
         let ptr = data.as_ptr() as *const u8;
@@ -132,7 +132,7 @@ impl UTCB {
 
     pub unsafe fn read_vec<T: Sized + Copy>(&mut self) -> Result<Vec<T>, ()> {
         // 读取长度
-        let len: usize = self.read_obj()?;
+        let len: usize = unsafe { self.read_obj() }?;
 
         let size_bytes = len * core::mem::size_of::<T>();
         if self.available_data() < size_bytes {

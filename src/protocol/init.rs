@@ -25,6 +25,7 @@ impl ServiceStatus {
 }
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+#[repr(usize)]
 pub enum ServiceState {
     Starting = 0,
     Running = 1,

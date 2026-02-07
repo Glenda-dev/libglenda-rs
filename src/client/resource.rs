@@ -1,7 +1,7 @@
 use crate::cap::{CNode, CapPtr, CapType, Endpoint};
 use crate::error::Error;
 use crate::interface::{ResourceService, SystemClient};
-use crate::ipc::{Badge, MsgArgs, MsgFlags, MsgTag, UTCB};
+use crate::ipc::{Badge, MsgFlags, MsgTag, UTCB};
 use crate::protocol::{RESOURCE_PROTO, resource};
 
 pub struct ResourceClient {
@@ -22,15 +22,8 @@ impl SystemClient for ResourceClient {
 
     fn disconnect(&mut self) {}
 
-    fn send(
-        &mut self,
-        label: usize,
-        proto: usize,
-        flags: MsgFlags,
-        msg: MsgArgs,
-    ) -> Result<(), Error> {
-        let tag = MsgTag::new(proto, label, flags);
-        self.endpoint.send(tag, msg)
+    fn send(&mut self, info: MsgTag) -> Result<(), Error> {
+        self.endpoint.send(info)
     }
 }
 
@@ -44,7 +37,11 @@ impl ResourceService for ResourceClient {
         dest_slot: CapPtr,
     ) -> Result<(), Error> {
         let tag = MsgTag::new(RESOURCE_PROTO, resource::ALLOC, MsgFlags::NONE);
-        let args = [
+
+        // Use CALL to wait for response
+        let utcb = unsafe { UTCB::get() };
+        utcb.msg_tag = tag;
+        utcb.mrs_regs = [
             pid.bits(),
             obj_type as usize,
             flags,
@@ -55,12 +52,7 @@ impl ResourceService for ResourceClient {
             0,
         ];
 
-        // Use CALL to wait for response
-        let utcb = unsafe { UTCB::get() };
-        utcb.msg_tag = tag;
-        utcb.mrs_regs = args;
-
-        self.endpoint.cap().invoke(crate::cap::ipcmethod::CALL, args)?;
+        self.endpoint.cap().invoke(crate::cap::ipcmethod::CALL)?;
 
         // Check return code in UTCB if needed, but invoke already returns Result<(), Error>
         // derived from the syscall return value.
@@ -69,12 +61,11 @@ impl ResourceService for ResourceClient {
 
     fn free(&mut self, pid: Badge, cap: CapPtr) -> Result<(), Error> {
         let tag = MsgTag::new(RESOURCE_PROTO, resource::FREE, MsgFlags::NONE);
-        let args = [pid.bits(), cap.bits(), 0, 0, 0, 0, 0, 0];
 
         let utcb = unsafe { UTCB::get() };
         utcb.msg_tag = tag;
-        utcb.mrs_regs = args;
+        utcb.mrs_regs = [pid.bits(), cap.bits(), 0, 0, 0, 0, 0, 0];
 
-        self.endpoint.cap().invoke(crate::cap::ipcmethod::CALL, args)
+        self.endpoint.cap().invoke(crate::cap::ipcmethod::CALL)
     }
 }

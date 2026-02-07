@@ -15,6 +15,7 @@ impl Perms {
 
 use super::{CapPtr, pagetablemethod};
 use crate::error::Error;
+use crate::ipc::UTCB;
 
 #[repr(transparent)]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -30,6 +31,10 @@ impl PageTable {
     }
 
     pub fn map_table(&self, table: PageTable, vaddr: usize, level: usize) -> Result<(), Error> {
-        self.0.invoke(pagetablemethod::MAP_TABLE, [table.cap().bits(), vaddr, level, 0, 0, 0, 0, 0])
+        let utcb = unsafe { UTCB::get() };
+        utcb.mrs_regs[0] = table.cap().bits();
+        utcb.mrs_regs[1] = vaddr;
+        utcb.mrs_regs[2] = level;
+        self.0.invoke(pagetablemethod::MAP_TABLE)
     }
 }

@@ -1,5 +1,5 @@
 use crate::error::Error;
-use crate::ipc::MsgArgs;
+use crate::ipc::Badge;
 
 /// AuthService provides authentication services.
 pub trait AuthService {
@@ -8,7 +8,7 @@ pub trait AuthService {
     fn auth_rpc(&mut self, data: &[u8]) -> Result<[u8; 1024], Error>;
 
     /// Check if a user (identified by badge) has specific permissions.
-    fn check_permission(&self, badge: usize, resource: &str, operation: &str) -> bool;
+    fn check_permission(&self, badge: Badge, resource: &str, operation: &str) -> bool;
 
     /// Get a session token for a specific service.
     fn get_ticket(&mut self, service: &str) -> Result<[u8; 256], Error>;
@@ -20,9 +20,9 @@ pub trait ProxyService {
     /// The implementation should check permissions before forwarding.
     fn proxy_call(
         &mut self,
+        badge: Badge,
         target_cap: usize,
         label: usize,
         proto: usize,
-        args: MsgArgs,
-    ) -> Result<MsgArgs, Error>;
+    ) -> Result<(), Error>;
 }

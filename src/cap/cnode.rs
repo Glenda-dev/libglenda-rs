@@ -1,7 +1,7 @@
 use super::cnodemethod;
 use super::{CapPtr, Rights};
 use crate::error::Error;
-use crate::ipc::Badge;
+use crate::ipc::{Badge, UTCB};
 
 #[repr(transparent)]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -23,28 +23,35 @@ impl CNode {
         badge: Badge,
         rights: Rights,
     ) -> Result<(), Error> {
-        self.0.invoke(
-            cnodemethod::MINT,
-            [src.bits(), dest.bits(), badge.bits(), rights.bits() as usize, 0,0, 0, 0],
-        )
+        let utcb = unsafe { UTCB::get() };
+        utcb.mrs_regs[0] = src.bits();
+        utcb.mrs_regs[1] = dest.bits();
+        utcb.mrs_regs[2] = badge.bits();
+        utcb.mrs_regs[3] = rights.bits() as usize;
+        self.0.invoke(cnodemethod::MINT)
     }
 
     pub fn copy(&self, src: CapPtr, dest: CapPtr, rights: Rights) -> Result<(), Error> {
-        self.0.invoke(
-            cnodemethod::COPY,
-            [src.bits(), dest.bits(), rights.bits() as usize, 0, 0,0, 0, 0],
-        )
+        let utcb = unsafe { UTCB::get() };
+        utcb.mrs_regs[0] = src.bits();
+        utcb.mrs_regs[1] = dest.bits();
+        utcb.mrs_regs[2] = rights.bits() as usize;
+        self.0.invoke(cnodemethod::COPY)
     }
 
     pub fn delete(&self, cptr: CapPtr) -> Result<(), Error> {
-        self.0.invoke(cnodemethod::DELETE, [cptr.bits(), 0, 0, 0, 0,0, 0, 0])
+        let utcb = unsafe { UTCB::get() };
+        utcb.mrs_regs[0] = cptr.bits();
+        self.0.invoke(cnodemethod::DELETE)
     }
 
     pub fn revoke(&self, cptr: CapPtr) -> Result<(), Error> {
-        self.0.invoke(cnodemethod::REVOKE, [cptr.bits(), 0, 0, 0, 0,0, 0, 0])
+        let utcb = unsafe { UTCB::get() };
+        utcb.mrs_regs[0] = cptr.bits();
+        self.0.invoke(cnodemethod::REVOKE)
     }
 
     pub fn debug_print(&self) -> Result<(), Error> {
-        self.0.invoke(cnodemethod::DEBUG_PRINT, [0, 0, 0, 0, 0,0, 0, 0])
+        self.0.invoke(cnodemethod::DEBUG_PRINT)
     }
 }

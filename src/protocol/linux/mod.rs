@@ -57,4 +57,6 @@ pub const ENOMEM: isize = -12;
 pub const EACCES: isize = -13;
 pub const EFAULT: isize = -14;
 pub const EINVAL: isize = -22;
+pub const EMFILE: isize = -24;
+pub const ERANGE: isize = -34;
 pub const ENOSYS: isize = -38;

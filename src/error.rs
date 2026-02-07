@@ -37,3 +37,9 @@ impl From<usize> for Error {
         unsafe { transmute::<usize, Error>(val) }
     }
 }
+
+impl Into<usize> for Error {
+    fn into(self) -> usize {
+        self as usize
+    }
+}
