@@ -1,4 +1,5 @@
 use crate::error::Error;
+use crate::ipc::Badge;
 use crate::protocol::device::DeviceNode;
 use crate::protocol::device::fb::FbInfo;
 use crate::protocol::device::input::InputEvent;
@@ -6,12 +7,12 @@ use crate::protocol::device::pci::PciAddress;
 use crate::protocol::device::usb::UsbSetupPacket;
 use crate::protocol::device::wifi::WifiApInfo;
 use crate::utils::platform::PlatformInfo;
+use alloc::string::String;
 
 /// DeviceService provides hardware discovery and management.
 pub trait DeviceService {
-    fn scan_platform(&mut self, info: &PlatformInfo);
-    fn get_node(&self, id: usize) -> Option<&DeviceNode>;
-    fn find_compatible(&self, compat: &str) -> Option<&DeviceNode>;
+    fn scan_platform(&mut self, badge: Badge, info: &PlatformInfo) -> Result<(), Error>;
+    fn find_compatible(&self, badge: Badge, compat: String) -> Result<DeviceNode, Error>;
 }
 
 /// DmaService provides DMA-safe memory allocation.

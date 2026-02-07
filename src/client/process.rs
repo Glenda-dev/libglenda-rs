@@ -3,6 +3,7 @@ use crate::error::Error;
 use crate::interface::{ProcessService, SystemClient};
 use crate::ipc::{Badge, MsgFlags, MsgTag, UTCB};
 use crate::protocol::{PROCESS_PROTO, process};
+use alloc::string::String;
 
 pub struct ProcessClient {
     endpoint: Endpoint,
@@ -37,7 +38,7 @@ impl ProcessService for ProcessClient {
         Ok(utcb.mrs_regs[0])
     }
 
-    fn spawn(&mut self, pid: Badge, name: &str) -> Result<usize, Error> {
+    fn spawn(&mut self, pid: Badge, name: String) -> Result<usize, Error> {
         let tag = MsgTag::new(PROCESS_PROTO, process::SPAWN, MsgFlags::NONE);
         let utcb = unsafe { UTCB::get() };
         utcb.msg_tag = tag;

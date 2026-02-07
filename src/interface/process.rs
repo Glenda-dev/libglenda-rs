@@ -1,10 +1,11 @@
 use crate::error::Error;
 use crate::ipc::{Badge, MsgArgs};
+use alloc::string::String;
 
 /// ProcessService provides high-level process control.
 pub trait ProcessService {
     fn get_pid(&mut self, pid: Badge) -> Result<usize, Error>;
-    fn spawn(&mut self, pid: Badge, name: &str) -> Result<usize, Error>;
+    fn spawn(&mut self, pid: Badge, name: String) -> Result<usize, Error>;
     fn fork(&mut self, pid: Badge) -> Result<usize, Error>;
     fn exit(&mut self, pid: Badge, code: usize) -> Result<(), Error>;
     fn load_image(&mut self, pid: Badge, elf_data: &[u8]) -> Result<(usize, usize), Error>;
