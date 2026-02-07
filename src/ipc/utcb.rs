@@ -1,6 +1,7 @@
 use super::{Badge, MsgTag};
 use crate::cap::CapPtr;
 use crate::mem::UTCB_VA;
+use alloc::string::String;
 use alloc::vec::Vec;
 use core::mem::MaybeUninit;
 use serde::{Serialize, de::DeserializeOwned};
@@ -161,5 +162,14 @@ impl UTCB {
     pub unsafe fn read_postcard<T: DeserializeOwned>(&mut self) -> Result<T, ()> {
         let vec = unsafe { self.read_vec::<u8>() }?;
         postcard::from_bytes(&vec).map_err(|_| ())
+    }
+
+    pub fn write_str(&mut self, s: &str) -> Result<usize, ()> {
+        unsafe { self.write_vec(s.as_bytes()) }
+    }
+
+    pub fn read_str(&mut self) -> Result<String, ()> {
+        let vec = unsafe { self.read_vec::<u8>() }?;
+        String::from_utf8(vec).map_err(|_| ())
     }
 }
