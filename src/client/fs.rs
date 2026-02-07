@@ -103,7 +103,7 @@ impl FileSystemService for FsClient {
 
         self.endpoint.cap().invoke(crate::cap::ipcmethod::CALL, [0; 8])?;
 
-        unsafe { utcb.read_postcard::<Stat>().map_err(|_| Error::Unknown) }
+        unsafe { utcb.read_obj::<Stat>().map_err(|_| Error::Unknown) }
     }
 }
 
@@ -148,7 +148,7 @@ impl FileHandleService for FsClient {
 
         self.endpoint.cap().invoke(crate::cap::ipcmethod::CALL, [0; 8])?;
 
-        unsafe { utcb.read_postcard::<Stat>().map_err(|_| Error::Unknown) }
+        unsafe { utcb.read_obj::<Stat>().map_err(|_| Error::Unknown) }
     }
 
     fn getdents(&mut self, count: usize) -> Result<Vec<fs::DEntry>, Error> {
@@ -159,7 +159,7 @@ impl FileHandleService for FsClient {
 
         self.endpoint.cap().invoke(crate::cap::ipcmethod::CALL, utcb.mrs_regs)?;
 
-        unsafe { utcb.read_postcard::<Vec<fs::DEntry>>().map_err(|_| Error::Unknown) }
+        unsafe { utcb.read_vec::<fs::DEntry>().map_err(|_| Error::Unknown) }
     }
 
     fn seek(&mut self, offset: i64, whence: usize) -> Result<u64, Error> {
