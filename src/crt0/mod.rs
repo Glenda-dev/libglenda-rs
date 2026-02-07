@@ -1,5 +1,5 @@
 #[cfg(feature = "rt-bare")]
-mod bare;
+pub mod bare;
 
 #[cfg(feature = "rt-service")]
-mod service;
+pub mod service;

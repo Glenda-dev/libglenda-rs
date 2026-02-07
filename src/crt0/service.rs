@@ -68,9 +68,7 @@ unsafe extern "C" fn glenda_start() -> ! {
         fn main() -> usize;
     }
     console::init();
-    unsafe {
-        HEAP_ALLOCATOR.inner.lock().init(HEAP_VA, HEAP_SIZE);
-    }
+    init_heap();
 
     let ret = unsafe { main() };
     exit(ret);
@@ -81,4 +79,10 @@ fn panic(info: &core::panic::PanicInfo) -> ! {
     println_unsynced!("{}PANIC{}: {}", ANSI_RED, ANSI_RESET, info);
     backtrace();
     exit(usize::MAX)
+}
+
+pub fn init_heap() {
+    unsafe {
+        HEAP_ALLOCATOR.inner.lock().init(HEAP_VA, HEAP_SIZE);
+    }
 }
