@@ -3,6 +3,7 @@ use crate::error::Error;
 use crate::interface::{NetworkService, SocketService, SystemClient};
 use crate::ipc::{MsgFlags, MsgTag, UTCB};
 use crate::protocol::{NETWORK_PROTO, network};
+use crate::set_mrs;
 
 pub struct NetworkClient {
     endpoint: Endpoint,
@@ -31,9 +32,7 @@ impl NetworkService for NetworkClient {
     fn socket(&mut self, domain: i32, socket_type: i32, protocol: i32) -> Result<usize, Error> {
         let tag = MsgTag::new(NETWORK_PROTO, network::SOCKET, MsgFlags::NONE);
         let utcb = unsafe { UTCB::get() };
-        utcb.mrs_regs[0] = domain as usize;
-        utcb.mrs_regs[1] = socket_type as usize;
-        utcb.mrs_regs[2] = protocol as usize;
+        set_mrs!(utcb, domain, socket_type, protocol);
 
         self.endpoint.call(tag)?;
 
@@ -53,7 +52,7 @@ impl SocketService for NetworkClient {
     fn listen(&mut self, backlog: i32) -> Result<(), Error> {
         let tag = MsgTag::new(NETWORK_PROTO, network::LISTEN, MsgFlags::NONE);
         let utcb = unsafe { UTCB::get() };
-        utcb.mrs_regs[0] = backlog as usize;
+        set_mrs!(utcb, backlog);
 
         self.endpoint.call(tag)
     }
@@ -79,8 +78,7 @@ impl SocketService for NetworkClient {
         let tag = MsgTag::new(NETWORK_PROTO, network::SEND, MsgFlags::NONE);
         let utcb = unsafe { UTCB::get() };
         let len = utcb.write(data);
-        utcb.mrs_regs[0] = len;
-        utcb.mrs_regs[1] = flags as usize;
+        set_mrs!(utcb, len, flags);
 
         self.endpoint.call(tag)?;
 
@@ -90,8 +88,7 @@ impl SocketService for NetworkClient {
     fn recv(&mut self, buffer: &mut [u8], flags: i32) -> Result<usize, Error> {
         let tag = MsgTag::new(NETWORK_PROTO, network::RECV, MsgFlags::NONE);
         let utcb = unsafe { UTCB::get() };
-        utcb.mrs_regs[0] = buffer.len();
-        utcb.mrs_regs[1] = flags as usize;
+        set_mrs!(utcb, buffer.len(), flags);
 
         self.endpoint.call(tag)?;
 

@@ -2,10 +2,10 @@ use crate::cap::{CapPtr, Endpoint};
 use crate::error::Error;
 use crate::interface::{FileHandleService, FileSystemService, PipeService, SystemClient};
 use crate::ipc::{MsgFlags, MsgTag, UTCB};
-use crate::protocol::{
-    FS_PROTO,
-    fs::{self, OpenFlags, Stat},
-};
+use crate::protocol::FS_PROTO;
+use crate::protocol::fs;
+use crate::protocol::fs::{OpenFlags, Stat};
+use crate::set_mrs;
 use alloc::vec::Vec;
 
 pub struct FsClient {
@@ -47,8 +47,7 @@ impl FileSystemService for FsClient {
         let tag = MsgTag::new(FS_PROTO, fs::OPEN, MsgFlags::NONE);
         let utcb = unsafe { UTCB::get() };
         utcb.write(path.as_bytes());
-        utcb.mrs_regs[0] = flags.bits();
-        utcb.mrs_regs[1] = mode as usize;
+        set_mrs!(utcb, flags.bits(), mode);
 
         self.endpoint.call(tag)?;
 
@@ -59,7 +58,7 @@ impl FileSystemService for FsClient {
         let tag = MsgTag::new(FS_PROTO, fs::MKDIR, MsgFlags::NONE);
         let utcb = unsafe { UTCB::get() };
         utcb.write(path.as_bytes());
-        utcb.mrs_regs[0] = mode as usize;
+        set_mrs!(utcb, mode);
 
         self.endpoint.call(tag)
     }
@@ -104,8 +103,7 @@ impl FileHandleService for FsClient {
         // Original code didn't call utcb.write/clear, just set mrs_regs.
         // UTCB state persistence across calls is tricky. Assuming mrs_regs is enough.
 
-        utcb.mrs_regs[0] = buf.len();
-        utcb.mrs_regs[1] = offset as usize;
+        set_mrs!(utcb, buf.len(), offset as usize);
 
         self.endpoint.call(tag)?;
 
@@ -118,8 +116,7 @@ impl FileHandleService for FsClient {
         let tag = MsgTag::new(FS_PROTO, fs::WRITE, MsgFlags::NONE);
         let utcb = unsafe { UTCB::get() };
         let len = utcb.write(buf);
-        utcb.mrs_regs[0] = len;
-        utcb.mrs_regs[1] = offset as usize;
+        set_mrs!(utcb, len, offset as usize);
 
         self.endpoint.call(tag)?;
 
@@ -128,16 +125,12 @@ impl FileHandleService for FsClient {
 
     fn close(&mut self) -> Result<(), Error> {
         let tag = MsgTag::new(FS_PROTO, fs::CLOSE, MsgFlags::NONE);
-        let utcb = unsafe { UTCB::get() };
-        utcb.mrs_regs = [0; 8];
-
         self.endpoint.call(tag)
     }
 
     fn stat(&self) -> Result<Stat, Error> {
         let tag = MsgTag::new(FS_PROTO, fs::STAT, MsgFlags::NONE);
         let utcb = unsafe { UTCB::get() };
-        utcb.mrs_regs = [0; 8];
 
         self.endpoint.call(tag)?;
 
@@ -147,7 +140,7 @@ impl FileHandleService for FsClient {
     fn getdents(&mut self, count: usize) -> Result<Vec<fs::DEntry>, Error> {
         let tag = MsgTag::new(FS_PROTO, fs::GETDENTS, MsgFlags::NONE);
         let utcb = unsafe { UTCB::get() };
-        utcb.mrs_regs = [0, count, 0, 0, 0, 0, 0, 0];
+        set_mrs!(utcb, count);
 
         self.endpoint.call(tag)?;
 
@@ -157,17 +150,16 @@ impl FileHandleService for FsClient {
     fn seek(&mut self, offset: i64, whence: usize) -> Result<u64, Error> {
         let tag = MsgTag::new(FS_PROTO, fs::SEEK, MsgFlags::NONE);
         let utcb = unsafe { UTCB::get() };
-        utcb.mrs_regs = [0, offset as usize, (offset >> 32) as usize, whence, 0, 0, 0, 0];
+        set_mrs!(utcb, offset as usize, whence);
 
         self.endpoint.call(tag)?;
 
-        Ok(utcb.mrs_regs[0] as u64 | ((utcb.mrs_regs[1] as u64) << 32))
+        Ok(utcb.mrs_regs[0] as u64)
     }
 
     fn sync(&mut self) -> Result<(), Error> {
         let tag = MsgTag::new(FS_PROTO, fs::SYNC, MsgFlags::NONE);
         let utcb = unsafe { UTCB::get() };
-        utcb.mrs_regs = [0; 8];
 
         self.endpoint.call(tag)
     }
@@ -175,7 +167,7 @@ impl FileHandleService for FsClient {
     fn truncate(&mut self, size: u64) -> Result<(), Error> {
         let tag = MsgTag::new(FS_PROTO, fs::TRUNCATE, MsgFlags::NONE);
         let utcb = unsafe { UTCB::get() };
-        utcb.mrs_regs = [0, size as usize, (size >> 32) as usize, 0, 0, 0, 0, 0];
+        set_mrs!(utcb, size as usize);
 
         self.endpoint.call(tag)
     }

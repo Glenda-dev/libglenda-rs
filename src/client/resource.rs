@@ -3,6 +3,7 @@ use crate::error::Error;
 use crate::interface::{ResourceService, SystemClient};
 use crate::ipc::{Badge, MsgFlags, MsgTag, UTCB};
 use crate::protocol::{RESOURCE_PROTO, resource};
+use crate::set_mrs;
 
 pub struct ResourceClient {
     endpoint: Endpoint,
@@ -33,8 +34,7 @@ impl ResourceService for ResourceClient {
 
         // Use CALL to wait for response
         let utcb = unsafe { UTCB::get() };
-        utcb.mrs_regs[0] = obj_type as usize;
-        utcb.mrs_regs[1] = flags;
+        set_mrs!(utcb, obj_type, flags);
 
         self.endpoint.call(tag)?;
 
@@ -48,7 +48,7 @@ impl ResourceService for ResourceClient {
 
         let utcb = unsafe { UTCB::get() };
 
-        utcb.mrs_regs[0] = cap.bits();
+        set_mrs!(utcb, cap.bits());
 
         self.endpoint.call(tag)
     }

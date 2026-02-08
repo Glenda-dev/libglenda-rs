@@ -39,6 +39,9 @@ pub trait VSpaceService {
         dest_cnode: CNode,
     ) -> Result<usize, Error>;
 
+    /// Unmap memory from the scratch region
+    fn unmap_scratch(&mut self, vaddr: usize, pages: usize) -> Result<(), Error>;
+
     fn is_mapped(&self, vaddr: usize, level: usize) -> bool;
 }
 

@@ -1,9 +1,6 @@
 // Resouces allocation
 pub const ALLOC: usize = 0x01;
 pub const FREE: usize = 0x02;
-pub const GET_RESOURCE: usize = 0x03;
-pub const GET_CAP: usize = 0x04;
-pub const GET_FILE: usize = 0x05;
 // VSpace management
 pub const MAP: usize = 0x10;
 pub const UNMAP: usize = 0x11;
@@ -12,6 +9,9 @@ pub const CLONE: usize = 0x12;
 pub const MMAP: usize = 0x20;
 pub const MUNMAP: usize = 0x21;
 pub const SBRK: usize = 0x22;
+// Init resources
+pub const GET_CAP: usize = 0x30;
+pub const GET_FILE: usize = 0x31;
 
 #[repr(usize)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

@@ -256,6 +256,18 @@ impl VSpaceManager {
         }
     }
 
+    fn unmap_rec_leak(entries: &mut BTreeMap<usize, Box<ShadowNode>>, vaddr: usize, level: usize) {
+        let idx = index(vaddr, level);
+        if let Some(node) = entries.get_mut(&idx) {
+            match &mut **node {
+                ShadowNode::Table { entries: sub_entries, .. } => {
+                    Self::unmap_rec_leak(sub_entries, vaddr, level - 1);
+                }
+                _ => {}
+            }
+        }
+    }
+
     fn is_mapped_rec(
         entries: &BTreeMap<usize, Box<ShadowNode>>,
         vaddr: usize,
@@ -414,6 +426,17 @@ impl VSpaceService for VSpaceManager {
         let levels = SHIFTS.len();
         for i in 0..pages {
             Self::unmap_rec(&mut self.shadow, vaddr + i * PGSIZE, levels - 1, objects, cnode);
+        }
+        if self.root.unmap(vaddr, pages * PGSIZE).is_err() {
+            return Err(Error::MappingFailed);
+        }
+        Ok(())
+    }
+
+    fn unmap_scratch(&mut self, vaddr: usize, pages: usize) -> Result<(), Error> {
+        let levels = SHIFTS.len();
+        for i in 0..pages {
+            Self::unmap_rec_leak(&mut self.shadow, vaddr + i * PGSIZE, levels - 1);
         }
         if self.root.unmap(vaddr, pages * PGSIZE).is_err() {
             return Err(Error::MappingFailed);

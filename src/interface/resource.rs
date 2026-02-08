@@ -12,7 +12,7 @@ pub trait ResourceService {
 }
 
 pub trait InitResourceService {
-    fn get_cap(&self, cap: InitCap) -> Result<CapPtr, Error>;
+    fn get_cap(&self, pid: Badge, cap: InitCap) -> Result<CapPtr, Error>;
 
-    fn get_file(&self, name: &String) -> Result<Frame, Error>;
+    fn get_file(&mut self, pid: Badge, name: &String) -> Result<Frame, Error>;
 }

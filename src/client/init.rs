@@ -5,6 +5,7 @@ use crate::ipc::{Badge, MsgFlags, MsgTag, UTCB};
 use crate::protocol::INIT_PROTO;
 use crate::protocol::init;
 use crate::protocol::init::{ServiceState, ServiceStatus};
+use crate::set_mrs;
 use alloc::string::String;
 use alloc::vec::Vec;
 
@@ -79,7 +80,7 @@ impl InitService for InitClient {
     fn report_service(&self, _badge: Badge, stat: ServiceState) -> Result<(), Error> {
         let tag = MsgTag::new(INIT_PROTO, init::REPORT, MsgFlags::NONE);
         let utcb = unsafe { UTCB::get() };
-        utcb.mrs_regs[0] = stat as usize;
+        set_mrs!(utcb, stat);
         self.endpoint.send(tag)
     }
 

@@ -12,6 +12,20 @@ pub const MAX_MRS: usize = 8;
 
 pub type MsgArgs = [usize; MAX_MRS];
 
+#[macro_export]
+macro_rules! set_mrs {
+    ($utcb:expr, $($arg:expr),* $(,)?) => {
+        {
+            $utcb.mrs_regs = [0usize; $crate::ipc::utcb::MAX_MRS];
+            let mut _i = 0;
+            $(
+                $utcb.mrs_regs[_i] = $arg as usize;
+                _i += 1;
+            )*
+        }
+    };
+}
+
 #[repr(C)]
 #[derive(Debug, Clone, Copy)]
 pub struct UTCB {

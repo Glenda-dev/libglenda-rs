@@ -4,6 +4,7 @@ use crate::interface::device::{DeviceService, DmaService};
 use crate::ipc::{Badge, MsgFlags, MsgTag, UTCB};
 use crate::protocol::DEVICE_PROTO;
 use crate::protocol::device::{self, DeviceNode};
+use crate::set_mrs;
 use crate::utils::platform::PlatformInfo;
 use alloc::string::String;
 
@@ -66,7 +67,7 @@ impl DmaService for DeviceClient {
         let utcb = unsafe { UTCB::get() };
         let tag = MsgTag::new(DEVICE_PROTO, device::ALLOC_DMA, MsgFlags::NONE);
 
-        utcb.mrs_regs[0] = size;
+        set_mrs!(utcb, size);
 
         self.endpoint.call(tag)?;
 
