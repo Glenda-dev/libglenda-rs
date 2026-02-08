@@ -1,11 +1,10 @@
 use crate::cap::{CapPtr, Endpoint, Reply};
 use crate::error::Error;
 use crate::interface::{InitService, SystemClient};
-use crate::ipc::{MsgFlags, MsgTag, UTCB};
-use crate::protocol::{
-    INIT_PROTO,
-    init::{self, ServiceState, ServiceStatus},
-};
+use crate::ipc::{Badge, MsgFlags, MsgTag, UTCB};
+use crate::protocol::INIT_PROTO;
+use crate::protocol::init;
+use crate::protocol::init::{ServiceState, ServiceStatus};
 use alloc::string::String;
 use alloc::vec::Vec;
 
@@ -38,72 +37,56 @@ impl InitService for InitClient {
     fn start_service(&mut self, service: String) -> Result<(), Error> {
         let tag = MsgTag::new(INIT_PROTO, init::START, MsgFlags::NONE);
         let utcb = unsafe { UTCB::get() };
-        utcb.msg_tag = tag;
-        utcb.write(service.as_bytes());
-        utcb.mrs_regs = [0; 8];
+        utcb.write_str(service.as_str())?;
 
-        self.endpoint.cap().invoke(crate::cap::ipcmethod::CALL)
+        self.endpoint.call(tag)
     }
 
     fn stop_service(&mut self, service: String) -> Result<(), Error> {
         let tag = MsgTag::new(INIT_PROTO, init::STOP, MsgFlags::NONE);
         let utcb = unsafe { UTCB::get() };
-        utcb.msg_tag = tag;
-        utcb.write(service.as_bytes());
-        utcb.mrs_regs = [0; 8];
+        utcb.write_str(service.as_str())?;
 
-        self.endpoint.cap().invoke(crate::cap::ipcmethod::CALL)
+        self.endpoint.call(tag)
     }
 
     fn restart_service(&mut self, service: String) -> Result<(), Error> {
         let tag = MsgTag::new(INIT_PROTO, init::RESTART, MsgFlags::NONE);
         let utcb = unsafe { UTCB::get() };
-        utcb.msg_tag = tag;
-        utcb.write(service.as_bytes());
-        utcb.mrs_regs = [0; 8];
+        utcb.write_str(service.as_str())?;
 
-        self.endpoint.cap().invoke(crate::cap::ipcmethod::CALL)
+        self.endpoint.call(tag)
     }
 
     fn reload_service(&mut self, service: String) -> Result<(), Error> {
         let tag = MsgTag::new(INIT_PROTO, init::RELOAD, MsgFlags::NONE);
         let utcb = unsafe { UTCB::get() };
-        utcb.msg_tag = tag;
-        utcb.write(service.as_bytes());
-        utcb.mrs_regs = [0; 8];
+        utcb.write_str(service.as_str())?;
 
-        self.endpoint.cap().invoke(crate::cap::ipcmethod::CALL)
+        self.endpoint.call(tag)
     }
 
     fn query_service(&self, service: String) -> Result<ServiceStatus, Error> {
         let tag = MsgTag::new(INIT_PROTO, init::QUERY, MsgFlags::NONE);
         let utcb = unsafe { UTCB::get() };
-        utcb.msg_tag = tag;
-        utcb.write(service.as_bytes());
-        utcb.mrs_regs = [0; 8];
+        utcb.write_str(service.as_str())?;
 
-        self.endpoint.cap().invoke(crate::cap::ipcmethod::CALL)?;
+        self.endpoint.call(tag)?;
 
         unsafe { utcb.read_postcard::<ServiceStatus>().map_err(|_| Error::Unknown) }
     }
 
-    fn report_service(&self, pid: usize, stat: ServiceState) -> Result<(), Error> {
+    fn report_service(&self, _badge: Badge, stat: ServiceState) -> Result<(), Error> {
         let tag = MsgTag::new(INIT_PROTO, init::REPORT, MsgFlags::NONE);
         let utcb = unsafe { UTCB::get() };
-        utcb.msg_tag = tag;
-        utcb.mrs_regs = [pid, stat as usize, 0, 0, 0, 0, 0, 0];
-
-        self.endpoint.cap().invoke(crate::cap::ipcmethod::SEND)
+        utcb.mrs_regs[0] = stat as usize;
+        self.endpoint.send(tag)
     }
 
     fn list_services(&self) -> Result<Vec<(String, ServiceStatus)>, Error> {
         let tag = MsgTag::new(INIT_PROTO, init::LIST, MsgFlags::NONE);
         let utcb = unsafe { UTCB::get() };
-        utcb.msg_tag = tag;
-        utcb.mrs_regs = [0; 8];
-
-        self.endpoint.cap().invoke(crate::cap::ipcmethod::CALL)?;
-
+        self.endpoint.call(tag)?;
         unsafe { utcb.read_postcard::<Vec<(String, ServiceStatus)>>().map_err(|_| Error::Unknown) }
     }
 }

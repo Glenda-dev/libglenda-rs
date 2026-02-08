@@ -15,10 +15,8 @@ pub const FUTEX_WAIT: usize = 0x13;
 pub const FUTEX_WAKE: usize = 0x14;
 pub const YIELD: usize = 0x15;
 pub const SLEEP: usize = 0x16;
-
 // Debugging & Inspection
 pub const GET_PID: usize = 0x20;
-pub const PS: usize = 0x21;
-
-// Init Service
-pub const SPAWN_SERVICE: usize = 0x30; // return PID of the spawned service
+pub const GET_PPID: usize = 0x21;
+// Management
+pub const GET_CNODE: usize = 0x30;

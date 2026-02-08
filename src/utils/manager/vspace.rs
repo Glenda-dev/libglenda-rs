@@ -1,9 +1,7 @@
-use super::{CSpaceService, VSpaceService};
+use super::{CSpaceService, UntypedService, VSpaceService};
 use crate::arch::mem::{PGSIZE, SHIFTS, VPN_MASK};
 use crate::cap::{CNode, CapPtr, CapType, Frame, PageTable, VSpace};
 use crate::error::Error;
-use crate::interface::ResourceService;
-use crate::ipc::Badge;
 use crate::mem::Perms;
 use alloc::boxed::Box;
 use alloc::collections::BTreeMap;
@@ -69,7 +67,7 @@ impl VSpaceManager {
     pub fn clone_space(
         &self,
         dest_mgr: &mut VSpaceManager,
-        objects: &mut dyn ResourceService,
+        objects: &mut dyn UntypedService,
         slots: &mut dyn CSpaceService,
         root_cnode: CNode,
         src_scratch_va: usize,
@@ -94,7 +92,7 @@ impl VSpaceManager {
         &self,
         entries: &BTreeMap<usize, Box<ShadowNode>>,
         dest_mgr: &mut VSpaceManager,
-        objects: &mut dyn ResourceService,
+        objects: &mut dyn UntypedService,
         slots: &mut dyn CSpaceService,
         root_cnode: CNode,
         base_vaddr: usize,
@@ -134,7 +132,7 @@ impl VSpaceManager {
 
                     // Alloc slot and object
                     let new_slot = slots.alloc(objects)?;
-                    objects.alloc(Badge::null(), CapType::Frame, 1, root_cnode, new_slot)?;
+                    objects.alloc(CapType::Frame, 1, root_cnode, new_slot)?;
                     let new_frame = Frame::from(new_slot);
 
                     // Map both to copy
@@ -189,7 +187,7 @@ impl VSpaceManager {
         entries: &'a mut BTreeMap<usize, Box<ShadowNode>>,
         vaddr: usize,
         level: usize,
-        objects: &mut dyn ResourceService,
+        objects: &mut dyn UntypedService,
         slots: &mut dyn CSpaceService,
         dest_cnode: CNode,
         pivot_root: VSpace,
@@ -203,7 +201,7 @@ impl VSpaceManager {
         if !entries.contains_key(&idx) {
             let slot = slots.alloc(objects)?;
             let target_level = level - 1;
-            objects.alloc(Badge::null(), CapType::PageTable, target_level, dest_cnode, slot)?;
+            objects.alloc(CapType::PageTable, target_level, dest_cnode, slot)?;
             let pt = PageTable::from(slot);
 
             if pivot_root.map_table(pt, vaddr, level).is_err() {
@@ -237,7 +235,7 @@ impl VSpaceManager {
         entries: &mut BTreeMap<usize, Box<ShadowNode>>,
         vaddr: usize,
         level: usize,
-        objects: &mut dyn ResourceService,
+        objects: &mut dyn UntypedService,
         cnode: CNode,
     ) {
         let idx = index(vaddr, level);
@@ -245,7 +243,7 @@ impl VSpaceManager {
             if let Some(removed_node) = entries.remove(&idx) {
                 if let ShadowNode::Frame { cap, .. } = *removed_node {
                     let _ = cnode.delete(cap);
-                    let _ = objects.free(Badge::null(), cap);
+                    let _ = objects.free(cap);
                 }
             }
         } else if let Some(node) = entries.get_mut(&idx) {
@@ -293,7 +291,7 @@ impl VSpaceService for VSpaceManager {
         vaddr: usize,
         perms: Perms,
         pages: usize,
-        objects: &mut dyn ResourceService,
+        objects: &mut dyn UntypedService,
         slots: &mut dyn CSpaceService,
         dest_cnode: CNode,
     ) -> Result<(), Error> {
@@ -352,7 +350,7 @@ impl VSpaceService for VSpaceManager {
         frame: Frame,
         perms: Perms,
         pages: usize,
-        objects: &mut dyn ResourceService,
+        objects: &mut dyn UntypedService,
         slots: &mut dyn CSpaceService,
         dest_cnode: CNode,
     ) -> Result<usize, Error> {
@@ -410,7 +408,7 @@ impl VSpaceService for VSpaceManager {
         &mut self,
         vaddr: usize,
         pages: usize,
-        objects: &mut dyn ResourceService,
+        objects: &mut dyn UntypedService,
         cnode: CNode,
     ) -> Result<(), Error> {
         let levels = SHIFTS.len();

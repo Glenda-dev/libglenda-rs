@@ -1,8 +1,7 @@
+use super::interface::UntypedService;
 use crate::cap::{CNODE_BITS, CNODE_PAGES, UNTYPED_SLOT};
 use crate::cap::{CNode, CapPtr, CapType, Untyped};
 use crate::error::Error;
-use crate::interface::ResourceService;
-use crate::ipc::Badge;
 use crate::utils::BootInfo;
 use crate::utils::bootinfo::MAX_UNTYPED_REGIONS;
 use crate::utils::bootinfo::UntypedRegion;
@@ -14,11 +13,11 @@ pub struct UntypedBlock {
     pub desc: UntypedRegion,
 }
 
-pub struct ResourceManager {
+pub struct UntypedManager {
     blocks: Vec<UntypedBlock>,
 }
 
-impl ResourceManager {
+impl UntypedManager {
     pub fn new(bootinfo: &BootInfo) -> Self {
         let mut blocks = Vec::new();
 
@@ -46,10 +45,9 @@ impl ResourceManager {
     }
 }
 
-impl ResourceService for ResourceManager {
+impl UntypedService for UntypedManager {
     fn alloc(
         &mut self,
-        _pid: Badge,
         obj_type: CapType,
         flags: usize,
         dest_cnode: CNode,
@@ -90,7 +88,7 @@ impl ResourceService for ResourceManager {
         Err(Error::OutOfMemory)
     }
 
-    fn free(&mut self, _pid: Badge, _cap: CapPtr) -> Result<(), Error> {
+    fn free(&mut self, _cap: CapPtr) -> Result<(), Error> {
         // TODO: Implement proper memory accounting/redzone freeing.
         // Currently we use a bump pointer allocator for untyped memory,
         // so we cannot easily reclaim allocated pages without a rewrite.

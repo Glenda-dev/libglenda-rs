@@ -1,9 +1,7 @@
-use super::CSpaceService;
+use super::{CSpaceService, UntypedService};
 use crate::cap::CNODE_SIZE;
 use crate::cap::{CNode, CapPtr, CapType};
 use crate::error::Error;
-use crate::interface::ResourceService;
-use crate::ipc::Badge;
 
 const L0_DIRECT_LIMIT: usize = 64;
 const L1_START_SLOT: usize = L0_DIRECT_LIMIT + 1;
@@ -24,7 +22,7 @@ impl CSpaceManager {
 }
 
 impl CSpaceService for CSpaceManager {
-    fn alloc(&mut self, objects: &mut dyn ResourceService) -> Result<CapPtr, Error> {
+    fn alloc(&mut self, objects: &mut dyn UntypedService) -> Result<CapPtr, Error> {
         let index = self.next_index;
         self.next_index += 1;
 
@@ -46,7 +44,7 @@ impl CSpaceService for CSpaceManager {
             if !self.l1_cnodes[l1_cache_idx] {
                 let l0_cptr = CapPtr::from(l0_idx);
                 objects
-                    .alloc(Badge::null(), CapType::CNode, 1, self.root_cnode, l0_cptr)
+                    .alloc(CapType::CNode, 1, self.root_cnode, l0_cptr)
                     .map_err(|_| Error::OutOfMemory)?;
                 self.l1_cnodes[l1_cache_idx] = true;
             }

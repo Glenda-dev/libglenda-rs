@@ -17,6 +17,9 @@ impl UartDevice for UartClient {
     fn put_char(&mut self, c: u8) {
         let utcb = unsafe { UTCB::get() };
         let tag = MsgTag::new(UART_PROTO, uart::PUT_CHAR, MsgFlags::NONE);
+        utcb.mrs_regs[0] = c as usize;
+
+        let _ = self.endpoint.call(tag);
     }
 
     fn get_char(&mut self) -> Option<u8> {

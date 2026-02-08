@@ -1,11 +1,10 @@
-use crate::cap::{CNode, CapPtr, Frame};
+use crate::cap::{CNode, CapPtr, CapType, Frame};
 use crate::error::Error;
-use crate::interface::ResourceService;
 use crate::mem::Perms;
 
 /// CSpaceService is responsible for managing capability slots.
 pub trait CSpaceService {
-    fn alloc(&mut self, objects: &mut dyn ResourceService) -> Result<CapPtr, Error>;
+    fn alloc(&mut self, objects: &mut dyn UntypedService) -> Result<CapPtr, Error>;
 }
 /// VSpaceService is responsible for managing virtual memory mappings.
 pub trait VSpaceService {
@@ -15,7 +14,7 @@ pub trait VSpaceService {
         vaddr: usize,
         perms: Perms,
         pages: usize,
-        objects: &mut dyn ResourceService,
+        objects: &mut dyn UntypedService,
         slots: &mut dyn CSpaceService,
         dest_cnode: CNode,
     ) -> Result<(), Error>;
@@ -25,7 +24,7 @@ pub trait VSpaceService {
         &mut self,
         vaddr: usize,
         pages: usize,
-        objects: &mut dyn ResourceService,
+        objects: &mut dyn UntypedService,
         cnode: CNode,
     ) -> Result<(), Error>;
 
@@ -35,10 +34,22 @@ pub trait VSpaceService {
         frame: Frame,
         perms: Perms,
         pages: usize,
-        objects: &mut dyn ResourceService,
+        objects: &mut dyn UntypedService,
         slots: &mut dyn CSpaceService,
         dest_cnode: CNode,
     ) -> Result<usize, Error>;
 
     fn is_mapped(&self, vaddr: usize, level: usize) -> bool;
+}
+
+pub trait UntypedService {
+    fn alloc(
+        &mut self,
+        obj_type: CapType,
+        flags: usize,
+        dest_cnode: CNode,
+        dest_slot: CapPtr,
+    ) -> Result<(), Error>;
+
+    fn free(&mut self, cap: CapPtr) -> Result<(), Error>;
 }

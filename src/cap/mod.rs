@@ -61,6 +61,37 @@ impl CapPtr {
     pub(crate) fn invoke(&self, method: usize) -> Result<(), Error> {
         sys_invoke(self.0, method)
     }
+
+    pub const fn len(&self) -> usize {
+        if self.0 == 0 {
+            return 0; // NULL
+        } else if self.0 >> (CNODE_BITS * 1) == 0 {
+            return 1; // L0
+        } else if self.0 >> (CNODE_BITS * 2) == 0 {
+            return 2; // L1
+        } else if self.0 >> (CNODE_BITS * 3) == 0 {
+            return 3; // L2
+        } else if self.0 >> (CNODE_BITS * 4) == 0 {
+            return 4; // L3
+        } else if self.0 >> (CNODE_BITS * 5) == 0 {
+            return 5; // L4
+        } else if self.0 >> (CNODE_BITS * 6) == 0 {
+            return 6; // L5
+        } else if self.0 >> (CNODE_BITS * 7) == 0 {
+            return 7; // L6
+        } else {
+            return 8; // L7
+        }
+    }
+
+    pub const fn concat(root: CapPtr, ptr: CapPtr) -> CapPtr {
+        let root_len = root.len();
+        let ptr_len = ptr.len();
+        if root_len + ptr_len > 8 || root.is_null() || ptr.is_null() {
+            return CapPtr::null();
+        }
+        CapPtr::from(root.0 | ptr.0 << (root_len * CNODE_BITS))
+    }
 }
 
 impl Display for CapPtr {
@@ -116,7 +147,7 @@ pub const VSPACE_SLOT: CapPtr = CapPtr::from(2);
 pub const TCB_SLOT: CapPtr = CapPtr::from(3);
 pub const MONITOR_SLOT: CapPtr = CapPtr::from(4);
 pub const KERNEL_SLOT: CapPtr = CapPtr::from(5);
-pub const PLATFORM_SLOT: CapPtr = CapPtr::from(6);
+pub const BOOTINFO_SLOT: CapPtr = CapPtr::from(6);
 pub const UNTYPED_SLOT: CapPtr = CapPtr::from(7);
 pub const MMIO_SLOT: CapPtr = CapPtr::from(8);
 pub const IRQ_SLOT: CapPtr = CapPtr::from(9);
@@ -129,6 +160,6 @@ pub const UNTYPED_CAP: CNode = CNode::from(UNTYPED_SLOT);
 pub const MMIO_CAP: CNode = CNode::from(MMIO_SLOT);
 pub const IRQ_CAP: CNode = CNode::from(IRQ_SLOT);
 pub const KERNEL_CAP: Kernel = Kernel::from(KERNEL_SLOT);
-pub const PLATFORM_CAP: Frame = Frame::from(PLATFORM_SLOT);
+pub const BOOTINFO_CAP: Frame = Frame::from(BOOTINFO_SLOT);
 pub const MONITOR_CAP: Endpoint = Endpoint::from(MONITOR_SLOT);
 pub const REPLY_CAP: Reply = Reply::from(REPLY_SLOT);

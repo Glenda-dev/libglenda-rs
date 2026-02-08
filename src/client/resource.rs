@@ -1,4 +1,4 @@
-use crate::cap::{CNode, CapPtr, CapType, Endpoint};
+use crate::cap::{CapPtr, CapType, Endpoint};
 use crate::error::Error;
 use crate::interface::{ResourceService, SystemClient};
 use crate::ipc::{Badge, MsgFlags, MsgTag, UTCB};
@@ -28,44 +28,28 @@ impl SystemClient for ResourceClient {
 }
 
 impl ResourceService for ResourceClient {
-    fn alloc(
-        &mut self,
-        pid: Badge,
-        obj_type: CapType,
-        flags: usize,
-        dest_cnode: CNode,
-        dest_slot: CapPtr,
-    ) -> Result<(), Error> {
+    fn alloc(&mut self, _pid: Badge, obj_type: CapType, flags: usize) -> Result<CapPtr, Error> {
         let tag = MsgTag::new(RESOURCE_PROTO, resource::ALLOC, MsgFlags::NONE);
 
         // Use CALL to wait for response
         let utcb = unsafe { UTCB::get() };
-        utcb.msg_tag = tag;
-        utcb.mrs_regs = [
-            pid.bits(),
-            obj_type as usize,
-            flags,
-            dest_cnode.cap().bits(),
-            dest_slot.bits(),
-            0,
-            0,
-            0,
-        ];
+        utcb.mrs_regs[0] = obj_type as usize;
+        utcb.mrs_regs[1] = flags;
 
-        self.endpoint.cap().invoke(crate::cap::ipcmethod::CALL)?;
+        self.endpoint.call(tag)?;
 
         // Check return code in UTCB if needed, but invoke already returns Result<(), Error>
         // derived from the syscall return value.
-        Ok(())
+        Ok(utcb.recv_window)
     }
 
-    fn free(&mut self, pid: Badge, cap: CapPtr) -> Result<(), Error> {
+    fn free(&mut self, _pid: Badge, cap: CapPtr) -> Result<(), Error> {
         let tag = MsgTag::new(RESOURCE_PROTO, resource::FREE, MsgFlags::NONE);
 
         let utcb = unsafe { UTCB::get() };
-        utcb.msg_tag = tag;
-        utcb.mrs_regs = [pid.bits(), cap.bits(), 0, 0, 0, 0, 0, 0];
 
-        self.endpoint.cap().invoke(crate::cap::ipcmethod::CALL)
+        utcb.mrs_regs[0] = cap.bits();
+
+        self.endpoint.call(tag)
     }
 }

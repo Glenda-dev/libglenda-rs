@@ -29,6 +29,7 @@ pub enum Error {
     NotInitialized = 23,
     DeviceError = 24,
     HasCap = 25,
+    HasBuffer = 26,
     Unknown = 255,
 }
 

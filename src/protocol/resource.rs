@@ -16,20 +16,8 @@ pub const SBRK: usize = 0x22;
 #[repr(usize)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum InitCap {
-    Console = 1,
-    Initrd = 2,
-    Untyped = 3,
-    Mmio = 4,
-    Irq = 5,
-}
-
-#[repr(usize)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum InitResource {
-    BootArgs = 1,
-    PlatformInfo = 2,
-    InitrdInfo = 3,
-    UntypedInfo = 4,
-    MmioInfo = 5,
-    IrqInfo = 6,
+    Kernel = 1,
+    Untyped = 2,
+    Mmio = 3,
+    Irq = 4,
 }
