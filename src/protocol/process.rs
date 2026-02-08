@@ -11,8 +11,6 @@ pub const FORK: usize = 0x06;
 pub const THREAD_CREATE: usize = 0x10;
 pub const THREAD_EXIT: usize = 0x11;
 pub const THREAD_JOIN: usize = 0x12;
-pub const FUTEX_WAIT: usize = 0x13;
-pub const FUTEX_WAKE: usize = 0x14;
 pub const YIELD: usize = 0x15;
 pub const SLEEP: usize = 0x16;
 // Debugging & Inspection

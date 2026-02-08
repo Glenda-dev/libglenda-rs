@@ -1,14 +1,14 @@
 use crate::arch::runtime::panic_break;
 use crate::cap::KERNEL_CAP;
 use crate::cap::Kernel;
+use crate::sync::spinlock::SpinLock;
 use core::fmt;
 use core::fmt::Write;
-use spin::Mutex;
 
 pub const ANSI_RED: &str = "\x1b[31m";
 pub const ANSI_RESET: &str = "\x1b[0m";
 
-pub static GLOBAL_CONSOLE: Mutex<Kernel> = Mutex::new(Kernel::null());
+pub static GLOBAL_CONSOLE: SpinLock<Kernel> = SpinLock::new(Kernel::null());
 
 pub fn init() {
     *GLOBAL_CONSOLE.lock() = KERNEL_CAP;

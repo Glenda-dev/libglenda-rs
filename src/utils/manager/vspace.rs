@@ -8,13 +8,13 @@ use alloc::collections::BTreeMap;
 
 #[derive(Debug)]
 enum ShadowNode {
-    Table { cap: CapPtr, entries: BTreeMap<usize, Box<ShadowNode>> },
+    Table { _cap: CapPtr, entries: BTreeMap<usize, Box<ShadowNode>> },
     Frame { cap: CapPtr, pages: usize, perms: Perms },
 }
 
 impl ShadowNode {
     fn new_table(cap: CapPtr) -> Self {
-        ShadowNode::Table { cap, entries: BTreeMap::new() }
+        ShadowNode::Table { _cap: cap, entries: BTreeMap::new() }
     }
 }
 

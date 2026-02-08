@@ -159,8 +159,6 @@ impl FileHandleService for FsClient {
 
     fn sync(&mut self) -> Result<(), Error> {
         let tag = MsgTag::new(FS_PROTO, fs::SYNC, MsgFlags::NONE);
-        let utcb = unsafe { UTCB::get() };
-
         self.endpoint.call(tag)
     }
 

@@ -12,5 +12,6 @@ pub mod interface;
 pub mod ipc;
 pub mod mem;
 pub mod protocol;
+pub mod sync;
 pub mod sys;
 pub mod utils;

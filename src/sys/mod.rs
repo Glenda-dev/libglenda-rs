@@ -1,9 +1,9 @@
 use crate::arch::syscall::syscall;
 use crate::cap::{CapPtr, Endpoint};
 use crate::error::Error;
-use crate::set_mrs;
 use crate::ipc::{MsgFlags, MsgTag, UTCB};
 use crate::protocol;
+use crate::set_mrs;
 
 pub const MONITOR_SLOT: CapPtr = CapPtr::from(4);
 pub const MONITOR_CAP: Endpoint = Endpoint::from(MONITOR_SLOT);
