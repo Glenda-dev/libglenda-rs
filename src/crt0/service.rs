@@ -90,7 +90,10 @@ pub fn init_console() {
     set_mrs!(ctx, InitCap::Kernel as usize);
     ctx.set_recv_window(KERNEL_SLOT);
     ctx.set_msg_tag(tag);
-    MONITOR_CAP.call(&mut ctx).expect("Failed to get console capability");
+    let res = MONITOR_CAP.call(&mut ctx);
+    if let Err(_) = res {
+        exit(usize::MAX);
+    }
     KERNEL_CONSOLE.lock().initialize(KERNEL_CAP);
     println!("Kernel console initialized.");
 }

@@ -1,7 +1,12 @@
 pub mod msg;
+pub mod router;
+pub mod server;
 pub mod utcb;
+#[macro_use]
+pub mod macros;
 
 pub use msg::{MsgFlags, MsgTag};
+pub use router::{Handler, IpcRouter};
 pub use utcb::{IPC_BUFFER_SIZE, MAX_MRS};
 pub use utcb::{MsgArgs, UTCB};
 
