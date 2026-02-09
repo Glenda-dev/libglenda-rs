@@ -95,7 +95,6 @@ pub fn init_console() {
         exit(usize::MAX);
     }
     KERNEL_CONSOLE.lock().initialize(KERNEL_CAP);
-    println!("Kernel console initialized.");
 }
 
 #[macro_export]
