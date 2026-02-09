@@ -13,12 +13,15 @@ pub const SBRK: usize = 0x22;
 pub const GET_CAP: usize = 0x30;
 pub const GET_FILE: usize = 0x31;
 
+use num_enum::FromPrimitive;
+
 #[repr(usize)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, FromPrimitive)]
 pub enum InitCap {
     Kernel = 1,
     Untyped = 2,
     Mmio = 3,
     Irq = 4,
+    #[num_enum(default)]
     Unknown = 0,
 }

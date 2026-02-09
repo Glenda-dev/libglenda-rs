@@ -1,7 +1,7 @@
-use core::mem::transmute;
+use num_enum::FromPrimitive;
 
 #[repr(usize)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, FromPrimitive)]
 pub enum Error {
     Success = 0,
     InvalidCap = 1,
@@ -30,13 +30,8 @@ pub enum Error {
     DeviceError = 24,
     HasCap = 25,
     HasBuffer = 26,
+    #[num_enum(default)]
     Unknown = 255,
-}
-
-impl From<usize> for Error {
-    fn from(val: usize) -> Self {
-        unsafe { transmute::<usize, Error>(val) }
-    }
 }
 
 impl Into<usize> for Error {

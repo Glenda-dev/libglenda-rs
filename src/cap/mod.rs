@@ -27,7 +27,7 @@ use crate::error::Error;
 use crate::ipc::UTCB;
 use crate::sys::sys_invoke;
 use core::fmt::Display;
-use core::mem::transmute;
+use num_enum::FromPrimitive;
 
 const SLOT_SIZE: usize = 48; // 每个 Slot 占用 48 字节
 pub const CNODE_BITS: usize = 8;
@@ -101,7 +101,7 @@ impl Display for CapPtr {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, FromPrimitive)]
 #[repr(usize)]
 pub enum CapType {
     Empty = 0,
@@ -115,12 +115,8 @@ pub enum CapType {
     IrqHandler = 8,
     Kernel = 9,
     VSpace = 10,
-}
-
-impl From<usize> for CapType {
-    fn from(val: usize) -> Self {
-        unsafe { transmute::<usize, CapType>(val) }
-    }
+    #[num_enum(default)]
+    Unknown = 255,
 }
 
 impl Into<usize> for CapType {
