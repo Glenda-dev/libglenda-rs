@@ -139,6 +139,7 @@ bitflags::bitflags! {
         const RECV  = 1 << 4;
         const CALL  = 1 << 5;
         const EXECUTE = 1 << 6; // 允许执行 (仅用于 TCB)
+        const CUSTOM = 1 << 7;
         const ALL   = 0xFF;
     }
 }

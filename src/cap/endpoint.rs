@@ -31,4 +31,8 @@ impl Endpoint {
     pub fn notify(&self, utcb: &mut UTCB) -> Result<(), Error> {
         self.0.invoke(ipcmethod::NOTIFY, utcb)
     }
+
+    pub fn proxy(&self, utcb: &mut UTCB) -> Result<(), Error> {
+        self.0.invoke(ipcmethod::PROXY, utcb)
+    }
 }
