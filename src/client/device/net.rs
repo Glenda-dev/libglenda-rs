@@ -2,6 +2,7 @@ use crate::cap::Endpoint;
 use crate::error::Error;
 use crate::interface::device::NetDevice;
 use crate::ipc::{MsgFlags, MsgTag, UTCB};
+use crate::protocol::device::net::MacAddress;
 use crate::protocol::device::{NET_PROTO, net};
 
 pub struct NetClient {
@@ -15,47 +16,31 @@ impl NetClient {
 }
 
 impl NetDevice for NetClient {
-    fn mac_address(&self) -> [u8; 6] {
-        let utcb = unsafe { UTCB::get() };
+    fn mac_address(&self) -> MacAddress {
+        let mut utcb = unsafe { UTCB::new() };
         let tag = MsgTag::new(NET_PROTO, net::GET_MAC, MsgFlags::NONE);
+        utcb.set_msg_tag(tag);
 
-        if self.endpoint.call(tag).is_ok() {
-            let mut mac = [0; 6];
-            if utcb.size >= 6 {
-                mac.copy_from_slice(&utcb.ipc_buffer[..6]);
-            }
-            mac
+        if self.endpoint.call(&mut utcb).is_ok() {
+            unsafe { utcb.read_obj::<MacAddress>().unwrap_or_default() }
         } else {
-            [0; 6]
+            MacAddress::default()
         }
     }
 
     fn send(&mut self, buf: &[u8]) -> Result<(), Error> {
-        let utcb = unsafe { UTCB::get() };
-        let msg_buf = &mut utcb.ipc_buffer;
-
-        if buf.len() > msg_buf.len() {
-            return Err(Error::InvalidArgs);
-        }
-
-        msg_buf[..buf.len()].copy_from_slice(buf);
+        let mut utcb = unsafe { UTCB::new() };
         let tag = MsgTag::new(NET_PROTO, net::SEND, MsgFlags::NONE);
-        utcb.size = buf.len();
-
-        self.endpoint.call(tag)
+        utcb.set_msg_tag(tag);
+        utcb.write(buf);
+        self.endpoint.call(&mut utcb)
     }
 
     fn recv(&mut self, buf: &mut [u8]) -> Result<usize, Error> {
-        let utcb = unsafe { UTCB::get() };
+        let mut utcb = unsafe { UTCB::new() };
         let tag = MsgTag::new(NET_PROTO, net::RECV, MsgFlags::NONE);
-        utcb.mrs_regs[0] = buf.len(); // Max length
-
-        self.endpoint.call(tag)?;
-
-        let len = utcb.size;
-        let copy_len = core::cmp::min(len, buf.len());
-        buf[..copy_len].copy_from_slice(&utcb.ipc_buffer[..copy_len]);
-
-        Ok(copy_len)
+        utcb.set_msg_tag(tag);
+        self.endpoint.call(&mut utcb)?;
+        Ok(utcb.read(buf))
     }
 }

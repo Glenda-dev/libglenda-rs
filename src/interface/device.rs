@@ -3,6 +3,7 @@ use crate::ipc::Badge;
 use crate::protocol::device::DeviceNode;
 use crate::protocol::device::fb::FbInfo;
 use crate::protocol::device::input::InputEvent;
+use crate::protocol::device::net::MacAddress;
 use crate::protocol::device::pci::PciAddress;
 use crate::protocol::device::usb::UsbSetupPacket;
 use crate::protocol::device::wifi::WifiApInfo;
@@ -41,7 +42,7 @@ pub trait BlockDevice {
 
 /// NetDevice provides network packet transmission.
 pub trait NetDevice {
-    fn mac_address(&self) -> [u8; 6];
+    fn mac_address(&self) -> MacAddress;
     fn send(&mut self, buf: &[u8]) -> Result<(), Error>;
     fn recv(&mut self, buf: &mut [u8]) -> Result<usize, Error>;
 }

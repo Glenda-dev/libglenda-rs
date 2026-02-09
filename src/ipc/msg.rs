@@ -1,6 +1,8 @@
 use bitflags::bitflags;
 use core::fmt::Display;
 
+use crate::protocol;
+
 #[derive(Debug, Clone, Copy)]
 #[repr(transparent)]
 pub struct MsgTag(pub usize);
@@ -10,7 +12,7 @@ impl MsgTag {
         Self(0)
     }
 
-    pub fn new(proto: usize, label: usize, flags: MsgFlags) -> Self {
+    pub const fn new(proto: usize, label: usize, flags: MsgFlags) -> Self {
         Self((proto & 0xFFFF) << 24 | (label & 0xFFFF) << 16 | (flags.bits() & 0xFFFF))
     }
 
@@ -28,6 +30,14 @@ impl MsgTag {
 
     pub fn flags(&self) -> MsgFlags {
         MsgFlags::from_bits_truncate(self.0 & 0xFFFF)
+    }
+
+    pub const fn ok() -> Self {
+        Self::new(protocol::GENERIC_PROTO, protocol::generic::REPLY, MsgFlags::OK)
+    }
+
+    pub const fn err() -> Self {
+        Self::new(protocol::GENERIC_PROTO, protocol::generic::REPLY, MsgFlags::ERROR)
     }
 }
 

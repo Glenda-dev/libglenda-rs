@@ -1,6 +1,8 @@
 use super::{CapPtr, kernelmethod};
 use crate::error::Error;
+use crate::ipc::IPC_BUFFER_SIZE;
 use crate::ipc::UTCB;
+use alloc::string::String;
 use core::fmt;
 
 #[repr(transparent)]
@@ -21,47 +23,64 @@ impl Kernel {
     }
 
     pub fn console_put_str(&self, s: &str) -> Result<(), Error> {
-        let utcb = unsafe { UTCB::get() };
-        utcb.clear();
-        let len = utcb.write(s.as_bytes());
-        if len == s.len() {
-            self.0.invoke(kernelmethod::CONSOLE_PUT_STR)
-        } else {
-            // Buffer overflow
-            Err(Error::Unknown)
+        let utcb = unsafe { UTCB::new() };
+        // Backup UTCB state
+        let original_msg_tag = utcb.get_msg_tag();
+        let original_mrs = utcb.get_mrs();
+
+        let bytes = s.as_bytes();
+        let remaining = bytes.len();
+        let mut offset = 0;
+
+        while offset < remaining {
+            let mut chunk_size = core::cmp::min(remaining - offset, IPC_BUFFER_SIZE);
+            if offset + chunk_size < remaining {
+                while !s.is_char_boundary(offset + chunk_size) {
+                    chunk_size -= 1;
+                }
+            }
+            utcb.clear();
+            let written = utcb.write(&bytes[offset..offset + chunk_size]);
+            if written != chunk_size {
+                return Err(Error::Unknown);
+            }
+            self.0.invoke(kernelmethod::CONSOLE_PUT_STR, utcb)?;
+            offset += chunk_size;
         }
+
+        // Restore UTCB state
+        utcb.set_msg_tag(original_msg_tag);
+        utcb.set_mrs(original_mrs);
+        Ok(())
     }
 
     pub fn console_get_char(&self) -> char {
-        let utcb = unsafe { UTCB::get() };
-        let ret = self.0.invoke(kernelmethod::CONSOLE_GET_CHAR);
-        if ret.is_ok() { utcb.mrs_regs[0] as u8 as char } else { '\0' }
+        let utcb = unsafe { UTCB::new() };
+        let ret = self.0.invoke(kernelmethod::CONSOLE_GET_CHAR, utcb);
+        if ret.is_ok() { utcb.get_mr(0) as u8 as char } else { '\0' }
     }
 
-    pub fn console_get_str(&self) -> Result<alloc::string::String, Error> {
-        let utcb = unsafe { UTCB::get() };
+    pub fn console_get_str(&self) -> Result<String, Error> {
+        let utcb = unsafe { UTCB::new() };
         // 清空 UTCB 以便接收数据
         utcb.clear();
-        let ret = self.0.invoke(kernelmethod::CONSOLE_GET_STR);
-        if ret.is_ok() {
-            // MR0 contains length
-            let len = utcb.mrs_regs[0];
-            let mut buf = alloc::vec![0u8; len];
-            utcb.read(&mut buf);
-            alloc::string::String::from_utf8(buf).map_err(|_| Error::Unknown)
-        } else {
-            Err(ret.unwrap_err())
-        }
+        self.0.invoke(kernelmethod::CONSOLE_GET_STR, utcb)?;
+        // MR0 contains length
+        let len = utcb.get_mr(0);
+        let mut buf = alloc::vec![0u8; len];
+        utcb.read(&mut buf);
+        String::from_utf8(buf).map_err(|_| Error::Unknown)
     }
 
     pub fn shell(&self) -> Result<(), Error> {
-        self.0.invoke(kernelmethod::SHELL)
+        let utcb = unsafe { UTCB::new() };
+        self.0.invoke(kernelmethod::SHELL, utcb)
     }
 
     pub fn get_time(&self) -> Result<usize, Error> {
-        self.0.invoke(kernelmethod::GET_TIME)?;
-        let utcb = unsafe { UTCB::get() };
-        Ok(utcb.mrs_regs[0])
+        let utcb = unsafe { UTCB::new() };
+        self.0.invoke(kernelmethod::GET_TIME, utcb)?;
+        Ok(utcb.get_mr(0))
     }
 }
 

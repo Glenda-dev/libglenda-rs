@@ -1,8 +1,8 @@
 use super::cnodemethod;
 use super::{CapPtr, Rights};
 use crate::error::Error;
-use crate::set_mrs;
 use crate::ipc::{Badge, UTCB};
+use crate::set_mrs;
 
 #[repr(transparent)]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -24,30 +24,31 @@ impl CNode {
         badge: Badge,
         rights: Rights,
     ) -> Result<(), Error> {
-        let utcb = unsafe { UTCB::get() };
+        let mut utcb = unsafe { UTCB::new() };
         set_mrs!(utcb, src.bits(), dest.bits(), badge.bits(), rights.bits());
-        self.0.invoke(cnodemethod::MINT)
+        self.0.invoke(cnodemethod::MINT, &mut utcb)
     }
 
     pub fn copy(&self, src: CapPtr, dest: CapPtr, rights: Rights) -> Result<(), Error> {
-        let utcb = unsafe { UTCB::get() };
+        let mut utcb = unsafe { UTCB::new() };
         set_mrs!(utcb, src.bits(), dest.bits(), rights.bits());
-        self.0.invoke(cnodemethod::COPY)
+        self.0.invoke(cnodemethod::COPY, &mut utcb)
     }
 
     pub fn delete(&self, cptr: CapPtr) -> Result<(), Error> {
-        let utcb = unsafe { UTCB::get() };
+        let mut utcb = unsafe { UTCB::new() };
         set_mrs!(utcb, cptr.bits());
-        self.0.invoke(cnodemethod::DELETE)
+        self.0.invoke(cnodemethod::DELETE, &mut utcb)
     }
 
     pub fn revoke(&self, cptr: CapPtr) -> Result<(), Error> {
-        let utcb = unsafe { UTCB::get() };
+        let mut utcb = unsafe { UTCB::new() };
         set_mrs!(utcb, cptr.bits());
-        self.0.invoke(cnodemethod::REVOKE)
+        self.0.invoke(cnodemethod::REVOKE, &mut utcb)
     }
 
     pub fn debug_print(&self) -> Result<(), Error> {
-        self.0.invoke(cnodemethod::DEBUG_PRINT)
+        let mut utcb = unsafe { UTCB::new() };
+        self.0.invoke(cnodemethod::DEBUG_PRINT, &mut utcb)
     }
 }

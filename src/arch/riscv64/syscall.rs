@@ -9,6 +9,7 @@ pub unsafe fn syscall(cptr: usize, method: usize) -> usize {
             in("a0") cptr,
             in("a7") method,
             lateout("a0") ret,
+            options(nostack),
         );
     }
     ret

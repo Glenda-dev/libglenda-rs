@@ -5,21 +5,21 @@ use crate::mem::UTCB_VA;
 use alloc::string::String;
 use alloc::vec::Vec;
 use core::mem::MaybeUninit;
+use core::ptr::{read_volatile, write_volatile};
 use serde::{Serialize, de::DeserializeOwned};
 
-pub const BUFFER_MAX_SIZE: usize = 3 * 1024; // 3KB
+pub const IPC_BUFFER_SIZE: usize = 3 * 1024; // 3KB
 pub const MAX_MRS: usize = 8;
 
 pub type MsgArgs = [usize; MAX_MRS];
 
 #[macro_export]
 macro_rules! set_mrs {
-    ($utcb:expr, $($arg:expr),* $(,)?) => {
+    ($ctx:expr, $($arg:expr),* $(,)?) => {
         {
-            $utcb.mrs_regs = [0usize; $crate::ipc::utcb::MAX_MRS];
             let mut _i = 0;
             $(
-                $utcb.mrs_regs[_i] = $arg as usize;
+                $ctx.set_mr(_i, $arg as usize);
                 _i += 1;
             )*
         }
@@ -29,23 +29,122 @@ macro_rules! set_mrs {
 #[repr(C)]
 #[derive(Debug, Clone, Copy)]
 pub struct UTCB {
-    pub msg_tag: MsgTag,
-    pub mrs_regs: MsgArgs,
-    pub cap_transfer: CapPtr,
-    pub recv_window: CapPtr,
-    pub badge: Badge,
-    pub head: usize,
-    pub size: usize,
-    pub ipc_buffer: [u8; BUFFER_MAX_SIZE],
+    msg_tag: MsgTag,
+    mrs_regs: MsgArgs,
+    cap_transfer: CapPtr,
+    recv_window: CapPtr,
+    reply_window: CapPtr,
+    badge: Badge,
+    head: usize,
+    size: usize,
+    ipc_buffer: [u8; IPC_BUFFER_SIZE],
 }
 
 impl UTCB {
-    pub unsafe fn get() -> &'static mut Self {
-        unsafe { &mut *(UTCB_VA as *mut UTCB) }
+    /// 创建一个新的 IPC 上下文。
+    ///
+    /// # Safety
+    /// 这个函数应该只在线程的某次 IPC 操作开始前调用，不应长期持有返回的对象。
+    pub unsafe fn new() -> &'static mut Self {
+        unsafe { &mut *(UTCB_VA as *mut Self) }
     }
 
-    pub unsafe fn from(addr: usize) -> &'static mut Self {
-        unsafe { &mut *(addr as *mut UTCB) }
+    pub fn get_msg_tag(&self) -> MsgTag {
+        unsafe { read_volatile(&self.msg_tag) }
+    }
+
+    pub fn set_msg_tag(&mut self, tag: MsgTag) {
+        unsafe { write_volatile(&mut self.msg_tag, tag) }
+    }
+
+    pub fn get_mr(&self, index: usize) -> usize {
+        if index < MAX_MRS { unsafe { read_volatile(&self.mrs_regs[index]) } } else { 0 }
+    }
+
+    pub fn set_mr(&mut self, index: usize, value: usize) {
+        if index < MAX_MRS {
+            unsafe { write_volatile(&mut self.mrs_regs[index], value) }
+        }
+    }
+
+    pub fn get_mrs(&self) -> [usize; MAX_MRS] {
+        let mut args = [0; MAX_MRS];
+        for i in 0..MAX_MRS {
+            args[i] = unsafe { read_volatile(&self.mrs_regs[i]) };
+        }
+        args
+    }
+
+    pub fn set_mrs(&mut self, mrs: [usize; MAX_MRS]) {
+        for i in 0..MAX_MRS {
+            unsafe { write_volatile(&mut self.mrs_regs[i], mrs[i]) };
+        }
+    }
+
+    pub fn get_badge(&self) -> Badge {
+        unsafe { read_volatile(&self.badge) }
+    }
+
+    pub fn get_size(&self) -> usize {
+        unsafe { read_volatile(&self.size) }
+    }
+
+    pub fn set_size(&mut self, size: usize) {
+        unsafe { write_volatile(&mut self.size, size) }
+    }
+
+    pub fn set_buffer_len(&mut self, len: usize) {
+        self.set_size(core::cmp::min(len, IPC_BUFFER_SIZE));
+    }
+
+    pub fn get_recv_window(&self) -> CapPtr {
+        unsafe { read_volatile(&self.recv_window) }
+    }
+
+    pub fn set_recv_window(&mut self, cap: CapPtr) {
+        unsafe { write_volatile(&mut self.recv_window, cap) }
+    }
+
+    pub fn get_reply_window(&self) -> CapPtr {
+        unsafe { read_volatile(&self.reply_window) }
+    }
+
+    pub fn set_reply_window(&mut self, cap: CapPtr) {
+        unsafe { write_volatile(&mut self.reply_window, cap) }
+    }
+
+    pub fn get_cap_transfer(&self) -> CapPtr {
+        unsafe { read_volatile(&self.cap_transfer) }
+    }
+
+    pub fn set_cap_transfer(&mut self, cap: CapPtr) {
+        unsafe { write_volatile(&mut self.cap_transfer, cap) }
+    }
+
+    pub fn ipc_buffer(&mut self) -> &mut [u8] {
+        &mut self.ipc_buffer
+    }
+
+    pub fn buffer_mut(&mut self) -> &mut [u8] {
+        &mut self.ipc_buffer
+    }
+
+    pub fn buffer(&self) -> &[u8] {
+        &self.ipc_buffer[..self.get_size()]
+    }
+
+    pub fn clear(&mut self) {
+        unsafe {
+            write_volatile(&mut self.msg_tag, MsgTag::empty());
+            for i in 0..MAX_MRS {
+                write_volatile(&mut self.mrs_regs[i], 0);
+            }
+            write_volatile(&mut self.cap_transfer, CapPtr::null());
+            write_volatile(&mut self.recv_window, CapPtr::null());
+            write_volatile(&mut self.reply_window, CapPtr::null());
+            write_volatile(&mut self.head, 0);
+            write_volatile(&mut self.size, 0);
+        }
     }
 
     pub fn available_data(&self) -> usize {
@@ -53,11 +152,11 @@ impl UTCB {
     }
 
     pub fn available_space(&self) -> usize {
-        BUFFER_MAX_SIZE - self.size
+        IPC_BUFFER_SIZE - self.size
     }
 
     pub fn write(&mut self, data: &[u8]) -> usize {
-        let len = core::cmp::min(data.len(), BUFFER_MAX_SIZE);
+        let len = core::cmp::min(data.len(), IPC_BUFFER_SIZE);
         self.ipc_buffer[..len].copy_from_slice(&data[..len]);
         self.size = len;
         self.head = 0;
@@ -80,15 +179,6 @@ impl UTCB {
             self.head += len;
         }
         len
-    }
-
-    pub fn clear(&mut self) {
-        self.msg_tag = MsgTag::empty();
-        self.mrs_regs = [0; MAX_MRS];
-        self.cap_transfer = CapPtr::null();
-        self.recv_window = CapPtr::null();
-        self.size = 0;
-        self.head = 0;
     }
 
     pub unsafe fn write_obj<T: Sized + Copy>(&mut self, obj: &T) -> Result<usize, Error> {
@@ -187,11 +277,11 @@ impl UTCB {
         postcard::from_bytes(&vec).map_err(|_| Error::InvalidObjType)
     }
 
-    pub fn write_str(&mut self, s: &str) -> Result<usize, Error> {
+    pub unsafe fn write_str(&mut self, s: &str) -> Result<usize, Error> {
         unsafe { self.write_vec(s.as_bytes()) }
     }
 
-    pub fn read_str(&mut self) -> Result<String, Error> {
+    pub unsafe fn read_str(&mut self) -> Result<String, Error> {
         let vec = unsafe { self.read_vec::<u8>() }?;
         String::from_utf8(vec).map_err(|_| Error::InvalidObjType)
     }

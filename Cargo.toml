@@ -19,6 +19,7 @@ bitflags = "2.10.0"
 serde-big-array = "0.5.1"
 
 [features]
+default = []
 rt-bare = ["kernel-console"]
 rt-service = ["kernel-console"]
 rt-app = []

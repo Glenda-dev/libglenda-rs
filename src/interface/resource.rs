@@ -6,7 +6,13 @@ use alloc::string::String;
 
 /// ResourceHelper is responsible for allocating kernel objects from untyped memory.
 pub trait ResourceService {
-    fn alloc(&mut self, pid: Badge, obj_type: CapType, flags: usize) -> Result<CapPtr, Error>;
+    fn alloc(
+        &mut self,
+        pid: Badge,
+        obj_type: CapType,
+        flags: usize,
+        recv: CapPtr,
+    ) -> Result<CapPtr, Error>;
 
     fn free(&mut self, pid: Badge, cap: CapPtr) -> Result<(), Error>;
 }

@@ -20,4 +20,5 @@ pub enum InitCap {
     Untyped = 2,
     Mmio = 3,
     Irq = 4,
+    Unknown = 0,
 }

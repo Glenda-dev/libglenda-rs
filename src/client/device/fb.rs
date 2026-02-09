@@ -4,6 +4,7 @@ use crate::interface::device::FrameBufferDevice;
 use crate::ipc::{MsgFlags, MsgTag, UTCB};
 use crate::protocol::device::fb::FbInfo;
 use crate::protocol::device::{FB_PROTO, fb};
+use crate::set_mrs;
 
 pub struct FbClient {
     endpoint: Endpoint,
@@ -17,31 +18,21 @@ impl FbClient {
 
 impl FrameBufferDevice for FbClient {
     fn get_info(&self) -> FbInfo {
-        let utcb = unsafe { UTCB::get() };
+        let mut utcb = unsafe { UTCB::new() };
         let tag = MsgTag::new(FB_PROTO, fb::GET_INFO, MsgFlags::NONE);
-
-        if self.endpoint.call(tag).is_ok() {
-            if utcb.size >= core::mem::size_of::<FbInfo>() {
-                let mut info = FbInfo::default();
-                unsafe {
-                    let src = utcb.ipc_buffer.as_ptr();
-                    let dst = &mut info as *mut FbInfo as *mut u8;
-                    core::ptr::copy_nonoverlapping(src, dst, core::mem::size_of::<FbInfo>());
-                }
-                return info;
-            }
+        utcb.set_msg_tag(tag);
+        if self.endpoint.call(&mut utcb).is_ok() {
+            unsafe { utcb.read_obj::<FbInfo>().unwrap_or(FbInfo::default()) }
+        } else {
+            FbInfo::default()
         }
-        FbInfo::default()
     }
 
     fn flush(&mut self, x: u32, y: u32, w: u32, h: u32) -> Result<(), Error> {
-        let utcb = unsafe { UTCB::get() };
+        let mut utcb = unsafe { UTCB::new() };
         let tag = MsgTag::new(FB_PROTO, fb::FLUSH, MsgFlags::NONE);
-        utcb.mrs_regs[0] = x as usize;
-        utcb.mrs_regs[1] = y as usize;
-        utcb.mrs_regs[2] = w as usize;
-        utcb.mrs_regs[3] = h as usize;
-
-        self.endpoint.call(tag)
+        set_mrs!(utcb, x, y, w, h);
+        utcb.set_msg_tag(tag);
+        self.endpoint.call(&mut utcb)
     }
 }

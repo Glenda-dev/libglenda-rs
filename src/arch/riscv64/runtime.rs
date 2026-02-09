@@ -1,4 +1,4 @@
-use crate::println_unsynced;
+use crate::println;
 use core::arch::{asm, global_asm};
 
 global_asm!(
@@ -36,7 +36,7 @@ fn fp() -> usize {
 }
 
 pub fn backtrace() {
-    println_unsynced!("--- GLENDA BACKTRACE START ---");
+    println!("--- GLENDA BACKTRACE START ---");
     let mut current_fp = fp();
     let mut depth = 0;
     while current_fp != 0 && depth < 20 {
@@ -58,7 +58,7 @@ pub fn backtrace() {
             let ra = *ra_ptr;
             let prev_fp = *prev_fp_ptr;
 
-            println_unsynced!("{:>2}: fp={:#x} ra={:#x}", depth, current_fp, ra);
+            println!("{:>2}: fp={:#x} ra={:#x}", depth, current_fp, ra);
 
             // 3. 栈增长方向检查：RISC-V 栈向下增长，prev_fp 必须大于 current_fp
             // 如果 prev_fp <= current_fp，说明栈已损坏或出现环路，必须停止
@@ -70,5 +70,5 @@ pub fn backtrace() {
         }
         depth += 1;
     }
-    println_unsynced!("--- GLENDA BACKTRACE END ---");
+    println!("--- GLENDA BACKTRACE END ---");
 }

@@ -2,6 +2,7 @@ pub mod msg;
 pub mod utcb;
 
 pub use msg::{MsgFlags, MsgTag};
+pub use utcb::{IPC_BUFFER_SIZE, MAX_MRS};
 pub use utcb::{MsgArgs, UTCB};
 
 use core::cmp::Ord;

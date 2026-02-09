@@ -27,51 +27,41 @@ impl DeviceClient {
 
 impl DeviceService for DeviceClient {
     fn scan_platform(&mut self, _badge: Badge, info: &PlatformInfo) -> Result<(), Error> {
-        let utcb = unsafe { UTCB::get() };
-        let buf = &mut utcb.ipc_buffer;
-
-        // Serialize PlatformInfo into message buffer
-        let len = postcard::to_slice(info, buf).map_err(|_| Error::InvalidArgs)?.len();
-
+        let mut utcb = unsafe { UTCB::new() };
+        unsafe {
+            utcb.write_obj::<PlatformInfo>(info)?;
+        }
         let tag = MsgTag::new(DEVICE_PROTO, device::SCAN_PLATFORM, MsgFlags::NONE);
-        utcb.size = len;
-
-        self.endpoint.call(tag)
+        utcb.set_msg_tag(tag);
+        self.endpoint.call(&mut utcb)
     }
 
     fn find_compatible(&self, _badge: Badge, compat: String) -> Result<DeviceNode, Error> {
-        let utcb = unsafe { UTCB::get() };
-        let buf = &mut utcb.ipc_buffer;
+        let mut utcb = unsafe { UTCB::new() };
 
-        let bytes = compat.as_bytes();
-        if bytes.len() > buf.len() {
-            return Err(Error::InvalidArgs);
+        unsafe {
+            utcb.write_str(compat.as_str())?;
         }
 
-        buf[..bytes.len()].copy_from_slice(bytes);
-
         let tag = MsgTag::new(DEVICE_PROTO, device::FIND_COMPATIBLE, MsgFlags::NONE);
-        utcb.size = bytes.len();
+        utcb.set_msg_tag(tag);
 
-        self.endpoint.call(tag)?;
+        self.endpoint.call(&mut utcb)?;
 
-        let node: DeviceNode =
-            postcard::from_bytes(&buf[..utcb.size]).map_err(|_| Error::InvalidProtocol)?;
-
-        Ok(node)
+        Ok(unsafe { utcb.read_postcard::<DeviceNode>()? })
     }
 }
 
 impl DmaService for DeviceClient {
     fn alloc_dma(&mut self, size: usize) -> Result<usize, Error> {
-        let utcb = unsafe { UTCB::get() };
+        let mut utcb = unsafe { UTCB::new() };
         let tag = MsgTag::new(DEVICE_PROTO, device::ALLOC_DMA, MsgFlags::NONE);
-
+        utcb.set_msg_tag(tag);
         set_mrs!(utcb, size);
 
-        self.endpoint.call(tag)?;
+        self.endpoint.call(&mut utcb)?;
 
-        Ok(utcb.mrs_regs[0])
+        Ok(utcb.get_mr(0))
     }
 
     fn free_dma(&mut self, _paddr: usize, _size: usize) {

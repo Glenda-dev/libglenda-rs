@@ -1,7 +1,8 @@
 use super::{CapPtr, Frame, PageTable, vspacemethod};
 use crate::error::Error;
-use crate::mem::Perms;
 use crate::ipc::UTCB;
+use crate::mem::Perms;
+use crate::set_mrs;
 
 #[repr(transparent)]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -17,33 +18,30 @@ impl VSpace {
     }
 
     pub fn map(&self, frame: Frame, vaddr: usize, perms: Perms) -> Result<(), Error> {
-        let utcb = unsafe { UTCB::get() };
-        utcb.mrs_regs[0] = frame.cap().bits();
-        utcb.mrs_regs[1] = vaddr;
-        utcb.mrs_regs[2] = perms.bits();
-        self.0.invoke(vspacemethod::MAP)
+        let mut utcb = unsafe { UTCB::new() };
+        set_mrs!(utcb, frame.cap().bits(), vaddr, perms.bits());
+        self.0.invoke(vspacemethod::MAP, &mut utcb)
     }
 
     pub fn map_table(&self, table: PageTable, vaddr: usize, level: usize) -> Result<(), Error> {
-        let utcb = unsafe { UTCB::get() };
-        utcb.mrs_regs[0] = table.cap().bits();
-        utcb.mrs_regs[1] = vaddr;
-        utcb.mrs_regs[2] = level;
-        self.0.invoke(vspacemethod::MAP_TABLE)
+        let mut utcb = unsafe { UTCB::new() };
+        set_mrs!(utcb, table.cap().bits(), vaddr, level);
+        self.0.invoke(vspacemethod::MAP_TABLE, &mut utcb)
     }
 
     pub fn unmap(&self, vaddr: usize, size: usize) -> Result<(), Error> {
-        let utcb = unsafe { UTCB::get() };
-        utcb.mrs_regs[0] = vaddr;
-        utcb.mrs_regs[1] = size;
-        self.0.invoke(vspacemethod::UNMAP)
+        let mut utcb = unsafe { UTCB::new() };
+        set_mrs!(utcb, vaddr, size);
+        self.0.invoke(vspacemethod::UNMAP, &mut utcb)
     }
 
     pub fn setup(&self) -> Result<(), Error> {
-        self.0.invoke(vspacemethod::SETUP)
+        let mut utcb = unsafe { UTCB::new() };
+        self.0.invoke(vspacemethod::SETUP, &mut utcb)
     }
 
     pub fn debug_print(&self) -> Result<(), Error> {
-        self.0.invoke(vspacemethod::DEBUG_PRINT)
+        let mut utcb = unsafe { UTCB::new() };
+        self.0.invoke(vspacemethod::DEBUG_PRINT, &mut utcb)
     }
 }

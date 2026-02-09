@@ -1,6 +1,6 @@
 use crate::cap::{CNode, CapPtr, Endpoint};
 use crate::error::Error;
-use crate::interface::{ProcessService, SystemClient};
+use crate::interface::ProcessService;
 use crate::ipc::{Badge, MsgFlags, MsgTag, UTCB};
 use crate::protocol::PROCESS_PROTO;
 use crate::protocol::process;
@@ -17,75 +17,67 @@ impl ProcessClient {
     }
 }
 
-impl SystemClient for ProcessClient {
-    fn connect(&mut self, ep: Endpoint, _reply: CapPtr) -> Result<(), Error> {
-        self.endpoint = ep;
-        Ok(())
-    }
-
-    fn disconnect(&mut self) {}
-
-    fn send(&mut self, info: MsgTag) -> Result<(), Error> {
-        self.endpoint.send(info)
-    }
-}
-
 impl ProcessService for ProcessClient {
     fn get_pid(&mut self, _pid: Badge) -> Result<usize, Error> {
         let tag = MsgTag::new(PROCESS_PROTO, process::GET_PID, MsgFlags::NONE);
-        let utcb = unsafe { UTCB::get() };
-
-        self.endpoint.call(tag)?;
-        Ok(utcb.mrs_regs[0])
+        let mut utcb = unsafe { UTCB::new() };
+        utcb.set_msg_tag(tag);
+        self.endpoint.call(&mut utcb)?;
+        Ok(utcb.get_mr(0))
     }
 
     fn get_ppid(&mut self, _pid: Badge) -> Result<usize, Error> {
         let tag = MsgTag::new(PROCESS_PROTO, process::GET_PPID, MsgFlags::NONE);
-        let utcb = unsafe { UTCB::get() };
-
-        self.endpoint.call(tag)?;
-        Ok(utcb.mrs_regs[0])
+        let mut utcb = unsafe { UTCB::new() };
+        utcb.set_msg_tag(tag);
+        self.endpoint.call(&mut utcb)?;
+        Ok(utcb.get_mr(0))
     }
 
     fn spawn(&mut self, _pid: Badge, name: String) -> Result<usize, Error> {
         let tag = MsgTag::new(PROCESS_PROTO, process::SPAWN, MsgFlags::NONE);
-        let utcb = unsafe { UTCB::get() };
+        let mut utcb = unsafe { UTCB::new() };
         utcb.write(name.as_bytes());
-        self.endpoint.call(tag)?;
-        Ok(utcb.mrs_regs[0])
+        utcb.set_msg_tag(tag);
+        self.endpoint.call(&mut utcb)?;
+        Ok(utcb.get_mr(0))
     }
 
     fn fork(&mut self, _pid: Badge) -> Result<usize, Error> {
         let tag = MsgTag::new(PROCESS_PROTO, process::FORK, MsgFlags::NONE);
-        let utcb = unsafe { UTCB::get() };
-        self.endpoint.call(tag)?;
-        Ok(utcb.mrs_regs[0])
+        let mut utcb = unsafe { UTCB::new() };
+        utcb.set_msg_tag(tag);
+        self.endpoint.call(&mut utcb)?;
+        Ok(utcb.get_mr(0))
     }
 
     fn exit(&mut self, _pid: Badge, code: usize) -> Result<(), Error> {
         let tag = MsgTag::new(PROCESS_PROTO, process::EXIT, MsgFlags::NONE);
-        let utcb = unsafe { UTCB::get() };
+        let mut utcb = unsafe { UTCB::new() };
         set_mrs!(utcb, code);
-        self.endpoint.send(tag)
+        utcb.set_msg_tag(tag);
+        self.endpoint.send(&mut utcb)
     }
 
     fn exec(&mut self, _pid: Badge, elf_data: &[u8]) -> Result<(usize, usize), Error> {
         let tag = MsgTag::new(PROCESS_PROTO, process::EXEC, MsgFlags::NONE);
-        let utcb = unsafe { UTCB::get() };
+        let mut utcb = unsafe { UTCB::new() };
         set_mrs!(utcb, elf_data.len());
-        // Note: passing large buffers might need another mechanism if it exceeds BUFFER_MAX_SIZE
+        utcb.set_msg_tag(tag);
+        // Note: passing large buffers might need another mechanism if it exceeds IPC_BUFFER_SIZE
         // For now we assume the caller handled it if it fits, or this is just a protocol definition.
         // Usually, exec might use a Frame capability instead of raw data in IPC buffer.
-        self.endpoint.call(tag)?;
-
-        Ok((utcb.mrs_regs[0], utcb.mrs_regs[1]))
+        self.endpoint.call(&mut utcb)?;
+        Ok((utcb.get_mr(0), utcb.get_mr(1)))
     }
 
-    fn get_cnode(&mut self, _pid: Badge, target: Badge) -> Result<CNode, Error> {
+    fn get_cnode(&mut self, _pid: Badge, target: Badge, recv: CapPtr) -> Result<CNode, Error> {
         let tag = MsgTag::new(PROCESS_PROTO, process::GET_CNODE, MsgFlags::NONE);
-        let utcb = unsafe { UTCB::get() };
-        utcb.mrs_regs[0] = target.bits();
-        self.endpoint.call(tag)?;
-        Ok(CNode::from(utcb.recv_window))
+        let mut utcb = unsafe { UTCB::new() };
+        utcb.set_msg_tag(tag);
+        utcb.set_mr(0, target.bits());
+        utcb.set_recv_window(recv);
+        self.endpoint.call(&mut utcb)?;
+        Ok(CNode::from(recv))
     }
 }

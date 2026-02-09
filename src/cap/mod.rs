@@ -24,6 +24,7 @@ pub use vspace::VSpace;
 
 use crate::arch::mem::PGSIZE;
 use crate::error::Error;
+use crate::ipc::UTCB;
 use crate::sys::sys_invoke;
 use core::fmt::Display;
 use core::mem::transmute;
@@ -58,8 +59,8 @@ impl CapPtr {
 
     // --- Generic Invocation ---
     #[inline(always)]
-    pub(crate) fn invoke(&self, method: usize) -> Result<(), Error> {
-        sys_invoke(self.0, method)
+    pub(crate) fn invoke(&self, method: usize, utcb: &mut UTCB) -> Result<(), Error> {
+        sys_invoke(self.0, method, utcb)
     }
 
     pub const fn len(&self) -> usize {

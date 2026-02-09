@@ -1,4 +1,4 @@
-use crate::println_unsynced;
+use crate::println;
 use core::arch::{asm, global_asm};
 
 global_asm!(
@@ -37,7 +37,7 @@ fn fp() -> usize {
 }
 
 pub fn backtrace() {
-    println_unsynced!("--- GLENDA BACKTRACE START (x86_64) ---");
+    println!("--- GLENDA BACKTRACE START (x86_64) ---");
     let mut current_fp = fp();
     let mut depth = 0;
     while current_fp != 0 && depth < 20 {
@@ -57,7 +57,7 @@ pub fn backtrace() {
             let prev_fp = *prev_fp_ptr;
             let ra = *ra_ptr;
 
-            println_unsynced!("{:>2}: fp={:#x} ra={:#x}", depth, current_fp, ra);
+            println!("{:>2}: fp={:#x} ra={:#x}", depth, current_fp, ra);
 
             // 栈向上增长检查 (x86 栈向下生长，所以 caller 的 frame 地址更大)
             if prev_fp != 0 && prev_fp <= current_fp {
@@ -67,5 +67,5 @@ pub fn backtrace() {
         }
         depth += 1;
     }
-    println_unsynced!("--- GLENDA BACKTRACE END ---");
+    println!("--- GLENDA BACKTRACE END ---");
 }

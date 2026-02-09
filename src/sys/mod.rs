@@ -10,11 +10,11 @@ pub const MONITOR_CAP: Endpoint = Endpoint::from(MONITOR_SLOT);
 
 pub fn sbrk(size: usize) -> Result<usize, ()> {
     let tag = MsgTag::new(protocol::RESOURCE_PROTO, protocol::resource::SBRK, MsgFlags::NONE);
-    let utcb = unsafe { UTCB::get() };
-    set_mrs!(utcb, size);
-    if MONITOR_CAP.send(tag).is_ok() {
-        let utcb = unsafe { UTCB::get() };
-        let ret = utcb.mrs_regs[0];
+    let mut ctx = unsafe { UTCB::new() };
+    set_mrs!(ctx, size);
+    ctx.set_msg_tag(tag);
+    if MONITOR_CAP.call(&mut ctx).is_ok() {
+        let ret = ctx.get_mr(0);
         if ret > 0 { Ok(ret) } else { Err(()) }
     } else {
         Err(())
@@ -23,14 +23,15 @@ pub fn sbrk(size: usize) -> Result<usize, ()> {
 
 pub fn exit(code: usize) -> ! {
     let tag = MsgTag::new(protocol::PROCESS_PROTO, protocol::process::EXIT, MsgFlags::NONE);
-    let utcb = unsafe { UTCB::get() };
-    set_mrs!(utcb, code);
-    let _ = MONITOR_CAP.send(tag);
+    let mut ctx = unsafe { UTCB::new() };
+    set_mrs!(ctx, code);
+    ctx.set_msg_tag(tag);
+    let _ = MONITOR_CAP.send(&mut ctx);
     unreachable!("Failed to exit with code {}", code);
 }
 
 #[inline(always)]
-pub fn sys_invoke(cptr: usize, method: usize) -> Result<(), Error> {
+pub fn sys_invoke(cptr: usize, method: usize, _utcb: &mut UTCB) -> Result<(), Error> {
     let ret = unsafe { syscall(cptr, method) };
     if Error::from(ret) == Error::Success { Ok(()) } else { Err(Error::from(ret)) }
 }

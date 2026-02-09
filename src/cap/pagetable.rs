@@ -1,21 +1,7 @@
-#[repr(transparent)]
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct Perms(usize);
-
-impl Perms {
-    pub const fn from(bits: usize) -> Self {
-        let perm = bits & 0xFF;
-        Self(perm)
-    }
-
-    pub const fn bits(&self) -> usize {
-        self.0
-    }
-}
-
 use super::{CapPtr, pagetablemethod};
 use crate::error::Error;
 use crate::ipc::UTCB;
+use crate::set_mrs;
 
 #[repr(transparent)]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -31,10 +17,8 @@ impl PageTable {
     }
 
     pub fn map_table(&self, table: PageTable, vaddr: usize, level: usize) -> Result<(), Error> {
-        let utcb = unsafe { UTCB::get() };
-        utcb.mrs_regs[0] = table.cap().bits();
-        utcb.mrs_regs[1] = vaddr;
-        utcb.mrs_regs[2] = level;
-        self.0.invoke(pagetablemethod::MAP_TABLE)
+        let mut utcb = unsafe { UTCB::new() };
+        set_mrs!(utcb, table.cap().bits(), vaddr, level);
+        self.0.invoke(pagetablemethod::MAP_TABLE, &mut utcb)
     }
 }

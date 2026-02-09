@@ -1,9 +1,15 @@
 use crate::arch::mem::PGSIZE;
 use crate::arch::runtime::backtrace;
-use crate::console;
+use crate::cap::{KERNEL_CAP, KERNEL_SLOT, MONITOR_CAP};
+use crate::console::KConsole;
 use crate::console::{ANSI_RED, ANSI_RESET};
+use crate::ipc::{MsgFlags, MsgTag, UTCB};
 use crate::mem::{HEAP_SIZE, HEAP_VA};
-use crate::println_unsynced;
+use crate::println;
+use crate::protocol;
+use crate::protocol::resource::InitCap;
+use crate::set_mrs;
+use crate::sync::mutex::Mutex;
 use crate::sys::{exit, sbrk};
 use buddy_system_allocator::LockedHeap;
 use core::alloc::{GlobalAlloc, Layout};
@@ -11,6 +17,8 @@ use core::alloc::{GlobalAlloc, Layout};
 struct DynamicAllocator {
     inner: LockedHeap<32>,
 }
+
+pub static KERNEL_CONSOLE: Mutex<KConsole> = Mutex::new(KConsole::null());
 
 #[global_allocator]
 static HEAP_ALLOCATOR: DynamicAllocator = DynamicAllocator { inner: LockedHeap::empty() };
@@ -52,22 +60,10 @@ pub fn expand(size: usize) -> Result<(), ()> {
 
 #[unsafe(no_mangle)]
 unsafe extern "C" fn glenda_start() -> ! {
-    unsafe extern "C" {
-        static mut __bss_start: u8;
-        static mut __bss_end: u8;
-    }
-
-    unsafe {
-        let start = &raw mut __bss_start;
-        let end = &raw mut __bss_end;
-        let len = end as usize - start as usize;
-        core::ptr::write_bytes(start, 0, len);
-    }
-
     unsafe extern "Rust" {
         fn main() -> usize;
     }
-    console::init();
+    init_console();
     init_heap();
 
     let ret = unsafe { main() };
@@ -76,7 +72,8 @@ unsafe extern "C" fn glenda_start() -> ! {
 
 #[panic_handler]
 fn panic(info: &core::panic::PanicInfo) -> ! {
-    println_unsynced!("{}PANIC{}: {}", ANSI_RED, ANSI_RESET, info);
+    KERNEL_CONSOLE.unlock();
+    println!("\n{}PANIC{}: {}", ANSI_RED, ANSI_RESET, info);
     backtrace();
     exit(usize::MAX)
 }
@@ -85,4 +82,26 @@ pub fn init_heap() {
     unsafe {
         HEAP_ALLOCATOR.inner.lock().init(HEAP_VA, HEAP_SIZE);
     }
+}
+
+pub fn init_console() {
+    let tag = MsgTag::new(protocol::RESOURCE_PROTO, protocol::resource::GET_CAP, MsgFlags::NONE);
+    let mut ctx = unsafe { UTCB::new() };
+    set_mrs!(ctx, InitCap::Kernel as usize);
+    ctx.set_recv_window(KERNEL_SLOT);
+    ctx.set_msg_tag(tag);
+    MONITOR_CAP.call(&mut ctx).expect("Failed to get console capability");
+    KERNEL_CONSOLE.lock().initialize(KERNEL_CAP);
+    println!("Kernel console initialized.");
+}
+
+#[macro_export]
+macro_rules! print {
+    ($($arg:tt)*) => ( $crate::crt0::KERNEL_CONSOLE.lock().print(format_args!($($arg)*)) );
+}
+
+#[macro_export]
+macro_rules! println {
+    () => ($crate::print!("\n"));
+    ($($arg:tt)*) => ($crate::print!("{}\n", format_args!($($arg)*)));
 }
