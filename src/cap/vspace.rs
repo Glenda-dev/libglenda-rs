@@ -19,29 +19,34 @@ impl VSpace {
 
     pub fn map(&self, frame: Frame, vaddr: usize, perms: Perms) -> Result<(), Error> {
         let mut utcb = unsafe { UTCB::new() };
+        utcb.clear();
         set_mrs!(utcb, frame.cap().bits(), vaddr, perms.bits());
         self.0.invoke(vspacemethod::MAP, &mut utcb)
     }
 
     pub fn map_table(&self, table: PageTable, vaddr: usize, level: usize) -> Result<(), Error> {
         let mut utcb = unsafe { UTCB::new() };
+        utcb.clear();
         set_mrs!(utcb, table.cap().bits(), vaddr, level);
         self.0.invoke(vspacemethod::MAP_TABLE, &mut utcb)
     }
 
     pub fn unmap(&self, vaddr: usize, size: usize) -> Result<(), Error> {
         let mut utcb = unsafe { UTCB::new() };
+        utcb.clear();
         set_mrs!(utcb, vaddr, size);
         self.0.invoke(vspacemethod::UNMAP, &mut utcb)
     }
 
     pub fn setup(&self) -> Result<(), Error> {
         let mut utcb = unsafe { UTCB::new() };
+        utcb.clear();
         self.0.invoke(vspacemethod::SETUP, &mut utcb)
     }
 
     pub fn debug_print(&self) -> Result<(), Error> {
         let mut utcb = unsafe { UTCB::new() };
+        utcb.clear();
         self.0.invoke(vspacemethod::DEBUG_PRINT, &mut utcb)
     }
 }

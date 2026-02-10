@@ -18,6 +18,7 @@ impl BlockClient {
 impl BlockDevice for BlockClient {
     fn capacity(&self) -> u64 {
         let mut utcb = unsafe { UTCB::new() };
+        utcb.clear();
         let tag = MsgTag::new(BLOCK_PROTO, block::GET_CAPACITY, MsgFlags::NONE);
         utcb.set_msg_tag(tag);
         match self.endpoint.call(&mut utcb) {
@@ -28,6 +29,7 @@ impl BlockDevice for BlockClient {
 
     fn block_size(&self) -> u32 {
         let mut utcb = unsafe { UTCB::new() };
+        utcb.clear();
         let tag = MsgTag::new(BLOCK_PROTO, block::GET_BLOCK_SIZE, MsgFlags::NONE);
         utcb.set_msg_tag(tag);
         match self.endpoint.call(&mut utcb) {
@@ -45,6 +47,7 @@ impl BlockDevice for BlockClient {
         let mut current_sector = sector;
         let mut total_read = 0;
         let mut utcb = unsafe { UTCB::new() };
+        utcb.clear();
         let max_payload = utcb.ipc_buffer().len();
 
         // Calculate max blocks per request that fit in buffer
@@ -88,6 +91,7 @@ impl BlockDevice for BlockClient {
         let mut current_sector = sector;
         let mut total_written = 0;
         let utcb = unsafe { UTCB::new() };
+
         let max_payload = utcb.ipc_buffer().len();
 
         let blocks_per_req = max_payload / bs;
@@ -101,6 +105,7 @@ impl BlockDevice for BlockClient {
                 break;
             }
 
+            utcb.clear();
             utcb.ipc_buffer()[..chunk.len()].copy_from_slice(chunk);
 
             let tag = MsgTag::new(BLOCK_PROTO, block::WRITE_BLOCKS, MsgFlags::NONE);
@@ -121,6 +126,7 @@ impl BlockDevice for BlockClient {
     fn sync(&mut self) -> Result<(), Error> {
         let tag = MsgTag::new(BLOCK_PROTO, block::SYNC, MsgFlags::NONE);
         let mut utcb = unsafe { UTCB::new() };
+        utcb.clear();
         utcb.set_msg_tag(tag);
         self.endpoint.call(&mut utcb)
     }

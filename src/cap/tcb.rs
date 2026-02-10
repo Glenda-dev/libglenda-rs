@@ -26,6 +26,7 @@ impl TCB {
         kstack: Frame,
     ) -> Result<(), Error> {
         let mut utcb = unsafe { UTCB::new() };
+        utcb.clear();
         set_mrs!(
             utcb,
             cspace.cap().bits(),
@@ -39,34 +40,40 @@ impl TCB {
 
     pub fn set_priority(&self, priority: u8) -> Result<(), Error> {
         let mut utcb = unsafe { UTCB::new() };
+        utcb.clear();
         set_mrs!(utcb, priority as usize);
         self.0.invoke(tcbmethod::SET_PRIORITY, &mut utcb)
     }
 
     pub fn set_entrypoint(&self, pc: usize, sp: usize, tp: usize) -> Result<(), Error> {
         let mut utcb = unsafe { UTCB::new() };
+        utcb.clear();
         set_mrs!(utcb, pc, sp, tp);
         self.0.invoke(tcbmethod::SET_ENTRYPOINT, &mut utcb)
     }
 
     pub fn set_fault_handler(&self, fault_ep: Endpoint, native: bool) -> Result<(), Error> {
         let mut utcb = unsafe { UTCB::new() };
+        utcb.clear();
         set_mrs!(utcb, fault_ep.cap().bits(), native as usize);
         self.0.invoke(tcbmethod::SET_FAULT_HANDLER, &mut utcb)
     }
 
     pub fn set_registers(&self) -> Result<(), Error> {
         let mut utcb = unsafe { UTCB::new() };
+        utcb.clear();
         self.0.invoke(tcbmethod::SET_REGISTERS, &mut utcb)
     }
 
     pub fn resume(&self) -> Result<(), Error> {
         let mut utcb = unsafe { UTCB::new() };
+        utcb.clear();
         self.0.invoke(tcbmethod::RESUME, &mut utcb)
     }
 
     pub fn suspend(&self) -> Result<(), Error> {
         let mut utcb = unsafe { UTCB::new() };
+        utcb.clear();
         self.0.invoke(tcbmethod::SUSPEND, &mut utcb)
     }
 }

@@ -55,16 +55,17 @@ impl Kernel {
     }
 
     pub fn console_get_char(&self) -> char {
-        let utcb = unsafe { UTCB::new() };
-        let ret = self.0.invoke(kernelmethod::CONSOLE_GET_CHAR, utcb);
+        let mut utcb = unsafe { UTCB::new() };
+        utcb.clear();
+        let ret = self.0.invoke(kernelmethod::CONSOLE_GET_CHAR, &mut utcb);
         if ret.is_ok() { utcb.get_mr(0) as u8 as char } else { '\0' }
     }
 
     pub fn console_get_str(&self) -> Result<String, Error> {
-        let utcb = unsafe { UTCB::new() };
+        let mut utcb = unsafe { UTCB::new() };
         // 清空 UTCB 以便接收数据
         utcb.clear();
-        self.0.invoke(kernelmethod::CONSOLE_GET_STR, utcb)?;
+        self.0.invoke(kernelmethod::CONSOLE_GET_STR, &mut utcb)?;
         // MR0 contains length
         let len = utcb.get_mr(0);
         let mut buf = alloc::vec![0u8; len];
@@ -73,13 +74,15 @@ impl Kernel {
     }
 
     pub fn shell(&self) -> Result<(), Error> {
-        let utcb = unsafe { UTCB::new() };
-        self.0.invoke(kernelmethod::SHELL, utcb)
+        let mut utcb = unsafe { UTCB::new() };
+        utcb.clear();
+        self.0.invoke(kernelmethod::SHELL, &mut utcb)
     }
 
     pub fn get_time(&self) -> Result<usize, Error> {
-        let utcb = unsafe { UTCB::new() };
-        self.0.invoke(kernelmethod::GET_TIME, utcb)?;
+        let mut utcb = unsafe { UTCB::new() };
+        utcb.clear();
+        self.0.invoke(kernelmethod::GET_TIME, &mut utcb)?;
         Ok(utcb.get_mr(0))
     }
 }

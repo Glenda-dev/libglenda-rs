@@ -19,6 +19,7 @@ impl FbClient {
 impl FrameBufferDevice for FbClient {
     fn get_info(&self) -> FbInfo {
         let mut utcb = unsafe { UTCB::new() };
+        utcb.clear();
         let tag = MsgTag::new(FB_PROTO, fb::GET_INFO, MsgFlags::NONE);
         utcb.set_msg_tag(tag);
         if self.endpoint.call(&mut utcb).is_ok() {
@@ -30,6 +31,7 @@ impl FrameBufferDevice for FbClient {
 
     fn flush(&mut self, x: u32, y: u32, w: u32, h: u32) -> Result<(), Error> {
         let mut utcb = unsafe { UTCB::new() };
+        utcb.clear();
         let tag = MsgTag::new(FB_PROTO, fb::FLUSH, MsgFlags::NONE);
         set_mrs!(utcb, x, y, w, h);
         utcb.set_msg_tag(tag);

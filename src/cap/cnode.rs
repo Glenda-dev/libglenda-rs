@@ -25,30 +25,35 @@ impl CNode {
         rights: Rights,
     ) -> Result<(), Error> {
         let mut utcb = unsafe { UTCB::new() };
+        utcb.clear();
         set_mrs!(utcb, src.bits(), dest.bits(), badge.bits(), rights.bits());
         self.0.invoke(cnodemethod::MINT, &mut utcb)
     }
 
     pub fn copy(&self, src: CapPtr, dest: CapPtr, rights: Rights) -> Result<(), Error> {
         let mut utcb = unsafe { UTCB::new() };
+        utcb.clear();
         set_mrs!(utcb, src.bits(), dest.bits(), rights.bits());
         self.0.invoke(cnodemethod::COPY, &mut utcb)
     }
 
     pub fn delete(&self, cptr: CapPtr) -> Result<(), Error> {
         let mut utcb = unsafe { UTCB::new() };
+        utcb.clear();
         set_mrs!(utcb, cptr.bits());
         self.0.invoke(cnodemethod::DELETE, &mut utcb)
     }
 
     pub fn revoke(&self, cptr: CapPtr) -> Result<(), Error> {
         let mut utcb = unsafe { UTCB::new() };
+        utcb.clear();
         set_mrs!(utcb, cptr.bits());
         self.0.invoke(cnodemethod::REVOKE, &mut utcb)
     }
 
     pub fn debug_print(&self) -> Result<(), Error> {
         let mut utcb = unsafe { UTCB::new() };
+        utcb.clear();
         self.0.invoke(cnodemethod::DEBUG_PRINT, &mut utcb)
     }
 }

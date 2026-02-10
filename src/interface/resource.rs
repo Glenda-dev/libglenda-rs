@@ -1,4 +1,4 @@
-use crate::cap::{CapPtr, CapType};
+use crate::cap::{CapPtr, CapType, Frame};
 use crate::error::Error;
 use crate::ipc::Badge;
 use crate::protocol::resource::InitCap;
@@ -20,5 +20,10 @@ pub trait ResourceService {
 pub trait InitResourceService {
     fn get_cap(&self, pid: Badge, cap: InitCap, recv: CapPtr) -> Result<CapPtr, Error>;
 
-    fn map_file(&mut self, pid: Badge, name: &String, address: usize) -> Result<usize, Error>;
+    fn get_file(
+        &mut self,
+        pid: Badge,
+        name: &String,
+        recv: CapPtr,
+    ) -> Result<(Frame, usize), Error>;
 }

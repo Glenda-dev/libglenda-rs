@@ -24,6 +24,7 @@ impl Untyped {
         dest_slot: CapPtr,
     ) -> Result<(), Error> {
         let mut utcb = unsafe { UTCB::new() };
+        utcb.clear();
         set_mrs!(utcb, obj_type, flags, dest_cnode.cap().bits(), dest_slot.bits());
         self.0.invoke(untypedmethod::RETYPE, &mut utcb)
     }

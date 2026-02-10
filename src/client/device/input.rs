@@ -17,6 +17,7 @@ impl InputClient {
 impl InputDevice for InputClient {
     fn poll_event(&mut self) -> Option<InputEvent> {
         let mut utcb = unsafe { UTCB::new() };
+        utcb.clear();
         let tag = MsgTag::new(INPUT_PROTO, input::READ_EVENT, MsgFlags::NONE);
         utcb.set_msg_tag(tag);
         if self.endpoint.call(&mut utcb).is_ok() {

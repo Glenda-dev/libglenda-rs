@@ -86,11 +86,12 @@ pub fn init_heap() {
 
 pub fn init_console() {
     let tag = MsgTag::new(protocol::RESOURCE_PROTO, protocol::resource::GET_CAP, MsgFlags::NONE);
-    let mut ctx = unsafe { UTCB::new() };
-    set_mrs!(ctx, InitCap::Kernel as usize);
-    ctx.set_recv_window(KERNEL_SLOT);
-    ctx.set_msg_tag(tag);
-    let res = MONITOR_CAP.call(&mut ctx);
+    let mut utcb = unsafe { UTCB::new() };
+    utcb.clear();
+    set_mrs!(utcb, InitCap::Kernel as usize);
+    utcb.set_recv_window(KERNEL_SLOT);
+    utcb.set_msg_tag(tag);
+    let res = MONITOR_CAP.call(&mut utcb);
     if let Err(_) = res {
         exit(usize::MAX);
     }

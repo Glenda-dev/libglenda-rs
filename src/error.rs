@@ -28,8 +28,7 @@ pub enum Error {
     OutOfSlots = 22,
     NotInitialized = 23,
     DeviceError = 24,
-    HasCap = 25,
-    HasBuffer = 26,
+    InvalidConfig = 25,
     #[num_enum(default)]
     Unknown = 255,
 }

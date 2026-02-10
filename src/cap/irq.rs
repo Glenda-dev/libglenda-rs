@@ -17,11 +17,13 @@ impl IrqHandler {
 
     pub fn ack(&self) -> Result<(), Error> {
         let mut utcb = unsafe { UTCB::new() };
+        utcb.clear();
         self.0.invoke(irqmethod::ACK, &mut utcb)
     }
 
     pub fn set_notification(&self, notification: Endpoint) -> Result<(), Error> {
         let mut utcb = unsafe { UTCB::new() };
+        utcb.clear();
         utcb.set_mr(0, notification.cap().bits());
         self.0.invoke(irqmethod::SET_NOTIFICATION, &mut utcb)
     }

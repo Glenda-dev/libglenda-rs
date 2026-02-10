@@ -20,6 +20,7 @@ impl PciClient {
 impl PciDevice for PciClient {
     fn read_config(&self, offset: usize, size: usize) -> Result<u32, Error> {
         let mut utcb = unsafe { UTCB::new() };
+        utcb.clear();
         let tag = MsgTag::new(PCI_PROTO, pci::READ_CONFIG, MsgFlags::NONE);
         set_mrs!(utcb, offset, size);
         utcb.set_msg_tag(tag);
@@ -30,6 +31,7 @@ impl PciDevice for PciClient {
 
     fn write_config(&self, offset: usize, value: u32, size: usize) -> Result<(), Error> {
         let mut utcb = unsafe { UTCB::new() };
+        utcb.clear();
         let tag = MsgTag::new(PCI_PROTO, pci::WRITE_CONFIG, MsgFlags::NONE);
         set_mrs!(utcb, offset, value as usize, size);
         utcb.set_msg_tag(tag);
@@ -39,12 +41,14 @@ impl PciDevice for PciClient {
     fn enable_bus_master(&self) -> Result<(), Error> {
         let tag = MsgTag::new(PCI_PROTO, pci::ENABLE_BUS_MASTER, MsgFlags::NONE);
         let mut utcb = unsafe { UTCB::new() };
+        utcb.clear();
         utcb.set_msg_tag(tag);
         self.endpoint.call(&mut utcb)
     }
 
     fn enable_msi(&self, vector: u8, dest_id: u32) -> Result<(), Error> {
         let mut utcb = unsafe { UTCB::new() };
+        utcb.clear();
         let tag = MsgTag::new(PCI_PROTO, pci::ENABLE_MSI, MsgFlags::NONE);
         set_mrs!(utcb, vector as usize, dest_id as usize);
         utcb.set_msg_tag(tag);

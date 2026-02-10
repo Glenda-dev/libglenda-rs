@@ -11,7 +11,7 @@ pub const MUNMAP: usize = 0x21;
 pub const SBRK: usize = 0x22;
 // Init resources
 pub const GET_CAP: usize = 0x30;
-pub const MAP_FILE: usize = 0x31;
+pub const GET_FILE: usize = 0x31;
 
 use num_enum::FromPrimitive;
 

@@ -18,6 +18,7 @@ impl PageTable {
 
     pub fn map_table(&self, table: PageTable, vaddr: usize, level: usize) -> Result<(), Error> {
         let mut utcb = unsafe { UTCB::new() };
+        utcb.clear();
         set_mrs!(utcb, table.cap().bits(), vaddr, level);
         self.0.invoke(pagetablemethod::MAP_TABLE, &mut utcb)
     }

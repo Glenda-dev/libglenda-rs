@@ -18,6 +18,7 @@ impl NetClient {
 impl NetDevice for NetClient {
     fn mac_address(&self) -> MacAddress {
         let mut utcb = unsafe { UTCB::new() };
+        utcb.clear();
         let tag = MsgTag::new(NET_PROTO, net::GET_MAC, MsgFlags::NONE);
         utcb.set_msg_tag(tag);
 
@@ -30,6 +31,7 @@ impl NetDevice for NetClient {
 
     fn send(&mut self, buf: &[u8]) -> Result<(), Error> {
         let mut utcb = unsafe { UTCB::new() };
+        utcb.clear();
         let tag = MsgTag::new(NET_PROTO, net::SEND, MsgFlags::NONE);
         utcb.set_msg_tag(tag);
         utcb.write(buf);
@@ -38,6 +40,7 @@ impl NetDevice for NetClient {
 
     fn recv(&mut self, buf: &mut [u8]) -> Result<usize, Error> {
         let mut utcb = unsafe { UTCB::new() };
+        utcb.clear();
         let tag = MsgTag::new(NET_PROTO, net::RECV, MsgFlags::NONE);
         utcb.set_msg_tag(tag);
         self.endpoint.call(&mut utcb)?;

@@ -97,6 +97,21 @@ impl UTCB {
         self.set_size(core::cmp::min(len, IPC_BUFFER_SIZE));
     }
 
+    pub fn clear(&mut self) {
+        unsafe {
+            write_volatile(&mut self.msg_tag, MsgTag::empty());
+            for i in 0..MAX_MRS {
+                write_volatile(&mut self.mrs_regs[i], 0);
+            }
+            write_volatile(&mut self.cap_transfer, CapPtr::null());
+            write_volatile(&mut self.recv_window, CapPtr::null());
+            write_volatile(&mut self.reply_window, CapPtr::null());
+            write_volatile(&mut self.badge, Badge::null());
+            write_volatile(&mut self.head, 0);
+            write_volatile(&mut self.size, 0);
+        }
+    }
+
     pub fn get_recv_window(&self) -> CapPtr {
         unsafe { read_volatile(&self.recv_window) }
     }
@@ -131,20 +146,6 @@ impl UTCB {
 
     pub fn buffer(&self) -> &[u8] {
         &self.ipc_buffer[..self.get_size()]
-    }
-
-    pub fn clear(&mut self) {
-        unsafe {
-            write_volatile(&mut self.msg_tag, MsgTag::empty());
-            for i in 0..MAX_MRS {
-                write_volatile(&mut self.mrs_regs[i], 0);
-            }
-            write_volatile(&mut self.cap_transfer, CapPtr::null());
-            write_volatile(&mut self.recv_window, CapPtr::null());
-            write_volatile(&mut self.reply_window, CapPtr::null());
-            write_volatile(&mut self.head, 0);
-            write_volatile(&mut self.size, 0);
-        }
     }
 
     pub fn available_data(&self) -> usize {

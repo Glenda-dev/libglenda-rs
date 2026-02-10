@@ -14,16 +14,17 @@ pub fn park() {
     let ep = current_thread_park_endpoint();
     // Block receiving a message. We use a null reply/badge slot as we don't expect complex IPC.
     // In a real loop we might handle spurious wakeups.
-    let mut ctx = unsafe { UTCB::new() };
-    let _ = ep.recv(&mut ctx);
+    let mut utcb = unsafe { UTCB::new() };
+    let _ = ep.recv(&mut utcb);
 }
 
 /// Unpark a specific thread via its endpoint.
 pub fn unpark(endpoint: Endpoint) {
     let tag = MsgTag::new(0, 0, MsgFlags::NONE);
-    let mut ctx = unsafe { UTCB::new() };
-    ctx.set_msg_tag(tag);
-    let _ = endpoint.send(&mut ctx);
+    let mut utcb = unsafe { UTCB::new() };
+    utcb.clear();
+    utcb.set_msg_tag(tag);
+    let _ = endpoint.send(&mut utcb);
 }
 
 // Placeholder for referencing the current thread's parker endpoint.

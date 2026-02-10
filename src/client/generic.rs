@@ -20,6 +20,7 @@ impl GeneralService for GeneralClient {
     fn ping(&mut self, value: usize) -> Result<usize, Error> {
         let tag = MsgTag::new(GENERIC_PROTO, generic::PING, MsgFlags::NONE);
         let utcb = unsafe { UTCB::new() };
+        utcb.clear();
         set_mrs!(utcb, value);
         utcb.set_msg_tag(tag);
         self.endpoint.call(utcb)?;
@@ -29,6 +30,7 @@ impl GeneralService for GeneralClient {
     fn share_memory(&mut self, cap: CapPtr) -> Result<(), Error> {
         let tag = MsgTag::new(GENERIC_PROTO, generic::SHARE_MEMORY, MsgFlags::NONE);
         let utcb = unsafe { UTCB::new() };
+        utcb.clear();
         utcb.set_cap_transfer(cap);
         utcb.set_msg_tag(tag);
         self.endpoint.call(utcb)?;
@@ -38,6 +40,7 @@ impl GeneralService for GeneralClient {
     fn send_message(&mut self, message: &str) -> Result<(), Error> {
         let tag = MsgTag::new(GENERIC_PROTO, generic::SEND_MESSAGE, MsgFlags::NONE);
         let utcb = unsafe { UTCB::new() };
+        utcb.clear();
         unsafe { utcb.write_str(message)? };
         utcb.set_msg_tag(tag);
         self.endpoint.call(utcb)?;

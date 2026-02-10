@@ -1,6 +1,6 @@
-use crate::cap::{CapPtr, CapType, Endpoint};
+use crate::cap::{CapPtr, CapType, Endpoint, Frame};
 use crate::error::Error;
-use crate::interface::{InitResourceService, ResourceService};
+use crate::interface::{InitResourceService, MemoryService, ResourceService};
 use crate::ipc::{Badge, MsgFlags, MsgTag, UTCB};
 use crate::protocol::{RESOURCE_PROTO, resource};
 use crate::set_mrs;
@@ -28,6 +28,7 @@ impl ResourceService for ResourceClient {
 
         // Use CALL to wait for response
         let mut utcb = unsafe { UTCB::new() };
+        utcb.clear();
         set_mrs!(utcb, obj_type, flags);
         utcb.set_msg_tag(tag);
         utcb.set_recv_window(recv);
@@ -43,6 +44,7 @@ impl ResourceService for ResourceClient {
         let tag = MsgTag::new(RESOURCE_PROTO, resource::FREE, MsgFlags::NONE);
 
         let mut utcb = unsafe { UTCB::new() };
+        utcb.clear();
 
         set_mrs!(utcb, cap.bits());
         utcb.set_msg_tag(tag);
@@ -56,20 +58,59 @@ impl InitResourceService for ResourceClient {
     fn get_cap(&self, _pid: Badge, cap: resource::InitCap, recv: CapPtr) -> Result<CapPtr, Error> {
         let tag = MsgTag::new(RESOURCE_PROTO, resource::GET_CAP, MsgFlags::NONE);
         let mut utcb = unsafe { UTCB::new() };
+        utcb.clear();
         set_mrs!(utcb, cap as usize);
         utcb.set_recv_window(recv);
         utcb.set_msg_tag(tag);
         self.endpoint.call(&mut utcb)?;
         Ok(utcb.get_recv_window())
     }
-    fn map_file(&mut self, _pid: Badge, name: &String, address: usize) -> Result<usize, Error> {
-        let tag = MsgTag::new(RESOURCE_PROTO, resource::MAP_FILE, MsgFlags::NONE);
+    fn get_file(
+        &mut self,
+        _pid: Badge,
+        name: &String,
+        recv: CapPtr,
+    ) -> Result<(Frame, usize), Error> {
+        let tag = MsgTag::new(RESOURCE_PROTO, resource::GET_FILE, MsgFlags::NONE);
         let mut utcb = unsafe { UTCB::new() };
+        utcb.clear();
+        set_mrs!(utcb, name.as_ptr() as usize, name.len());
+        utcb.set_recv_window(recv);
         utcb.set_msg_tag(tag);
-        unsafe { utcb.write_str(name)? };
-        utcb.set_mr(0, address);
         self.endpoint.call(&mut utcb)?;
+        let frame = Frame::from(recv);
         let size = utcb.get_mr(0);
-        Ok(size)
+        Ok((frame, size))
+    }
+}
+
+impl MemoryService for ResourceClient {
+    fn brk(&mut self, _pid: Badge, increment: isize) -> Result<usize, Error> {
+        let tag = MsgTag::new(RESOURCE_PROTO, resource::SBRK, MsgFlags::NONE);
+        let mut utcb = unsafe { UTCB::new() };
+        utcb.clear();
+        set_mrs!(utcb, increment as usize);
+        utcb.set_msg_tag(tag);
+        self.endpoint.call(&mut utcb)?;
+        let new_brk = utcb.get_mr(0);
+        Ok(new_brk)
+    }
+    fn mmap(&mut self, _pid: Badge, frame: Frame, addr: usize, len: usize) -> Result<usize, Error> {
+        let tag = MsgTag::new(RESOURCE_PROTO, resource::MMAP, MsgFlags::NONE);
+        let mut utcb = unsafe { UTCB::new() };
+        utcb.clear();
+        set_mrs!(utcb, frame.cap().bits(), addr, len);
+        utcb.set_msg_tag(tag);
+        self.endpoint.call(&mut utcb)?;
+        let new_addr = utcb.get_mr(0);
+        Ok(new_addr)
+    }
+    fn munmap(&mut self, _pid: Badge, addr: usize, len: usize) -> Result<(), Error> {
+        let tag = MsgTag::new(RESOURCE_PROTO, resource::MUNMAP, MsgFlags::NONE);
+        let mut utcb = unsafe { UTCB::new() };
+        set_mrs!(utcb, addr, len);
+        utcb.set_msg_tag(tag);
+        self.endpoint.call(&mut utcb)?;
+        Ok(())
     }
 }

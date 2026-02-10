@@ -17,6 +17,7 @@ impl UartClient {
 impl UartDevice for UartClient {
     fn put_char(&mut self, c: u8) {
         let mut utcb = unsafe { UTCB::new() };
+        utcb.clear();
         let tag = MsgTag::new(UART_PROTO, uart::PUT_CHAR, MsgFlags::NONE);
         utcb.set_msg_tag(tag);
         utcb.set_mr(0, c as usize);
@@ -26,6 +27,7 @@ impl UartDevice for UartClient {
 
     fn get_char(&mut self) -> Option<u8> {
         let mut utcb = unsafe { UTCB::new() };
+        utcb.clear();
         let tag = MsgTag::new(UART_PROTO, uart::GET_CHAR, MsgFlags::NONE);
         utcb.set_msg_tag(tag);
 
@@ -39,6 +41,7 @@ impl UartDevice for UartClient {
         let bytes = s.as_bytes();
         for chunk in bytes.chunks(IPC_BUFFER_SIZE) {
             let mut utcb = unsafe { UTCB::new() };
+            utcb.clear();
             let buf = &mut utcb.ipc_buffer();
             buf[..chunk.len()].copy_from_slice(chunk);
             let tag = MsgTag::new(UART_PROTO, uart::PUT_STR, MsgFlags::NONE);

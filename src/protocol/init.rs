@@ -11,7 +11,7 @@ pub const LIST: usize = 0x06;
 pub const REPORT: usize = 0x10;
 
 #[repr(C)]
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ServiceStatus {
     pub name: String,
     pub running: ServiceState,

@@ -12,11 +12,12 @@ pub const MONITOR_CAP: Endpoint = Endpoint::from(MONITOR_SLOT);
 
 pub fn sbrk(size: usize) -> Result<usize, ()> {
     let tag = MsgTag::new(protocol::RESOURCE_PROTO, protocol::resource::SBRK, MsgFlags::NONE);
-    let mut ctx = unsafe { UTCB::new() };
-    set_mrs!(ctx, size);
-    ctx.set_msg_tag(tag);
-    if MONITOR_CAP.call(&mut ctx).is_ok() {
-        let ret = ctx.get_mr(0);
+    let mut utcb = unsafe { UTCB::new() };
+    utcb.clear();
+    set_mrs!(utcb, size);
+    utcb.set_msg_tag(tag);
+    if MONITOR_CAP.call(&mut utcb).is_ok() {
+        let ret = utcb.get_mr(0);
         if ret > 0 { Ok(ret) } else { Err(()) }
     } else {
         Err(())
@@ -25,10 +26,11 @@ pub fn sbrk(size: usize) -> Result<usize, ()> {
 
 pub fn exit(code: usize) -> ! {
     let tag = MsgTag::new(protocol::PROCESS_PROTO, protocol::process::EXIT, MsgFlags::NONE);
-    let mut ctx = unsafe { UTCB::new() };
-    set_mrs!(ctx, code);
-    ctx.set_msg_tag(tag);
-    let _ = MONITOR_CAP.send(&mut ctx);
+    let mut utcb = unsafe { UTCB::new() };
+    utcb.clear();
+    set_mrs!(utcb, code);
+    utcb.set_msg_tag(tag);
+    let _ = MONITOR_CAP.send(&mut utcb);
     print!("Failed to exit with code {}", code);
     loop {
         unsafe {
