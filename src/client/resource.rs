@@ -65,12 +65,19 @@ impl InitResourceService for ResourceClient {
         Ok(utcb.get_recv_window())
     }
     fn get_file(&mut self, _pid: Badge, name: &str, recv: CapPtr) -> Result<(Frame, usize), Error> {
-        let tag = MsgTag::new(RESOURCE_PROTO, resource::GET_FILE, MsgFlags::NONE);
         let mut utcb = unsafe { UTCB::new() };
         utcb.clear();
-        set_mrs!(utcb, name.as_ptr() as usize, name.len());
+
+        // Serialize string to IPC buffer
+        unsafe {
+            utcb.write_str(name)?;
+        }
+
+        // Set tag with HAS_BUFFER to enable kernel copy
+        let tag = MsgTag::new(RESOURCE_PROTO, resource::GET_FILE, MsgFlags::HAS_BUFFER);
         utcb.set_recv_window(recv);
         utcb.set_msg_tag(tag);
+
         self.endpoint.call(&mut utcb)?;
         let frame = Frame::from(recv);
         let size = utcb.get_mr(0);
