@@ -98,6 +98,13 @@ pub trait GpioDevice {
     fn read(&self, pin: u32) -> Result<bool, Error>;
 }
 
+/// TimerDevice provides time and alarm services.
+pub trait TimerDevice {
+    fn get_time(&self) -> u64;
+    fn set_alarm(&mut self, timestamp: u64) -> Result<(), Error>;
+    fn stop_alarm(&mut self) -> Result<(), Error>;
+}
+
 /// RngDevice provides random numbers.
 pub trait RngDevice {
     fn get_random_bytes(&mut self, buf: &mut [u8]) -> Result<usize, Error>;
