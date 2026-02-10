@@ -5,11 +5,11 @@ use alloc::string::String;
 use alloc::vec::Vec;
 
 pub trait InitService {
-    fn start_service(&mut self, service: &String) -> Result<(), Error>;
-    fn stop_service(&mut self, service: &String) -> Result<(), Error>;
-    fn restart_service(&mut self, service: &String) -> Result<(), Error>;
-    fn reload_service(&mut self, service: &String) -> Result<(), Error>;
-    fn query_service(&self, service: &String) -> Result<ServiceStatus, Error>;
+    fn start_service(&mut self, service: &str) -> Result<(), Error>;
+    fn stop_service(&mut self, service: &str) -> Result<(), Error>;
+    fn restart_service(&mut self, service: &str) -> Result<(), Error>;
+    fn reload_service(&mut self, service: &str) -> Result<(), Error>;
+    fn query_service(&self, service: &str) -> Result<ServiceStatus, Error>;
     fn report_service(&mut self, badge: Badge, stat: ServiceState) -> Result<(), Error>;
     fn list_services(&self) -> Result<Vec<(String, ServiceStatus)>, Error>;
 }

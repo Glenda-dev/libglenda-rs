@@ -20,48 +20,48 @@ impl InitClient {
 }
 
 impl InitService for InitClient {
-    fn start_service(&mut self, service: &String) -> Result<(), Error> {
+    fn start_service(&mut self, service: &str) -> Result<(), Error> {
         let tag = MsgTag::new(INIT_PROTO, init::START, MsgFlags::NONE);
         let mut utcb = unsafe { UTCB::new() };
         utcb.clear();
-        unsafe { utcb.write_str(service.as_str())? };
+        unsafe { utcb.write_str(service)? };
         utcb.set_msg_tag(tag);
         self.endpoint.call(&mut utcb)
     }
 
-    fn stop_service(&mut self, service: &String) -> Result<(), Error> {
+    fn stop_service(&mut self, service: &str) -> Result<(), Error> {
         let tag = MsgTag::new(INIT_PROTO, init::STOP, MsgFlags::NONE);
         let mut utcb = unsafe { UTCB::new() };
         utcb.clear();
-        unsafe { utcb.write_str(service.as_str())? };
+        unsafe { utcb.write_str(service)? };
         utcb.set_msg_tag(tag);
         self.endpoint.call(&mut utcb)
     }
 
-    fn restart_service(&mut self, service: &String) -> Result<(), Error> {
+    fn restart_service(&mut self, service: &str) -> Result<(), Error> {
         let tag = MsgTag::new(INIT_PROTO, init::RESTART, MsgFlags::NONE);
         let mut utcb = unsafe { UTCB::new() };
         utcb.clear();
-        unsafe { utcb.write_str(service.as_str())? };
+        unsafe { utcb.write_str(service)? };
         utcb.set_msg_tag(tag);
 
         self.endpoint.call(&mut utcb)
     }
 
-    fn reload_service(&mut self, service: &String) -> Result<(), Error> {
+    fn reload_service(&mut self, service: &str) -> Result<(), Error> {
         let tag = MsgTag::new(INIT_PROTO, init::RELOAD, MsgFlags::NONE);
         let mut utcb = unsafe { UTCB::new() };
         utcb.clear();
-        unsafe { utcb.write_str(service.as_str())? };
+        unsafe { utcb.write_str(service)? };
         utcb.set_msg_tag(tag);
         self.endpoint.call(&mut utcb)
     }
 
-    fn query_service(&self, service: &String) -> Result<ServiceStatus, Error> {
+    fn query_service(&self, service: &str) -> Result<ServiceStatus, Error> {
         let tag = MsgTag::new(INIT_PROTO, init::QUERY, MsgFlags::NONE);
         let mut utcb = unsafe { UTCB::new() };
         utcb.clear();
-        unsafe { utcb.write_str(service.as_str())? };
+        unsafe { utcb.write_str(service)? };
         utcb.set_msg_tag(tag);
 
         self.endpoint.call(&mut utcb)?;

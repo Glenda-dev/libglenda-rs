@@ -1,13 +1,12 @@
 use crate::cap::{CNode, CapPtr};
 use crate::error::Error;
 use crate::ipc::{Badge, UTCB};
-use alloc::string::String;
 
 /// ProcessService provides high-level process control.
 pub trait ProcessService {
     fn get_pid(&mut self, pid: Badge) -> Result<usize, Error>;
     fn get_ppid(&mut self, pid: Badge) -> Result<usize, Error>;
-    fn spawn(&mut self, pid: Badge, name: String) -> Result<usize, Error>;
+    fn spawn(&mut self, pid: Badge, name: &str) -> Result<usize, Error>;
     fn fork(&mut self, pid: Badge) -> Result<usize, Error>;
     fn exit(&mut self, pid: Badge, code: usize) -> Result<(), Error>;
     fn kill(&mut self, pid: Badge, target: usize) -> Result<(), Error>;

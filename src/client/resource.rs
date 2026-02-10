@@ -4,7 +4,6 @@ use crate::interface::{InitResourceService, MemoryService, ResourceService};
 use crate::ipc::{Badge, MsgFlags, MsgTag, UTCB};
 use crate::protocol::{RESOURCE_PROTO, resource};
 use crate::set_mrs;
-use alloc::string::String;
 
 pub struct ResourceClient {
     endpoint: Endpoint,
@@ -65,12 +64,7 @@ impl InitResourceService for ResourceClient {
         self.endpoint.call(&mut utcb)?;
         Ok(utcb.get_recv_window())
     }
-    fn get_file(
-        &mut self,
-        _pid: Badge,
-        name: &String,
-        recv: CapPtr,
-    ) -> Result<(Frame, usize), Error> {
+    fn get_file(&mut self, _pid: Badge, name: &str, recv: CapPtr) -> Result<(Frame, usize), Error> {
         let tag = MsgTag::new(RESOURCE_PROTO, resource::GET_FILE, MsgFlags::NONE);
         let mut utcb = unsafe { UTCB::new() };
         utcb.clear();

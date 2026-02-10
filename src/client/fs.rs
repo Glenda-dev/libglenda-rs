@@ -60,10 +60,7 @@ impl FileSystemService for FsClient {
         let tag = MsgTag::new(FS_PROTO, fs::RENAME, MsgFlags::NONE);
         let utcb = unsafe { UTCB::new() };
         utcb.clear();
-        // Simple marshaling: old_path\0new_path
-        utcb.write(old_path.as_bytes());
-        utcb.append(&[0]);
-        utcb.append(new_path.as_bytes());
+        unsafe { utcb.write_postcard(&(old_path, new_path))? };
         utcb.set_msg_tag(tag);
         self.endpoint.call(utcb)?;
         Ok(())

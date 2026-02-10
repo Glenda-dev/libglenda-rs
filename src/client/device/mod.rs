@@ -6,7 +6,6 @@ use crate::protocol::DEVICE_PROTO;
 use crate::protocol::device::{self, DeviceNode};
 use crate::set_mrs;
 use crate::utils::platform::PlatformInfo;
-use alloc::string::String;
 
 pub mod block;
 pub mod fb;
@@ -36,11 +35,11 @@ impl DeviceService for DeviceClient {
         self.endpoint.call(&mut utcb)
     }
 
-    fn find_compatible(&self, _badge: Badge, compat: String) -> Result<DeviceNode, Error> {
+    fn find_compatible(&self, _badge: Badge, compat: &str) -> Result<DeviceNode, Error> {
         let mut utcb = unsafe { UTCB::new() };
 
         unsafe {
-            utcb.write_str(compat.as_str())?;
+            utcb.write_str(compat)?;
         }
 
         let tag = MsgTag::new(DEVICE_PROTO, device::FIND_COMPATIBLE, MsgFlags::NONE);

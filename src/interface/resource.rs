@@ -2,7 +2,6 @@ use crate::cap::{CapPtr, CapType, Frame};
 use crate::error::Error;
 use crate::ipc::Badge;
 use crate::protocol::resource::InitCap;
-use alloc::string::String;
 
 /// ResourceHelper is responsible for allocating kernel objects from untyped memory.
 pub trait ResourceService {
@@ -20,10 +19,5 @@ pub trait ResourceService {
 pub trait InitResourceService {
     fn get_cap(&self, pid: Badge, cap: InitCap, recv: CapPtr) -> Result<CapPtr, Error>;
 
-    fn get_file(
-        &mut self,
-        pid: Badge,
-        name: &String,
-        recv: CapPtr,
-    ) -> Result<(Frame, usize), Error>;
+    fn get_file(&mut self, pid: Badge, name: &str, recv: CapPtr) -> Result<(Frame, usize), Error>;
 }

@@ -57,6 +57,14 @@ impl UTCB {
         unsafe { write_volatile(&mut self.msg_tag, tag) }
     }
 
+    pub fn error_check(&self) -> Result<(), Error> {
+        let tag = self.get_msg_tag();
+        if !tag.flags().contains(super::MsgFlags::OK) {
+            return Err(Error::from(self.get_mr(0)));
+        }
+        Ok(())
+    }
+
     pub fn get_mr(&self, index: usize) -> usize {
         if index < MAX_MRS { unsafe { read_volatile(&self.mrs_regs[index]) } } else { 0 }
     }
@@ -164,15 +172,6 @@ impl UTCB {
         len
     }
 
-    pub fn append(&mut self, data: &[u8]) -> usize {
-        let len = core::cmp::min(data.len(), self.available_space());
-        if len > 0 {
-            self.ipc_buffer[self.size..self.size + len].copy_from_slice(&data[..len]);
-            self.size += len;
-        }
-        len
-    }
-
     pub fn read(&mut self, data: &mut [u8]) -> usize {
         let len = core::cmp::min(data.len(), self.available_data());
         if len > 0 {
@@ -186,7 +185,7 @@ impl UTCB {
         let size = core::mem::size_of::<T>();
 
         // 检查缓冲区空间是否足够
-        if self.available_space() < size {
+        if IPC_BUFFER_SIZE < size {
             return Err(Error::BufferOverflow);
         }
 
@@ -194,10 +193,11 @@ impl UTCB {
         let ptr = obj as *const T as *const u8;
         let slice = unsafe { core::slice::from_raw_parts(ptr, size) };
 
-        // 使用 append 确保不会覆盖之前的数据
-        let written = self.append(slice);
+        self.ipc_buffer[..size].copy_from_slice(slice);
+        self.size = size;
+        self.head = 0;
 
-        if written == size { Ok(written) } else { Err(Error::BufferOverflow) }
+        Ok(size)
     }
 
     /// 从 IPC 缓冲区反序列化读取对象
@@ -225,24 +225,25 @@ impl UTCB {
     pub unsafe fn write_vec<T: Sized + Copy>(&mut self, data: &[T]) -> Result<usize, Error> {
         let len = data.len();
         let size_bytes = len * core::mem::size_of::<T>();
+        let total_size = core::mem::size_of::<usize>() + size_bytes;
 
-        if self.available_space() < core::mem::size_of::<usize>() + size_bytes {
+        if total_size > IPC_BUFFER_SIZE {
             return Err(Error::BufferOverflow);
         }
 
         // 写入长度
-        (unsafe { self.write_obj(&len) })?;
+        let len_bytes = len.to_le_bytes();
+        self.ipc_buffer[..core::mem::size_of::<usize>()].copy_from_slice(&len_bytes);
 
         // 写入数据
         let ptr = data.as_ptr() as *const u8;
         let slice = unsafe { core::slice::from_raw_parts(ptr, size_bytes) };
-        let written = self.append(slice);
+        self.ipc_buffer[core::mem::size_of::<usize>()..total_size].copy_from_slice(slice);
 
-        if written == size_bytes {
-            Ok(core::mem::size_of::<usize>() + written)
-        } else {
-            Err(Error::BufferOverflow)
-        }
+        self.size = total_size;
+        self.head = 0;
+
+        Ok(total_size)
     }
 
     pub unsafe fn read_vec<T: Sized + Copy>(&mut self) -> Result<Vec<T>, Error> {

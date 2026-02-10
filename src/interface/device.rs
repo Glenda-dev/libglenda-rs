@@ -8,12 +8,11 @@ use crate::protocol::device::pci::PciAddress;
 use crate::protocol::device::usb::UsbSetupPacket;
 use crate::protocol::device::wifi::WifiApInfo;
 use crate::utils::platform::PlatformInfo;
-use alloc::string::String;
 
 /// DeviceService provides hardware discovery and management.
 pub trait DeviceService {
     fn scan_platform(&mut self, badge: Badge, info: &PlatformInfo) -> Result<(), Error>;
-    fn find_compatible(&self, badge: Badge, compat: String) -> Result<DeviceNode, Error>;
+    fn find_compatible(&self, badge: Badge, compat: &str) -> Result<DeviceNode, Error>;
 }
 
 /// DmaService provides DMA-safe memory allocation.
