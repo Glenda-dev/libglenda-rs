@@ -55,7 +55,12 @@ bitflags! {
 impl Display for MsgFlags {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         let mut first = true;
-        let perms = [(MsgFlags::OK, "OK"), (MsgFlags::ERROR, "ERROR")];
+        let perms = [
+            (MsgFlags::OK, "OK"),
+            (MsgFlags::ERROR, "ERROR"),
+            (MsgFlags::HAS_CAP, "HAS_CAP"),
+            (MsgFlags::HAS_BUFFER, "HAS_BUFFER"),
+        ];
         for (bit, name) in perms.iter() {
             if self.contains(*bit) {
                 if !first {

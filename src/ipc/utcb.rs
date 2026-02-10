@@ -101,6 +101,14 @@ impl UTCB {
         unsafe { write_volatile(&mut self.size, size) }
     }
 
+    pub fn get_head(&self) -> usize {
+        unsafe { read_volatile(&self.head) }
+    }
+
+    pub fn set_head(&mut self, head: usize) {
+        unsafe { write_volatile(&mut self.head, head) }
+    }
+
     pub fn set_buffer_len(&mut self, len: usize) {
         self.set_size(core::cmp::min(len, IPC_BUFFER_SIZE));
     }
@@ -138,6 +146,10 @@ impl UTCB {
 
     pub fn get_cap_transfer(&self) -> CapPtr {
         unsafe { read_volatile(&self.cap_transfer) }
+    }
+
+    pub fn get_buffer_ptr(&mut self) -> *mut u8 {
+        self.ipc_buffer.as_mut_ptr()
     }
 
     pub fn set_cap_transfer(&mut self, cap: CapPtr) {

@@ -150,6 +150,7 @@ pub const UNTYPED_SLOT: CapPtr = CapPtr::from(7);
 pub const MMIO_SLOT: CapPtr = CapPtr::from(8);
 pub const IRQ_SLOT: CapPtr = CapPtr::from(9);
 pub const REPLY_SLOT: CapPtr = CapPtr::from(10);
+pub const RECV_SLOT: CapPtr = CapPtr::from(11);
 
 pub const CSPACE_CAP: CNode = CNode::from(CSPACE_SLOT);
 pub const VSPACE_CAP: VSpace = VSpace::from(VSPACE_SLOT);

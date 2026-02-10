@@ -36,7 +36,7 @@ impl ProcessService for ProcessClient {
     }
 
     fn spawn(&mut self, _pid: Badge, name: &str) -> Result<usize, Error> {
-        let tag = MsgTag::new(PROCESS_PROTO, process::SPAWN, MsgFlags::NONE);
+        let tag = MsgTag::new(PROCESS_PROTO, process::SPAWN, MsgFlags::HAS_BUFFER);
         let mut utcb = unsafe { UTCB::new() };
         utcb.clear();
         unsafe { utcb.write_str(name)? };

@@ -97,9 +97,10 @@ impl MemoryService for ResourceClient {
         Ok(new_brk)
     }
     fn mmap(&mut self, _pid: Badge, frame: Frame, addr: usize, len: usize) -> Result<usize, Error> {
-        let tag = MsgTag::new(RESOURCE_PROTO, resource::MMAP, MsgFlags::NONE);
+        let tag = MsgTag::new(RESOURCE_PROTO, resource::MMAP, MsgFlags::HAS_CAP);
         let mut utcb = unsafe { UTCB::new() };
         utcb.clear();
+        utcb.set_cap_transfer(frame.cap());
         set_mrs!(utcb, frame.cap().bits(), addr, len);
         utcb.set_msg_tag(tag);
         self.endpoint.call(&mut utcb)?;
