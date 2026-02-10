@@ -77,7 +77,7 @@ impl UntypedService for UntypedManager {
                         // This block is out of memory, try next block
                         continue;
                     }
-                    Err(Error::InvalidSlot) => return Err(Error::InvalidCap),
+                    Err(Error::InvalidSlot) => return Err(Error::InvalidCapability),
                     Err(_) => {
                         return Err(Error::OutOfMemory);
                     }

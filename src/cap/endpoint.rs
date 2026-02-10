@@ -21,8 +21,7 @@ impl Endpoint {
     }
 
     pub fn recv(&self, utcb: &mut UTCB) -> Result<(), Error> {
-        self.0.invoke(ipcmethod::RECV, utcb)?;
-        utcb.error_check()
+        self.0.invoke(ipcmethod::RECV, utcb)
     }
 
     pub fn call(&self, utcb: &mut UTCB) -> Result<(), Error> {

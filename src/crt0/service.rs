@@ -3,6 +3,7 @@ use crate::arch::runtime::backtrace;
 use crate::cap::{KERNEL_CAP, KERNEL_SLOT, MONITOR_CAP};
 use crate::console::KConsole;
 use crate::console::{ANSI_RED, ANSI_RESET};
+use crate::error::Error;
 use crate::ipc::{MsgFlags, MsgTag, UTCB};
 use crate::mem::{HEAP_SIZE, HEAP_VA};
 use crate::println;
@@ -33,11 +34,15 @@ unsafe impl GlobalAlloc for DynamicAllocator {
         // 第一次分配失败，尝试扩展堆
         // 扩展大小建议至少为 layout 的尺寸与页大小（4KB）的较大值
         let expand_size = layout.size().max(PGSIZE);
-        if expand(expand_size).is_ok() {
-            // 扩展成功后重试分配
-            unsafe { self.inner.alloc(layout) }
-        } else {
-            core::ptr::null_mut()
+        match expand(expand_size) {
+            Ok(()) => {
+                // 扩展成功后重试分配
+                unsafe { self.inner.alloc(layout) }
+            }
+            Err(e) => {
+                println!("Failed to expand heap: {:?}", e);
+                core::ptr::null_mut()
+            }
         }
     }
 
@@ -47,15 +52,12 @@ unsafe impl GlobalAlloc for DynamicAllocator {
 }
 
 /// 动态扩展堆内存
-pub fn expand(size: usize) -> Result<(), ()> {
-    if let Ok(old_break) = sbrk(size) {
-        unsafe {
-            HEAP_ALLOCATOR.inner.lock().add_to_heap(old_break, old_break + size);
-        }
-        Ok(())
-    } else {
-        Err(())
+pub fn expand(size: usize) -> Result<(), Error> {
+    let old_break = sbrk(size).map_err(|_| Error::OutOfMemory)?;
+    unsafe {
+        HEAP_ALLOCATOR.inner.lock().add_to_heap(old_break, old_break + size);
     }
+    Ok(())
 }
 
 #[unsafe(no_mangle)]

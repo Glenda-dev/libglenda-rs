@@ -186,7 +186,7 @@ impl UTCB {
 
         // 检查缓冲区空间是否足够
         if IPC_BUFFER_SIZE < size {
-            return Err(Error::BufferOverflow);
+            return Err(Error::MessageTooLong);
         }
 
         // 将结构体指针转换为字节切片
@@ -208,7 +208,7 @@ impl UTCB {
         let size = core::mem::size_of::<T>();
 
         if self.available_data() < size {
-            return Err(Error::BufferOverflow);
+            return Err(Error::MessageTooLong);
         }
 
         let mut obj = MaybeUninit::<T>::uninit();
@@ -218,7 +218,7 @@ impl UTCB {
         if self.read(slice) == size {
             Ok(unsafe { obj.assume_init() })
         } else {
-            Err(Error::BufferOverflow)
+            Err(Error::MessageTooLong)
         }
     }
 
@@ -228,7 +228,7 @@ impl UTCB {
         let total_size = core::mem::size_of::<usize>() + size_bytes;
 
         if total_size > IPC_BUFFER_SIZE {
-            return Err(Error::BufferOverflow);
+            return Err(Error::MessageTooLong);
         }
 
         // 写入长度
@@ -252,7 +252,7 @@ impl UTCB {
 
         let size_bytes = len * core::mem::size_of::<T>();
         if self.available_data() < size_bytes {
-            return Err(Error::BufferOverflow);
+            return Err(Error::MessageTooLong);
         }
 
         let mut vec: Vec<T> = Vec::with_capacity(len);
@@ -265,18 +265,18 @@ impl UTCB {
             }
             Ok(vec)
         } else {
-            Err(Error::BufferOverflow)
+            Err(Error::MessageTooLong)
         }
     }
 
     pub unsafe fn write_postcard<T: Serialize>(&mut self, obj: &T) -> Result<usize, Error> {
-        let vec = postcard::to_allocvec(obj).map_err(|_| Error::InvalidObjType)?;
+        let vec = postcard::to_allocvec(obj).map_err(|_| Error::InvalidType)?;
         unsafe { self.write_vec(&vec) }
     }
 
     pub unsafe fn read_postcard<T: DeserializeOwned>(&mut self) -> Result<T, Error> {
         let vec = unsafe { self.read_vec::<u8>() }?;
-        postcard::from_bytes(&vec).map_err(|_| Error::InvalidObjType)
+        postcard::from_bytes(&vec).map_err(|_| Error::InvalidType)
     }
 
     pub unsafe fn write_str(&mut self, s: &str) -> Result<usize, Error> {
@@ -285,6 +285,6 @@ impl UTCB {
 
     pub unsafe fn read_str(&mut self) -> Result<String, Error> {
         let vec = unsafe { self.read_vec::<u8>() }?;
-        String::from_utf8(vec).map_err(|_| Error::InvalidObjType)
+        String::from_utf8(vec).map_err(|_| Error::InvalidType)
     }
 }
