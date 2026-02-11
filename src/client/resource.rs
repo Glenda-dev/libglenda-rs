@@ -34,9 +34,28 @@ impl ResourceService for ResourceClient {
 
         self.endpoint.call(&mut utcb)?;
 
-        // Check return code in UTCB if needed, but invoke already returns Result<(), Error>
-        // derived from the syscall return value.
         Ok(recv)
+    }
+
+    fn dma_alloc(
+        &mut self,
+        _pid: Badge,
+        pages: usize,
+        recv: CapPtr,
+    ) -> Result<(usize, Frame), Error> {
+        let tag = MsgTag::new(RESOURCE_PROTO, resource::DMA_ALLOC, MsgFlags::NONE);
+
+        // Use CALL to wait for response
+        let mut utcb = unsafe { UTCB::new() };
+        utcb.clear();
+        set_mrs!(utcb, pages);
+        utcb.set_msg_tag(tag);
+        utcb.set_recv_window(recv);
+
+        self.endpoint.call(&mut utcb)?;
+
+        // The paddr is returned in MR0
+        Ok((utcb.get_mr(0), Frame::from(recv)))
     }
 
     fn free(&mut self, _pid: Badge, cap: CapPtr) -> Result<(), Error> {

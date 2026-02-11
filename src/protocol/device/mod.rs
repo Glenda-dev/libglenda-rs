@@ -1,3 +1,9 @@
+// Device Interface
+pub const GET_DESC: usize = 1;
+pub const GET_MMIO: usize = 2;
+pub const GET_IRQ: usize = 3;
+pub const SCAN_PLATFORM: usize = 4;
+
 pub mod block;
 pub mod fb;
 pub mod gpio;
@@ -5,54 +11,14 @@ pub mod i2c;
 pub mod input;
 pub mod net;
 pub mod pci;
-pub mod rng;
 pub mod spi;
-pub mod timer;
 pub mod uart;
 pub mod usb;
 pub mod wifi;
 
-// Core System
-pub const PCI_PROTO: usize = 0x301;
-pub const IOMMU_PROTO: usize = 0x302;
-pub const UART_PROTO: usize = 0x303;
-pub const TIMER_PROTO: usize = 0x30F;
-
-// Storage & Network
-pub const BLOCK_PROTO: usize = 0x304;
-pub const NET_PROTO: usize = 0x305;
-pub const IB_PROTO: usize = 0x306;
-pub const WIFI_PROTO: usize = 0x307;
-
-// Human Interface
-pub const INPUT_PROTO: usize = 0x308;
-pub const FB_PROTO: usize = 0x309;
-
-// Peripheral Bus
-pub const USB_PROTO: usize = 0x30A;
-pub const SPI_PROTO: usize = 0x30B;
-pub const I2C_PROTO: usize = 0x30C;
-pub const GPIO_PROTO: usize = 0x30D;
-pub const RNG_PROTO: usize = 0x30E;
-
-// Driver Interface
-pub const GET_DESC: usize = 1;
-pub const GET_MMIO: usize = 2;
-pub const MAP_MMIO: usize = 2;
-pub const GET_IRQ: usize = 3;
-pub const MAP_IRQ: usize = 3;
-pub const SCAN_PLATFORM: usize = 4;
-pub const FIND_COMPATIBLE: usize = 5;
-pub const ALLOC_DMA: usize = 6;
-pub const FREE_DMA: usize = 7;
-
-// Bus Types
-pub const BUS_PCI: usize = 1;
-pub const BUS_PLATFORM: usize = 2; // DTB
-
-use crate::utils::platform::DeviceKind;
 use alloc::string::String;
 use alloc::vec::Vec;
+use num_enum::FromPrimitive;
 use serde::{Deserialize, Serialize};
 
 #[repr(C)]
@@ -86,4 +52,25 @@ pub struct DeviceNode {
     pub kind: DeviceKind,
     pub parent_id: Option<usize>,
     pub children: Vec<usize>,
+}
+
+#[repr(u32)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, FromPrimitive)]
+pub enum DeviceKind {
+    #[num_enum(default)]
+    Unknown = 0,
+    Uart = 1,
+    Intc = 2, // 中断控制器 (PLIC/GIC)
+    Timer = 3,
+    Virtio = 4,
+    PciHost = 5,
+}
+
+#[repr(u32)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum BusType {
+    System = 0, // 系统主总线 (System Bus)
+    Pci = 1,
+    Usb = 2,
+    Platform = 3, // 简单的内存映射设备
 }

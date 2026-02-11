@@ -1,9 +1,9 @@
 use crate::cap::Endpoint;
 use crate::error::Error;
-use crate::interface::device::FrameBufferDevice;
+use crate::interface::drivers::FrameBufferDriver;
 use crate::ipc::{MsgFlags, MsgTag, UTCB};
 use crate::protocol::device::fb::FbInfo;
-use crate::protocol::device::{FB_PROTO, fb};
+use crate::protocol::drivers::{FB_PROTO, fb};
 use crate::set_mrs;
 
 pub struct FbClient {
@@ -16,7 +16,7 @@ impl FbClient {
     }
 }
 
-impl FrameBufferDevice for FbClient {
+impl FrameBufferDriver for FbClient {
     fn get_info(&self) -> FbInfo {
         let mut utcb = unsafe { UTCB::new() };
         utcb.clear();

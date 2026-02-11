@@ -59,7 +59,16 @@ where
             // We might need to enhance IpcReturn to return (MsgTag, ...) or handle flags.
 
             // Simple default: OK
-            utcb.set_msg_tag(MsgTag::ok());
+            let mut flags = MsgFlags::OK;
+            if utcb.get_size() > 0 {
+                flags |= MsgFlags::HAS_BUFFER;
+            }
+
+            utcb.set_msg_tag(MsgTag::new(
+                protocol::GENERIC_PROTO,
+                protocol::generic::REPLY,
+                flags,
+            ));
             Ok(())
         }
         Err(e) => Err(e),

@@ -1,11 +1,11 @@
 use crate::arch::mem::PGSIZE;
+use crate::protocol::device::{BusType, DeviceKind};
 use core::fmt;
-use num_enum::FromPrimitive;
 use serde::{Deserialize, Serialize};
 use serde_big_array::BigArray;
 
-pub const MAX_MEMORY_REGIONS: usize = 16;
-pub const MAX_DEVICES: usize = 64;
+pub const MAX_MEMORY_REGIONS: usize = 128;
+pub const MAX_DEVICES: usize = 128;
 pub const PLATFORM_INFO_SIZE: usize = core::mem::size_of::<PlatformInfo>();
 pub const PLATFORM_INFO_PAGES: usize = (PLATFORM_INFO_SIZE + PGSIZE - 1) / PGSIZE;
 /// 平台硬件信息摘要
@@ -37,6 +37,7 @@ pub struct PlatformInfo {
     pub irq_count: usize,
 
     /// 物理内存区域列表
+    #[serde(with = "BigArray")]
     pub memory_regions: [MemoryRegion; MAX_MEMORY_REGIONS],
     pub memory_region_count: usize,
 
@@ -140,27 +141,6 @@ impl fmt::Debug for DisplayOptionIdx {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         if self.0 == u32::MAX { write!(f, "None") } else { write!(f, "{}", self.0) }
     }
-}
-
-#[repr(u32)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, FromPrimitive)]
-pub enum DeviceKind {
-    #[num_enum(default)]
-    Unknown = 0,
-    Uart = 1,
-    Intc = 2, // 中断控制器 (PLIC/GIC)
-    Timer = 3,
-    Virtio = 4,
-    PciHost = 5,
-}
-
-#[repr(u32)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-pub enum BusType {
-    System = 0, // 系统主总线 (System Bus)
-    Pci = 1,
-    Usb = 2,
-    Platform = 3, // 简单的内存映射设备
 }
 
 impl PlatformInfo {

@@ -1,6 +1,7 @@
 // Resouces allocation
 pub const ALLOC: usize = 0x01;
 pub const FREE: usize = 0x02;
+pub const DMA_ALLOC: usize = 0x03;
 // VSpace management
 pub const MAP: usize = 0x10;
 pub const UNMAP: usize = 0x11;

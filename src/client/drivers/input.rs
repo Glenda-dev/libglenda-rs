@@ -1,8 +1,8 @@
 use crate::cap::Endpoint;
-use crate::interface::device::InputDevice;
+use crate::interface::drivers::InputDriver;
 use crate::ipc::{MsgFlags, MsgTag, UTCB};
 use crate::protocol::device::input::InputEvent;
-use crate::protocol::device::{INPUT_PROTO, input};
+use crate::protocol::drivers::{INPUT_PROTO, input};
 
 pub struct InputClient {
     endpoint: Endpoint,
@@ -14,7 +14,7 @@ impl InputClient {
     }
 }
 
-impl InputDevice for InputClient {
+impl InputDriver for InputClient {
     fn poll_event(&mut self) -> Option<InputEvent> {
         let mut utcb = unsafe { UTCB::new() };
         utcb.clear();

@@ -1,6 +1,6 @@
 pub mod auth;
 pub mod device;
-pub mod driver;
+pub mod drivers;
 pub mod fs;
 pub mod generic;
 pub mod init;
@@ -13,7 +13,7 @@ pub mod system;
 
 pub use auth::*;
 pub use device::*;
-pub use driver::*;
+pub use drivers::*;
 pub use fs::*;
 pub use generic::*;
 pub use init::*;

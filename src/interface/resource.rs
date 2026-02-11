@@ -13,6 +13,13 @@ pub trait ResourceService {
         recv: CapPtr,
     ) -> Result<CapPtr, Error>;
 
+    fn dma_alloc(
+        &mut self,
+        pid: Badge,
+        pages: usize,
+        recv: CapPtr,
+    ) -> Result<(usize, Frame), Error>;
+
     fn free(&mut self, pid: Badge, cap: CapPtr) -> Result<(), Error>;
 
     fn get_cap(

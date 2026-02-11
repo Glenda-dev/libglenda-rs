@@ -1,9 +1,9 @@
 use crate::cap::Endpoint;
 use crate::error::Error;
-use crate::interface::device::PciDevice;
+use crate::interface::drivers::PciDriver;
 use crate::ipc::{MsgFlags, MsgTag, UTCB};
 use crate::protocol::device::pci::PciAddress;
-use crate::protocol::device::{PCI_PROTO, pci};
+use crate::protocol::drivers::{PCI_PROTO, pci};
 use crate::set_mrs;
 
 pub struct PciClient {
@@ -17,7 +17,7 @@ impl PciClient {
     }
 }
 
-impl PciDevice for PciClient {
+impl PciDriver for PciClient {
     fn read_config(&self, offset: usize, size: usize) -> Result<u32, Error> {
         let mut utcb = unsafe { UTCB::new() };
         utcb.clear();

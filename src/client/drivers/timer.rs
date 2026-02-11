@@ -1,8 +1,8 @@
 use crate::cap::Endpoint;
 use crate::error::Error;
-use crate::interface::TimerDevice;
+use crate::interface::TimerDriver;
 use crate::ipc::{MsgFlags, MsgTag, UTCB};
-use crate::protocol::device::{TIMER_PROTO, timer};
+use crate::protocol::drivers::{TIMER_PROTO, timer};
 use crate::set_mrs;
 
 pub struct TimerClient(Endpoint);
@@ -13,7 +13,7 @@ impl TimerClient {
     }
 }
 
-impl TimerDevice for TimerClient {
+impl TimerDriver for TimerClient {
     fn get_time(&self) -> u64 {
         let mut utcb = unsafe { UTCB::new() };
         utcb.clear();

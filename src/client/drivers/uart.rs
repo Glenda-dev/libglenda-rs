@@ -1,8 +1,8 @@
 use crate::cap::Endpoint;
-use crate::interface::device::UartDevice;
+use crate::interface::drivers::UartDriver;
 use crate::ipc::IPC_BUFFER_SIZE;
 use crate::ipc::{MsgFlags, MsgTag, UTCB};
-use crate::protocol::device::{UART_PROTO, uart};
+use crate::protocol::drivers::{UART_PROTO, uart};
 
 pub struct UartClient {
     endpoint: Endpoint,
@@ -14,7 +14,7 @@ impl UartClient {
     }
 }
 
-impl UartDevice for UartClient {
+impl UartDriver for UartClient {
     fn put_char(&mut self, c: u8) {
         let mut utcb = unsafe { UTCB::new() };
         utcb.clear();

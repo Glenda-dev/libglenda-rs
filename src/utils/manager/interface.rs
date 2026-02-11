@@ -65,7 +65,7 @@ pub trait UntypedService: CSpaceProvider {
         flags: usize,
         dest_cnode: CNode,
         dest_slot: CapPtr,
-    ) -> Result<(), Error>;
+    ) -> Result<usize, Error>;
 
     fn free(&mut self, cap: CapPtr) -> Result<(), Error>;
 

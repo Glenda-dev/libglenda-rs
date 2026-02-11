@@ -1,9 +1,9 @@
 use crate::cap::Endpoint;
 use crate::error::Error;
-use crate::interface::device::NetDevice;
+use crate::interface::drivers::NetDriver;
 use crate::ipc::{MsgFlags, MsgTag, UTCB};
 use crate::protocol::device::net::MacAddress;
-use crate::protocol::device::{NET_PROTO, net};
+use crate::protocol::drivers::{NET_PROTO, net};
 
 pub struct NetClient {
     endpoint: Endpoint,
@@ -15,7 +15,7 @@ impl NetClient {
     }
 }
 
-impl NetDevice for NetClient {
+impl NetDriver for NetClient {
     fn mac_address(&self) -> MacAddress {
         let mut utcb = unsafe { UTCB::new() };
         utcb.clear();

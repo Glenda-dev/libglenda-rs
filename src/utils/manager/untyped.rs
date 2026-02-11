@@ -52,10 +52,11 @@ impl UntypedService for UntypedManager {
         flags: usize,
         dest_cnode: CNode,
         dest_slot: CapPtr,
-    ) -> Result<(), Error> {
+    ) -> Result<usize, Error> {
         let pages = self.get_pages(obj_type, flags);
         for block in self.blocks.iter_mut() {
             if block.desc.watermark + pages <= block.desc.pages {
+                let paddr = block.desc.start + block.desc.watermark * 4096;
                 // Try to retype
                 let ret = match obj_type {
                     CapType::Untyped => block.cap.retype_untyped(flags, dest_cnode, dest_slot),
@@ -71,7 +72,7 @@ impl UntypedService for UntypedManager {
                 match ret {
                     Ok(()) => {
                         block.desc.watermark += pages;
-                        return Ok(());
+                        return Ok(paddr as usize);
                     }
                     Err(Error::OutOfMemory) => {
                         // This block is out of memory, try next block
@@ -103,6 +104,6 @@ impl UntypedService for UntypedManager {
 
 impl CSpaceProvider for UntypedManager {
     fn alloc_cnode(&mut self, dest_cnode: CNode, dest_slot: CapPtr) -> Result<(), Error> {
-        self.alloc(CapType::CNode, 1, dest_cnode, dest_slot)
+        self.alloc(CapType::CNode, 1, dest_cnode, dest_slot).map(|_| ())
     }
 }

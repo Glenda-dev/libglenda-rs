@@ -1,8 +1,8 @@
 use crate::cap::Endpoint;
 use crate::error::Error;
-use crate::interface::device::BlockDevice;
+use crate::interface::drivers::BlockDriver;
 use crate::ipc::{MsgFlags, MsgTag, UTCB};
-use crate::protocol::device::{BLOCK_PROTO, block};
+use crate::protocol::drivers::{BLOCK_PROTO, block};
 use crate::set_mrs;
 
 pub struct BlockClient {
@@ -15,7 +15,7 @@ impl BlockClient {
     }
 }
 
-impl BlockDevice for BlockClient {
+impl BlockDriver for BlockClient {
     fn capacity(&self) -> u64 {
         let mut utcb = unsafe { UTCB::new() };
         utcb.clear();
