@@ -8,7 +8,7 @@ use crate::ipc::{MsgFlags, MsgTag, UTCB};
 use crate::mem::{HEAP_SIZE, HEAP_VA};
 use crate::println;
 use crate::protocol;
-use crate::protocol::resource::InitCap;
+use crate::protocol::resource::ResourceType;
 use crate::set_mrs;
 use crate::sync::mutex::Mutex;
 use crate::sys::{exit, sbrk};
@@ -90,7 +90,7 @@ pub fn init_console() {
     let tag = MsgTag::new(protocol::RESOURCE_PROTO, protocol::resource::GET_CAP, MsgFlags::NONE);
     let mut utcb = unsafe { UTCB::new() };
     utcb.clear();
-    set_mrs!(utcb, InitCap::Kernel as usize);
+    set_mrs!(utcb, ResourceType::Kernel as usize);
     utcb.set_recv_window(KERNEL_SLOT);
     utcb.set_msg_tag(tag);
     let res = MONITOR_CAP.call(&mut utcb);

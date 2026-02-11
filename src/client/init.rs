@@ -1,4 +1,4 @@
-use crate::cap::{CapPtr, Endpoint};
+use crate::cap::Endpoint;
 use crate::error::Error;
 use crate::interface::InitService;
 use crate::ipc::{Badge, MsgFlags, MsgTag, UTCB};
@@ -14,8 +14,8 @@ pub struct InitClient {
 }
 
 impl InitClient {
-    pub const fn new() -> Self {
-        Self { endpoint: Endpoint::from(CapPtr::null()) }
+    pub const fn new(ep: Endpoint) -> Self {
+        Self { endpoint: ep }
     }
 }
 

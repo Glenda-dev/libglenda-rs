@@ -4,7 +4,20 @@ use crate::mem::Perms;
 
 /// CSpaceService is responsible for managing capability slots.
 pub trait CSpaceService {
-    fn alloc(&mut self, objects: &mut dyn UntypedService) -> Result<CapPtr, Error>;
+    fn alloc(&mut self, provider: &mut dyn CSpaceProvider) -> Result<CapPtr, Error>;
+    fn free(&mut self, slot: CapPtr) -> Result<(), Error>;
+}
+
+pub trait CSpaceProvider {
+    fn alloc_cnode(&mut self, dest_cnode: CNode, dest_slot: CapPtr) -> Result<(), Error>;
+}
+
+pub struct NullProvider;
+
+impl CSpaceProvider for NullProvider {
+    fn alloc_cnode(&mut self, _dest_cnode: CNode, _dest_slot: CapPtr) -> Result<(), Error> {
+        Err(Error::OutOfMemory)
+    }
 }
 /// VSpaceService is responsible for managing virtual memory mappings.
 pub trait VSpaceService {
@@ -45,7 +58,7 @@ pub trait VSpaceService {
     fn is_mapped(&self, vaddr: usize, level: usize) -> bool;
 }
 
-pub trait UntypedService {
+pub trait UntypedService: CSpaceProvider {
     fn alloc(
         &mut self,
         obj_type: CapType,
@@ -55,4 +68,7 @@ pub trait UntypedService {
     ) -> Result<(), Error>;
 
     fn free(&mut self, cap: CapPtr) -> Result<(), Error>;
+
+    /// Returns this service as a CSpaceProvider
+    fn as_cspace_provider(&mut self) -> &mut dyn CSpaceProvider;
 }

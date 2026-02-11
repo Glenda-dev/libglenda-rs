@@ -1,6 +1,6 @@
-use super::{CSpaceService, UntypedService};
+use super::{CSpaceProvider, CSpaceService};
 use crate::cap::CNODE_SIZE;
-use crate::cap::{CNode, CapPtr, CapType};
+use crate::cap::{CNode, CapPtr};
 use crate::error::Error;
 
 const L0_DIRECT_LIMIT: usize = 64;
@@ -19,10 +19,15 @@ impl CSpaceManager {
     pub fn new(root: CNode, start_index: usize) -> Self {
         Self { root_cnode: root, next_index: start_index, l1_cnodes: [false; L1_SLOTS] }
     }
+
+    pub fn free(&mut self, _slot: CapPtr) -> Result<(), Error> {
+        // TODO: Implement slot recycling
+        Ok(())
+    }
 }
 
 impl CSpaceService for CSpaceManager {
-    fn alloc(&mut self, objects: &mut dyn UntypedService) -> Result<CapPtr, Error> {
+    fn alloc(&mut self, provider: &mut dyn CSpaceProvider) -> Result<CapPtr, Error> {
         let index = self.next_index;
         self.next_index += 1;
 
@@ -43,14 +48,16 @@ impl CSpaceService for CSpaceManager {
             let l1_cache_idx = l0_idx - L1_START_SLOT;
             if !self.l1_cnodes[l1_cache_idx] {
                 let l0_cptr = CapPtr::from(l0_idx);
-                objects
-                    .alloc(CapType::CNode, 1, self.root_cnode, l0_cptr)
-                    .map_err(|_| Error::OutOfMemory)?;
+                provider.alloc_cnode(self.root_cnode, l0_cptr).map_err(|_| Error::OutOfMemory)?;
                 self.l1_cnodes[l1_cache_idx] = true;
             }
 
             // Construct 2-level CapPtr: l0_idx | (l1_idx << 8)
             Ok(CapPtr::from(l0_idx | (l1_idx << 8)))
         }
+    }
+
+    fn free(&mut self, slot: CapPtr) -> Result<(), Error> {
+        self.free(slot)
     }
 }

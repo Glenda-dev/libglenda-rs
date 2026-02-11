@@ -1,6 +1,6 @@
 use crate::cap::{CapPtr, CapType, Endpoint, Frame};
 use crate::error::Error;
-use crate::interface::{InitResourceService, MemoryService, ResourceService};
+use crate::interface::{MemoryService, ResourceService};
 use crate::ipc::{Badge, MsgFlags, MsgTag, UTCB};
 use crate::protocol::{RESOURCE_PROTO, resource};
 use crate::set_mrs;
@@ -51,20 +51,47 @@ impl ResourceService for ResourceClient {
         self.endpoint.call(&mut utcb)?;
         Ok(())
     }
-}
 
-impl InitResourceService for ResourceClient {
-    fn get_cap(&self, _pid: Badge, cap: resource::InitCap, recv: CapPtr) -> Result<CapPtr, Error> {
+    fn get_cap(
+        &mut self,
+        _pid: Badge,
+        cap: resource::ResourceType,
+        id: usize,
+        recv: CapPtr,
+    ) -> Result<CapPtr, Error> {
         let tag = MsgTag::new(RESOURCE_PROTO, resource::GET_CAP, MsgFlags::NONE);
         let mut utcb = unsafe { UTCB::new() };
         utcb.clear();
-        set_mrs!(utcb, cap as usize);
+        set_mrs!(utcb, cap as usize, id);
         utcb.set_recv_window(recv);
         utcb.set_msg_tag(tag);
         self.endpoint.call(&mut utcb)?;
         Ok(utcb.get_recv_window())
     }
-    fn get_file(&mut self, _pid: Badge, name: &str, recv: CapPtr) -> Result<(Frame, usize), Error> {
+
+    fn register_cap(
+        &mut self,
+        _pid: Badge,
+        cap_type: resource::ResourceType,
+        id: usize,
+        cap: CapPtr,
+    ) -> Result<(), Error> {
+        let tag = MsgTag::new(RESOURCE_PROTO, resource::REGISTER_CAP, MsgFlags::HAS_CAP);
+        let mut utcb = unsafe { UTCB::new() };
+        utcb.clear();
+        set_mrs!(utcb, cap_type as usize, id);
+        utcb.set_cap_transfer(cap);
+        utcb.set_msg_tag(tag);
+        self.endpoint.call(&mut utcb)?;
+        Ok(())
+    }
+
+    fn get_config(
+        &mut self,
+        _pid: Badge,
+        name: &str,
+        recv: CapPtr,
+    ) -> Result<(Frame, usize), Error> {
         let mut utcb = unsafe { UTCB::new() };
         utcb.clear();
 
@@ -74,7 +101,7 @@ impl InitResourceService for ResourceClient {
         }
 
         // Set tag with HAS_BUFFER to enable kernel copy
-        let tag = MsgTag::new(RESOURCE_PROTO, resource::GET_FILE, MsgFlags::HAS_BUFFER);
+        let tag = MsgTag::new(RESOURCE_PROTO, resource::GET_CONFIG, MsgFlags::HAS_BUFFER);
         utcb.set_recv_window(recv);
         utcb.set_msg_tag(tag);
 

@@ -131,7 +131,7 @@ impl VSpaceManager {
                     }
 
                     // Alloc slot and object
-                    let new_slot = slots.alloc(objects)?;
+                    let new_slot = slots.alloc(objects.as_cspace_provider())?;
                     objects.alloc(CapType::Frame, 1, root_cnode, new_slot)?;
                     let new_frame = Frame::from(new_slot);
 
@@ -199,7 +199,7 @@ impl VSpaceManager {
         }
 
         if !entries.contains_key(&idx) {
-            let slot = slots.alloc(objects)?;
+            let slot = slots.alloc(objects.as_cspace_provider())?;
             let target_level = level - 1;
             objects.alloc(CapType::PageTable, target_level, dest_cnode, slot)?;
             let pt = PageTable::from(slot);

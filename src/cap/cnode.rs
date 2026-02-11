@@ -51,6 +51,13 @@ impl CNode {
         self.0.invoke(cnodemethod::REVOKE, &mut utcb)
     }
 
+    pub fn move_cap(&self, src: CapPtr, dest: CapPtr) -> Result<(), Error> {
+        let mut utcb = unsafe { UTCB::new() };
+        utcb.clear();
+        set_mrs!(utcb, src.bits(), dest.bits());
+        self.0.invoke(cnodemethod::MOVE, &mut utcb)
+    }
+
     pub fn debug_print(&self) -> Result<(), Error> {
         let mut utcb = unsafe { UTCB::new() };
         utcb.clear();

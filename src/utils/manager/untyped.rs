@@ -1,5 +1,5 @@
-use super::interface::UntypedService;
-use crate::cap::{CNODE_BITS, CNODE_PAGES, UNTYPED_SLOT};
+use super::interface::{CSpaceProvider, UntypedService};
+use crate::cap::{CNODE_BITS, CNODE_PAGES};
 use crate::cap::{CNode, CapPtr, CapType, Untyped};
 use crate::error::Error;
 use crate::utils::BootInfo;
@@ -18,7 +18,7 @@ pub struct UntypedManager {
 }
 
 impl UntypedManager {
-    pub fn new(bootinfo: &BootInfo) -> Self {
+    pub fn new(bootinfo: &BootInfo, root: CapPtr) -> Self {
         let mut blocks = Vec::new();
 
         for i in 0..bootinfo.untyped_count {
@@ -26,7 +26,7 @@ impl UntypedManager {
                 break;
             }
             // Slots in the Untyped CNode start at 1
-            let cptr = CapPtr::from((i + 1) << CNODE_BITS | UNTYPED_SLOT.bits());
+            let cptr = CapPtr::from((i + 1) << CNODE_BITS | root.bits());
             let desc = bootinfo.untyped_list[i];
 
             blocks.push(UntypedBlock { cap: Untyped::from(cptr), desc });
@@ -94,5 +94,15 @@ impl UntypedService for UntypedManager {
         // so we cannot easily reclaim allocated pages without a rewrite.
         // The capability itself is deleted by the caller (CNode::delete).
         Ok(())
+    }
+
+    fn as_cspace_provider(&mut self) -> &mut dyn CSpaceProvider {
+        self
+    }
+}
+
+impl CSpaceProvider for UntypedManager {
+    fn alloc_cnode(&mut self, dest_cnode: CNode, dest_slot: CapPtr) -> Result<(), Error> {
+        self.alloc(CapType::CNode, 1, dest_cnode, dest_slot)
     }
 }
