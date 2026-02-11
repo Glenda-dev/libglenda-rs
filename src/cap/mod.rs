@@ -59,7 +59,7 @@ impl CapPtr {
 
     // --- Generic Invocation ---
     #[inline(always)]
-    pub(crate) fn invoke(&self, method: usize, utcb: &mut UTCB) -> Result<(), Error> {
+    pub fn invoke(&self, method: usize, utcb: &mut UTCB) -> Result<(), Error> {
         sys_invoke(self.0, method, utcb)
     }
 

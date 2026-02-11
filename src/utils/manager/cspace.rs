@@ -1,15 +1,15 @@
 use super::{CSpaceProvider, CSpaceService};
-use crate::cap::CNODE_SIZE;
-use crate::cap::{CNode, CapPtr};
+use crate::cap::{CNODE_BITS, CNODE_SLOTS, CNode, CapPtr};
 use crate::error::Error;
 
 const L0_DIRECT_LIMIT: usize = 64;
 const L1_START_SLOT: usize = L0_DIRECT_LIMIT + 1;
-const L1_SLOTS: usize = CNODE_SIZE - L1_START_SLOT; // 192
+const L1_SLOTS: usize = CNODE_SLOTS - L1_START_SLOT; // 191
 
 /// CSpaceManager manages the allocation of capability slots in a process's CSpace.
 /// It supports multi-level CNode hierarchy.
 pub struct CSpaceManager {
+    #[allow(dead_code)]
     root_cnode: CNode,
     next_index: usize,
     l1_cnodes: [bool; L1_SLOTS],
@@ -31,16 +31,18 @@ impl CSpaceService for CSpaceManager {
         let index = self.next_index;
         self.next_index += 1;
 
-        if index < L0_DIRECT_LIMIT {
+        if index <= L0_DIRECT_LIMIT {
             // Level 0 Direct Mapping
             Ok(CapPtr::from(index))
         } else {
             // Level 1 Mapping
-            let relative_index = index - L0_DIRECT_LIMIT;
-            let l0_idx = L1_START_SLOT + (relative_index / 256);
-            let l1_idx = relative_index % 256;
+            // We skip slot 0 in the L1 CNode as it is reserved for metadata.
+            // Each L1 CNode has 255 usable slots (1-255).
+            let relative_index = index - (L0_DIRECT_LIMIT + 1);
+            let l0_idx = L1_START_SLOT + (relative_index / 255);
+            let l1_idx = (relative_index % 255) + 1;
 
-            if l0_idx >= 256 {
+            if l0_idx >= CNODE_SLOTS {
                 return Err(Error::CNodeFull);
             }
 
@@ -53,7 +55,7 @@ impl CSpaceService for CSpaceManager {
             }
 
             // Construct 2-level CapPtr: l0_idx | (l1_idx << 8)
-            Ok(CapPtr::from(l0_idx | (l1_idx << 8)))
+            Ok(CapPtr::from(l0_idx | (l1_idx << CNODE_BITS)))
         }
     }
 

@@ -1,5 +1,6 @@
 use crate::arch::mem::PGSIZE;
 use core::fmt;
+use num_enum::FromPrimitive;
 use serde::{Deserialize, Serialize};
 use serde_big_array::BigArray;
 
@@ -111,12 +112,16 @@ pub struct DeviceDesc {
     pub bus_type: BusType,
 }
 
+impl DeviceDesc {
+    pub fn compatible(&self) -> &str {
+        let len = self.compatible.iter().position(|&c| c == 0).unwrap_or(self.compatible.len());
+        core::str::from_utf8(&self.compatible[..len]).unwrap_or("Unknown")
+    }
+}
+
 impl fmt::Debug for DeviceDesc {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let compatible_len =
-            self.compatible.iter().position(|&c| c == 0).unwrap_or(self.compatible.len());
-        let compatible_str =
-            core::str::from_utf8(&self.compatible[..compatible_len]).unwrap_or("???");
+        let compatible_str = self.compatible();
 
         f.debug_struct("DeviceDesc")
             .field("compatible", &compatible_str)
@@ -138,8 +143,9 @@ impl fmt::Debug for DisplayOptionIdx {
 }
 
 #[repr(u32)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, FromPrimitive)]
 pub enum DeviceKind {
+    #[num_enum(default)]
     Unknown = 0,
     Uart = 1,
     Intc = 2, // 中断控制器 (PLIC/GIC)

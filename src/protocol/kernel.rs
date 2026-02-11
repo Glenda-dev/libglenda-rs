@@ -37,11 +37,6 @@ pub const UNKNOWN_FAULT: usize = 0x07;
 
 // 中断和通知
 
-/// 中断通知 (Interrupt)
-/// 触发条件：硬件中断发生，内核转发给注册的处理程序
-/// 消息内容：通常为空，通过 Badge 区分
-pub const IRQ: usize = 0x08;
-
 /// 异步通知 (Notification)
 /// 触发条件：ipc::notify
 /// 消息内容：通常为空，通过 Badge 传递事件位

@@ -13,3 +13,4 @@ pub use init::InitClient;
 pub use network::NetworkClient;
 pub use process::ProcessClient;
 pub use resource::ResourceClient;
+pub use device::DeviceClient;

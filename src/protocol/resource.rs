@@ -20,10 +20,11 @@ use num_enum::FromPrimitive;
 pub enum ResourceType {
     Kernel = 1,
     Untyped = 2,
-    Mmio = 3,
-    Irq = 4,
-    Platform = 5,
-    Endpoint = 6,
+    Bootinfo = 3,
+    Mmio = 4,
+    Irq = 5,
+    Platform = 6,
+    Endpoint = 7,
     #[num_enum(default)]
     Unknown = 0,
 }

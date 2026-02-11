@@ -35,18 +35,16 @@ pub const I2C_PROTO: usize = 0x30C;
 pub const GPIO_PROTO: usize = 0x30D;
 pub const RNG_PROTO: usize = 0x30E;
 
-// Management Interface
-pub const SCAN_PLATFORM: usize = 1;
-pub const GET_NODE: usize = 2;
-pub const FIND_COMPATIBLE: usize = 3;
-pub const INIT_MANIFEST: usize = 4; // arg0: frame_cap, arg1: size
-pub const GET_DEVICE_BY_NAME: usize = 5; // arg0: name_len
-
 // Driver Interface
-pub const GET_INFO: usize = 10;
-pub const MAP_MMIO: usize = 11; // arg0: device_id, arg1: mmio_index, arg2: dest_slot
-pub const GET_IRQ: usize = 12; // arg0: device_id, arg1: irq_index, arg2: dest_slot
-pub const ALLOC_DMA: usize = 13;
+pub const GET_DESC: usize = 1;
+pub const GET_MMIO: usize = 2;
+pub const MAP_MMIO: usize = 2;
+pub const GET_IRQ: usize = 3;
+pub const MAP_IRQ: usize = 3;
+pub const SCAN_PLATFORM: usize = 4;
+pub const FIND_COMPATIBLE: usize = 5;
+pub const ALLOC_DMA: usize = 6;
+pub const FREE_DMA: usize = 7;
 
 // Bus Types
 pub const BUS_PCI: usize = 1;

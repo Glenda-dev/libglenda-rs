@@ -1,3 +1,4 @@
+use crate::cap::{Frame, IrqHandler};
 use crate::error::Error;
 use crate::ipc::Badge;
 use crate::protocol::device::DeviceNode;
@@ -7,12 +8,15 @@ use crate::protocol::device::net::MacAddress;
 use crate::protocol::device::pci::PciAddress;
 use crate::protocol::device::usb::UsbSetupPacket;
 use crate::protocol::device::wifi::WifiApInfo;
-use crate::utils::platform::PlatformInfo;
+use crate::utils::platform::DeviceDesc;
 
 /// DeviceService provides hardware discovery and management.
 pub trait DeviceService {
-    fn scan_platform(&mut self, badge: Badge, info: &PlatformInfo) -> Result<(), Error>;
+    fn scan_platform(&mut self, badge: Badge) -> Result<(), Error>;
     fn find_compatible(&self, badge: Badge, compat: &str) -> Result<DeviceNode, Error>;
+    fn get_desc(&mut self, badge: Badge) -> Result<DeviceDesc, Error>;
+    fn get_mmio(&mut self, badge: Badge) -> Result<Frame, Error>;
+    fn get_irq(&mut self, badge: Badge) -> Result<IrqHandler, Error>;
 }
 
 /// DmaService provides DMA-safe memory allocation.
