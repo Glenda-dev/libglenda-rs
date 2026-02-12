@@ -91,7 +91,11 @@ pub trait GpioDriver {
 
 /// TimerDriver provides time and alarm services.
 pub trait TimerDriver {
+    /// Get current UNIX time in seconds.
     fn get_time(&self) -> u64;
+    /// Set current UNIX time in seconds.
+    fn set_time(&mut self, timestamp: u64) -> Result<(), Error>;
+    /// Set an alarm (UNIX timestamp).
     fn set_alarm(&mut self, timestamp: u64) -> Result<(), Error>;
     fn stop_alarm(&mut self) -> Result<(), Error>;
 }

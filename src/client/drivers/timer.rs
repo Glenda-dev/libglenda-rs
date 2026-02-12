@@ -20,13 +20,16 @@ impl TimerDriver for TimerClient {
         let tag = MsgTag::new(TIMER_PROTO, timer::GET_TIME, MsgFlags::NONE);
         utcb.set_msg_tag(tag);
 
-        if self.0.call(&mut utcb).is_ok() {
-            let low = utcb.get_mr(0) as u64;
-            let high = utcb.get_mr(1) as u64;
-            (high << 32) | low
-        } else {
-            0
-        }
+        if self.0.call(&mut utcb).is_ok() { utcb.get_mr(0) as u64 } else { 0 }
+    }
+
+    fn set_time(&mut self, timestamp: u64) -> Result<(), Error> {
+        let mut utcb = unsafe { UTCB::new() };
+        utcb.clear();
+        let tag = MsgTag::new(TIMER_PROTO, timer::SET_TIME, MsgFlags::NONE);
+        utcb.set_msg_tag(tag);
+        set_mrs!(utcb, timestamp as usize);
+        self.0.call(&mut utcb)
     }
 
     fn set_alarm(&mut self, timestamp: u64) -> Result<(), Error> {
@@ -34,7 +37,7 @@ impl TimerDriver for TimerClient {
         utcb.clear();
         let tag = MsgTag::new(TIMER_PROTO, timer::SET_ALARM, MsgFlags::NONE);
         utcb.set_msg_tag(tag);
-        set_mrs!(utcb, (timestamp & 0xFFFFFFFF) as usize, (timestamp >> 32) as usize);
+        set_mrs!(utcb, timestamp as usize);
         self.0.call(&mut utcb)
     }
 
