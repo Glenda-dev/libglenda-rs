@@ -12,6 +12,12 @@ pub struct FsClient {
     endpoint: Endpoint,
 }
 
+impl FsClient {
+    pub const fn new(endpoint: Endpoint) -> Self {
+        Self { endpoint }
+    }
+}
+
 impl PipeService for FsClient {
     fn pipe(&mut self) -> Result<(usize, usize), Error> {
         let tag = MsgTag::new(FS_PROTO, fs::PIPE, MsgFlags::NONE);
