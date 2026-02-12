@@ -11,6 +11,7 @@ pub mod i2c;
 pub mod input;
 pub mod net;
 pub mod pci;
+pub mod sdio;
 pub mod spi;
 pub mod uart;
 pub mod usb;

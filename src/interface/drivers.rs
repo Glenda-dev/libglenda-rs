@@ -3,6 +3,7 @@ use crate::protocol::device::fb::FbInfo;
 use crate::protocol::device::input::InputEvent;
 use crate::protocol::device::net::MacAddress;
 use crate::protocol::device::pci::PciAddress;
+use crate::protocol::device::sdio::SdioCommand;
 use crate::protocol::device::usb::UsbSetupPacket;
 use crate::protocol::device::wifi::WifiApInfo;
 
@@ -119,6 +120,15 @@ pub trait I2cDriver {
     fn write(&mut self, addr: u16, buf: &[u8]) -> Result<(), Error>;
     /// Write command then read response (Atomic repeated start if supported)
     fn write_read(&mut self, addr: u16, w_buf: &[u8], r_buf: &mut [u8]) -> Result<(), Error>;
+}
+
+/// SdioDriver provides SDIO bus access.
+pub trait SdioDriver {
+    fn send_command(&mut self, cmd: SdioCommand) -> Result<[u32; 4], Error>;
+    fn read_blocks(&mut self, cmd: SdioCommand, buf: &mut [u8]) -> Result<(), Error>;
+    fn write_blocks(&mut self, cmd: SdioCommand, buf: &[u8]) -> Result<(), Error>;
+    fn set_bus_width(&mut self, width: u8) -> Result<(), Error>;
+    fn set_clock(&mut self, hz: u32) -> Result<(), Error>;
 }
 
 /// IommuDriver provides DMA remapping.

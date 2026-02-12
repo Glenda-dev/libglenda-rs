@@ -6,6 +6,7 @@ pub mod input;
 pub mod net;
 pub mod pci;
 pub mod rng;
+pub mod sdio;
 pub mod spi;
 pub mod timer;
 pub mod uart;
@@ -17,6 +18,7 @@ pub const PCI_PROTO: usize = 0x301;
 pub const IOMMU_PROTO: usize = 0x302;
 pub const UART_PROTO: usize = 0x303;
 pub const TIMER_PROTO: usize = 0x30F;
+pub const SDIO_PROTO: usize = 0x310;
 
 // Storage & Network
 pub const BLOCK_PROTO: usize = 0x304;
