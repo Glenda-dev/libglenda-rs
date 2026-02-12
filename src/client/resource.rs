@@ -1,9 +1,10 @@
-use crate::cap::{CapPtr, CapType, Endpoint, Frame};
+use crate::cap::{CNode, CapPtr, CapType, Endpoint, Frame};
 use crate::error::Error;
 use crate::interface::{MemoryService, ResourceService};
 use crate::ipc::{Badge, MsgFlags, MsgTag, UTCB};
 use crate::protocol::{RESOURCE_PROTO, resource};
 use crate::set_mrs;
+use crate::utils::manager::CSpaceProvider;
 
 pub struct ResourceClient {
     endpoint: Endpoint,
@@ -159,6 +160,13 @@ impl MemoryService for ResourceClient {
         set_mrs!(utcb, addr, len);
         utcb.set_msg_tag(tag);
         self.endpoint.call(&mut utcb)?;
+        Ok(())
+    }
+}
+
+impl CSpaceProvider for ResourceClient {
+    fn alloc_cnode(&mut self, _dest_cnode: CNode, dest_slot: CapPtr) -> Result<(), Error> {
+        let _ = self.alloc(Badge::null(), CapType::CNode, 0, dest_slot)?;
         Ok(())
     }
 }

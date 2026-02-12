@@ -62,4 +62,8 @@ impl CSpaceService for CSpaceManager {
     fn free(&mut self, slot: CapPtr) -> Result<(), Error> {
         self.free(slot)
     }
+
+    fn root(&mut self) -> CNode {
+        self.root_cnode
+    }
 }

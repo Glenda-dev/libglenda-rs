@@ -6,6 +6,7 @@ use crate::mem::Perms;
 pub trait CSpaceService {
     fn alloc(&mut self, provider: &mut dyn CSpaceProvider) -> Result<CapPtr, Error>;
     fn free(&mut self, slot: CapPtr) -> Result<(), Error>;
+    fn root(&mut self) -> CNode;
 }
 
 pub trait CSpaceProvider {

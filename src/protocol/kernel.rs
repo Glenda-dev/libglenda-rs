@@ -40,4 +40,4 @@ pub const UNKNOWN_FAULT: usize = 0x07;
 /// 异步通知 (Notification)
 /// 触发条件：ipc::notify
 /// 消息内容：通常为空，通过 Badge 传递事件位
-pub const NOTIFY: usize = 0x09;
+pub const NOTIFY: usize = 0x08;
