@@ -10,13 +10,13 @@ pub trait CSpaceService {
 }
 
 pub trait CSpaceProvider {
-    fn alloc_cnode(&mut self, dest_cnode: CNode, dest_slot: CapPtr) -> Result<(), Error>;
+    fn alloc_cnode(&mut self, dest: CapPtr) -> Result<(), Error>;
 }
 
 pub struct NullProvider;
 
 impl CSpaceProvider for NullProvider {
-    fn alloc_cnode(&mut self, _dest_cnode: CNode, _dest_slot: CapPtr) -> Result<(), Error> {
+    fn alloc_cnode(&mut self, _dest: CapPtr) -> Result<(), Error> {
         Err(Error::OutOfMemory)
     }
 }
@@ -60,13 +60,7 @@ pub trait VSpaceService {
 }
 
 pub trait UntypedService: CSpaceProvider {
-    fn alloc(
-        &mut self,
-        obj_type: CapType,
-        flags: usize,
-        dest_cnode: CNode,
-        dest_slot: CapPtr,
-    ) -> Result<usize, Error>;
+    fn alloc(&mut self, obj_type: CapType, flags: usize, dest: CapPtr) -> Result<usize, Error>;
 
     fn free(&mut self, cap: CapPtr) -> Result<(), Error>;
 

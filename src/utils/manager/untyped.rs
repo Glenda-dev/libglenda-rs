@@ -1,6 +1,6 @@
 use super::interface::{CSpaceProvider, UntypedService};
 use crate::cap::{CNODE_BITS, CNODE_PAGES};
-use crate::cap::{CNode, CapPtr, CapType, Untyped};
+use crate::cap::{CapPtr, CapType, Untyped};
 use crate::error::Error;
 use crate::utils::BootInfo;
 use crate::utils::bootinfo::MAX_UNTYPED_REGIONS;
@@ -46,26 +46,20 @@ impl UntypedManager {
 }
 
 impl UntypedService for UntypedManager {
-    fn alloc(
-        &mut self,
-        obj_type: CapType,
-        flags: usize,
-        dest_cnode: CNode,
-        dest_slot: CapPtr,
-    ) -> Result<usize, Error> {
+    fn alloc(&mut self, obj_type: CapType, flags: usize, dest: CapPtr) -> Result<usize, Error> {
         let pages = self.get_pages(obj_type, flags);
         for block in self.blocks.iter_mut() {
             if block.desc.watermark + pages <= block.desc.pages {
                 let paddr = block.desc.start + block.desc.watermark * 4096;
                 // Try to retype
                 let ret = match obj_type {
-                    CapType::Untyped => block.cap.retype_untyped(flags, dest_cnode, dest_slot),
-                    CapType::TCB => block.cap.retype_tcb(dest_cnode, dest_slot),
-                    CapType::PageTable => block.cap.retype_pagetable(flags, dest_cnode, dest_slot),
-                    CapType::CNode => block.cap.retype_cnode(dest_cnode, dest_slot),
-                    CapType::Frame => block.cap.retype_frame(flags, dest_cnode, dest_slot),
-                    CapType::VSpace => block.cap.retype_vspace(dest_cnode, dest_slot),
-                    CapType::Endpoint => block.cap.retype_endpoint(dest_cnode, dest_slot),
+                    CapType::Untyped => block.cap.retype_untyped(flags, dest),
+                    CapType::TCB => block.cap.retype_tcb(dest),
+                    CapType::PageTable => block.cap.retype_pagetable(flags, dest),
+                    CapType::CNode => block.cap.retype_cnode(dest),
+                    CapType::Frame => block.cap.retype_frame(flags, dest),
+                    CapType::VSpace => block.cap.retype_vspace(dest),
+                    CapType::Endpoint => block.cap.retype_endpoint(dest),
                     _ => return Err(Error::NotSupported),
                 };
 
@@ -103,7 +97,7 @@ impl UntypedService for UntypedManager {
 }
 
 impl CSpaceProvider for UntypedManager {
-    fn alloc_cnode(&mut self, dest_cnode: CNode, dest_slot: CapPtr) -> Result<(), Error> {
-        self.alloc(CapType::CNode, 1, dest_cnode, dest_slot).map(|_| ())
+    fn alloc_cnode(&mut self, dest: CapPtr) -> Result<(), Error> {
+        self.alloc(CapType::CNode, 1, dest).map(|_| ())
     }
 }

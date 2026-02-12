@@ -1,4 +1,4 @@
-use crate::cap::{CNode, CapPtr, CapType, Endpoint, Frame};
+use crate::cap::{CapPtr, CapType, Endpoint, Frame};
 use crate::error::Error;
 use crate::interface::{MemoryService, ResourceService};
 use crate::ipc::{Badge, MsgFlags, MsgTag, UTCB};
@@ -165,8 +165,8 @@ impl MemoryService for ResourceClient {
 }
 
 impl CSpaceProvider for ResourceClient {
-    fn alloc_cnode(&mut self, _dest_cnode: CNode, dest_slot: CapPtr) -> Result<(), Error> {
-        let _ = self.alloc(Badge::null(), CapType::CNode, 0, dest_slot)?;
+    fn alloc_cnode(&mut self, dest: CapPtr) -> Result<(), Error> {
+        let _ = self.alloc(Badge::null(), CapType::CNode, 0, dest)?;
         Ok(())
     }
 }

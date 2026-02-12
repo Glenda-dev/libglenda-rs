@@ -132,7 +132,8 @@ impl VSpaceManager {
 
                     // Alloc slot and object
                     let new_slot = slots.alloc(objects.as_cspace_provider())?;
-                    objects.alloc(CapType::Frame, 1, root_cnode, new_slot)?;
+                    let full_dest = CapPtr::concat(root_cnode.cap(), new_slot);
+                    objects.alloc(CapType::Frame, 1, full_dest)?;
                     let new_frame = Frame::from(new_slot);
 
                     // Map both to copy
@@ -201,7 +202,8 @@ impl VSpaceManager {
         if !entries.contains_key(&idx) {
             let slot = slots.alloc(objects.as_cspace_provider())?;
             let target_level = level - 1;
-            objects.alloc(CapType::PageTable, target_level, dest_cnode, slot)?;
+            let full_dest = CapPtr::concat(dest_cnode.cap(), slot);
+            objects.alloc(CapType::PageTable, target_level, full_dest)?;
             let pt = PageTable::from(slot);
 
             if pivot_root.map_table(pt, vaddr, level).is_err() {

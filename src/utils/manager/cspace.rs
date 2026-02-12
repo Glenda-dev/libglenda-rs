@@ -50,7 +50,8 @@ impl CSpaceService for CSpaceManager {
             let l1_cache_idx = l0_idx - L1_START_SLOT;
             if !self.l1_cnodes[l1_cache_idx] {
                 let l0_cptr = CapPtr::from(l0_idx);
-                provider.alloc_cnode(self.root_cnode, l0_cptr).map_err(|_| Error::OutOfMemory)?;
+                let full_dest = CapPtr::concat(self.root_cnode.cap(), l0_cptr);
+                provider.alloc_cnode(full_dest).map_err(|_| Error::OutOfMemory)?;
                 self.l1_cnodes[l1_cache_idx] = true;
             }
 
