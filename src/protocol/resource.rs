@@ -24,8 +24,7 @@ pub enum ResourceType {
     Bootinfo = 3,
     Mmio = 4,
     Irq = 5,
-    Platform = 6,
-    Endpoint = 7,
+    Endpoint = 6,
     #[num_enum(default)]
     Unknown = 0,
 }

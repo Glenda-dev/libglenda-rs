@@ -1,4 +1,5 @@
 use crate::error::Error;
+use crate::protocol::device::DeviceDescNode;
 use crate::protocol::device::fb::FbInfo;
 use crate::protocol::device::input::InputEvent;
 use crate::protocol::device::net::MacAddress;
@@ -6,6 +7,7 @@ use crate::protocol::device::pci::PciAddress;
 use crate::protocol::device::sdio::SdioCommand;
 use crate::protocol::device::usb::UsbSetupPacket;
 use crate::protocol::device::wifi::WifiApInfo;
+use alloc::vec::Vec;
 
 pub trait DriverService {
     fn init(&mut self) -> Result<(), Error>;
@@ -136,4 +138,8 @@ pub trait IommuDriver {
     fn map(&mut self, iova: usize, paddr: usize, size: usize, flags: u32) -> Result<(), Error>;
     fn unmap(&mut self, iova: usize, size: usize) -> Result<(), Error>;
     fn flush(&mut self) -> Result<(), Error>;
+}
+
+pub trait BusDriver {
+    fn probe(&mut self) -> Result<Vec<DeviceDescNode>, Error>;
 }
