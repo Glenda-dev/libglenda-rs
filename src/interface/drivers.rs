@@ -7,6 +7,7 @@ use crate::protocol::device::pci::PciAddress;
 use crate::protocol::device::sdio::SdioCommand;
 use crate::protocol::device::usb::UsbSetupPacket;
 use crate::protocol::device::wifi::WifiApInfo;
+use alloc::string::String;
 use alloc::vec::Vec;
 
 pub trait DriverService {
@@ -142,4 +143,8 @@ pub trait IommuDriver {
 
 pub trait BusDriver {
     fn probe(&mut self) -> Result<Vec<DeviceDescNode>, Error>;
+}
+
+pub trait ProbeDriver {
+    fn probe(&mut self) -> Result<Vec<String>, Error>;
 }

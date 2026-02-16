@@ -4,6 +4,7 @@ use crate::interface::device::DeviceService;
 use crate::ipc::{Badge, MsgFlags, MsgTag, UTCB};
 use crate::protocol;
 use crate::protocol::device::DeviceDescNode;
+use alloc::string::String;
 use alloc::vec::Vec;
 
 pub struct DeviceClient {
@@ -60,6 +61,17 @@ impl DeviceService for DeviceClient {
             MsgTag::new(protocol::DEVICE_PROTO, protocol::device::REPORT, MsgFlags::HAS_BUFFER);
         unsafe {
             utcb.write_postcard(&desc)?;
+        }
+        utcb.set_msg_tag(tag);
+        self.endpoint.call(&mut utcb)
+    }
+
+    fn update(&mut self, _badge: Badge, compatible: Vec<String>) -> Result<(), Error> {
+        let mut utcb = unsafe { UTCB::new() };
+        let tag =
+            MsgTag::new(protocol::DEVICE_PROTO, protocol::device::UPDATE, MsgFlags::HAS_BUFFER);
+        unsafe {
+            utcb.write_postcard(&compatible)?;
         }
         utcb.set_msg_tag(tag);
         self.endpoint.call(&mut utcb)

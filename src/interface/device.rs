@@ -10,4 +10,6 @@ pub trait DeviceService {
     fn get_mmio(&mut self, badge: Badge, id: usize) -> Result<(Frame, usize, usize), Error>;
     fn get_irq(&mut self, badge: Badge, id: usize) -> Result<IrqHandler, Error>;
     fn report(&mut self, badge: Badge, desc: Vec<DeviceDescNode>) -> Result<(), Error>;
+    fn update(&mut self, badge: Badge, compatible: Vec<alloc::string::String>)
+    -> Result<(), Error>;
 }

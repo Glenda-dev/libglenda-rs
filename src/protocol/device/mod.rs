@@ -3,6 +3,7 @@ pub const GET_MMIO: usize = 1;
 pub const GET_IRQ: usize = 2;
 pub const SCAN_PLATFORM: usize = 3;
 pub const REPORT: usize = 4;
+pub const UPDATE: usize = 5;
 
 pub mod block;
 pub mod fb;
