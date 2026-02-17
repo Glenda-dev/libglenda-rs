@@ -4,8 +4,8 @@ use crate::cap::{KERNEL_CAP, KERNEL_SLOT, MONITOR_CAP};
 use crate::console::KConsole;
 use crate::console::{ANSI_RED, ANSI_RESET};
 use crate::error::Error;
-use crate::ipc::{MsgFlags, MsgTag, UTCB};
-use crate::mem::{HEAP_SIZE, HEAP_VA};
+use crate::ipc::{MsgFlags, MsgTag, ThreadControlBlock, UTCB};
+use crate::mem::{HEAP_SIZE, HEAP_VA, get_utcb_va};
 use crate::println;
 use crate::protocol;
 use crate::protocol::resource::ResourceType;
@@ -14,6 +14,9 @@ use crate::sync::mutex::Mutex;
 use crate::sys::{exit, sbrk};
 use buddy_system_allocator::LockedHeap;
 use core::alloc::{GlobalAlloc, Layout};
+
+#[unsafe(no_mangle)]
+static mut MAIN_TCB: ThreadControlBlock = ThreadControlBlock { self_ptr: 0, utcb: 0 };
 
 struct DynamicAllocator {
     inner: LockedHeap<32>,
@@ -61,15 +64,35 @@ pub fn expand(size: usize) -> Result<(), Error> {
 }
 
 #[unsafe(no_mangle)]
-unsafe extern "C" fn glenda_start() -> ! {
+unsafe extern "C" fn glenda_start(_arg: usize, tid: usize) -> ! {
     unsafe extern "Rust" {
         fn main() -> usize;
+    }
+    unsafe {
+        init_tcb(tid);
     }
     init_console();
     init_heap();
 
     let ret = unsafe { main() };
     exit(ret);
+}
+
+unsafe fn init_tcb(tid: usize) {
+    let tp = crate::arch::thread::get_thread_pointer();
+    unsafe {
+        if tp == 0 {
+            // Main thread
+            MAIN_TCB.self_ptr = core::ptr::addr_of_mut!(MAIN_TCB) as usize;
+            MAIN_TCB.utcb = get_utcb_va(tid);
+            crate::arch::thread::set_thread_pointer(core::ptr::addr_of_mut!(MAIN_TCB) as usize);
+        } else {
+            // Thread created by thread_create, tp already set to provided TCB
+            let tcb = &mut *(tp as *mut ThreadControlBlock);
+            tcb.self_ptr = tp;
+            tcb.utcb = get_utcb_va(tid);
+        }
+    }
 }
 
 #[panic_handler]

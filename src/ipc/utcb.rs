@@ -1,7 +1,7 @@
 use super::{Badge, MsgTag};
 use crate::cap::CapPtr;
 use crate::error::Error;
-use crate::mem::UTCB_VA;
+use crate::mem::get_utcb_va;
 use alloc::string::String;
 use alloc::vec::Vec;
 use core::mem::MaybeUninit;
@@ -12,6 +12,12 @@ pub const IPC_BUFFER_SIZE: usize = 3 * 1024; // 3KB
 pub const MAX_MRS: usize = 8;
 
 pub type MsgArgs = [usize; MAX_MRS];
+
+#[repr(C)]
+pub struct ThreadControlBlock {
+    pub self_ptr: usize,
+    pub utcb: usize,
+}
 
 #[macro_export]
 macro_rules! set_mrs {
@@ -46,7 +52,12 @@ impl UTCB {
     /// # Safety
     /// 这个函数应该只在线程的某次 IPC 操作开始前调用，不应长期持有返回的对象。
     pub unsafe fn new() -> &'static mut Self {
-        unsafe { &mut *(UTCB_VA as *mut Self) }
+        let tp = crate::arch::thread::get_thread_pointer();
+        if tp == 0 {
+            return unsafe { &mut *(get_utcb_va(0) as *mut Self) };
+        }
+        let tcb = unsafe { &*(tp as *const ThreadControlBlock) };
+        unsafe { &mut *(tcb.utcb as *mut Self) }
     }
 
     pub fn get_msg_tag(&self) -> MsgTag {

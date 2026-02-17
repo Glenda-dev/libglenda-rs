@@ -1,6 +1,6 @@
 use crate::cap::{CNode, CapPtr, Endpoint};
 use crate::error::Error;
-use crate::interface::ProcessService;
+use crate::interface::{ProcessService, ThreadService};
 use crate::ipc::{Badge, MsgFlags, MsgTag, UTCB};
 use crate::protocol::PROCESS_PROTO;
 use crate::protocol::process;
@@ -95,5 +95,28 @@ impl ProcessService for ProcessClient {
         utcb.set_recv_window(recv);
         self.endpoint.call(&mut utcb)?;
         Ok(CNode::from(recv))
+    }
+}
+
+impl ThreadService for ProcessClient {
+    fn thread_create(
+        &mut self,
+        _pid: Badge,
+        entry: usize,
+        arg: usize,
+        stack_top: usize,
+        tls: usize,
+    ) -> Result<usize, Error> {
+        let tag = MsgTag::new(PROCESS_PROTO, process::THREAD_CREATE, MsgFlags::NONE);
+        let mut utcb = unsafe { UTCB::new() };
+        utcb.clear();
+        set_mrs!(utcb, entry, arg, stack_top, tls);
+        utcb.set_msg_tag(tag);
+        // Note: Currently thread creation still uses the Process endpoint, which is fine
+        // as the server likely handles both on the same capability or separate ones.
+        // Assuming ProcessClient uses an endpoint that maps to the ProcessManager logic
+        // which implements both services.
+        self.endpoint.call(&mut utcb)?;
+        Ok(utcb.get_mr(0))
     }
 }

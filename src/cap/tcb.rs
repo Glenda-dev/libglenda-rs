@@ -33,7 +33,7 @@ impl TCB {
             vspace.cap().bits(),
             utcb_frame.cap().bits(),
             trapframe.cap().bits(),
-            kstack.cap().bits()
+            kstack.cap().bits(),
         );
         self.0.invoke(tcbmethod::CONFIGURE, &mut utcb)
     }
@@ -52,6 +52,13 @@ impl TCB {
         self.0.invoke(tcbmethod::SET_ENTRYPOINT, &mut utcb)
     }
 
+    pub fn set_address(&self, utcb_va: usize, trapframe_va: usize) -> Result<(), Error> {
+        let mut utcb = unsafe { UTCB::new() };
+        utcb.clear();
+        set_mrs!(utcb, utcb_va, trapframe_va);
+        self.0.invoke(tcbmethod::SET_ADDRESS, &mut utcb)
+    }
+
     pub fn set_fault_handler(&self, fault_ep: Endpoint, native: bool) -> Result<(), Error> {
         let mut utcb = unsafe { UTCB::new() };
         utcb.clear();
@@ -59,9 +66,12 @@ impl TCB {
         self.0.invoke(tcbmethod::SET_FAULT_HANDLER, &mut utcb)
     }
 
-    pub fn set_registers(&self) -> Result<(), Error> {
+    pub fn set_registers(&self, regs: &[usize]) -> Result<(), Error> {
         let mut utcb = unsafe { UTCB::new() };
         utcb.clear();
+        for (i, &reg) in regs.iter().enumerate() {
+            utcb.set_mr(i, reg);
+        }
         self.0.invoke(tcbmethod::SET_REGISTERS, &mut utcb)
     }
 

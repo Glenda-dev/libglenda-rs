@@ -8,7 +8,7 @@ pub mod macros;
 pub use msg::{MsgFlags, MsgTag};
 pub use router::{Handler, IpcRouter};
 pub use utcb::{IPC_BUFFER_SIZE, MAX_MRS};
-pub use utcb::{MsgArgs, UTCB};
+pub use utcb::{MsgArgs, ThreadControlBlock, UTCB};
 
 use core::cmp::Ord;
 use core::fmt::{Debug, Display};
