@@ -28,7 +28,7 @@ pub fn exit(code: usize) -> ! {
     set_mrs!(utcb, code);
     utcb.set_msg_tag(tag);
     let _ = MONITOR_CAP.send(&mut utcb);
-    print!("Failed to exit with code {}", code);
+    print!("Failed to exit with code {}\n", code);
     loop {
         unsafe {
             panic_break();

@@ -28,7 +28,7 @@ use crate::arch::mem::PGSIZE;
 use crate::error::Error;
 use crate::ipc::UTCB;
 use crate::sys::sys_invoke;
-use core::fmt::Display;
+use core::fmt::{Debug, Display};
 use num_enum::FromPrimitive;
 
 const SLOT_SIZE: usize = 48; // 每个 Slot 占用 48 字节
@@ -39,7 +39,7 @@ pub const CNODE_SLOTS: usize = 1 << CNODE_BITS;
 pub const CNODE_MASK: usize = CNODE_SLOTS - 1;
 
 #[repr(transparent)]
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+#[derive(Clone, Copy, PartialEq, Eq)]
 pub struct CapPtr(usize);
 
 impl CapPtr {
@@ -99,7 +99,13 @@ impl CapPtr {
 
 impl Display for CapPtr {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        write!(f, "{:x}", self.0)
+        write!(f, "{:#x}", self.0)
+    }
+}
+
+impl Debug for CapPtr {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        write!(f, "{:#x}", self.0)
     }
 }
 

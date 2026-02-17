@@ -64,11 +64,7 @@ where
                 flags |= MsgFlags::HAS_BUFFER;
             }
 
-            utcb.set_msg_tag(MsgTag::new(
-                protocol::GENERIC_PROTO,
-                protocol::generic::REPLY,
-                flags,
-            ));
+            utcb.set_msg_tag(MsgTag::new(protocol::GENERIC_PROTO, protocol::generic::REPLY, flags));
             Ok(())
         }
         Err(e) => Err(e),
@@ -110,5 +106,20 @@ where
             Ok(())
         }
         Err(e) => Err(e),
+    }
+}
+
+pub fn handle_call_noreply<T, F>(utcb: &mut UTCB, f: F) -> Result<(), Error>
+where
+    F: FnOnce(&mut UTCB) -> Result<T, Error>,
+    T: IpcReturn,
+{
+    match f(utcb) {
+        Ok(_) => {
+            Err(Error::Success) // Indicate success but avoid reply since caller doesn't expect it
+        }
+        Err(e) => {
+            panic!("handle_call_noreply: unexpected error: {:?}", e);
+        }
     }
 }
