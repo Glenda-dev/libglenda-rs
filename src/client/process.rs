@@ -73,11 +73,11 @@ impl ProcessService for ProcessClient {
         Ok(())
     }
 
-    fn exec(&mut self, _pid: Badge, elf_data: &[u8]) -> Result<(usize, usize), Error> {
-        let tag = MsgTag::new(PROCESS_PROTO, process::EXEC, MsgFlags::NONE);
+    fn exec(&mut self, _pid: Badge, path: &str) -> Result<(usize, usize), Error> {
+        let tag = MsgTag::new(PROCESS_PROTO, process::EXEC, MsgFlags::HAS_BUFFER);
         let mut utcb = unsafe { UTCB::new() };
         utcb.clear();
-        set_mrs!(utcb, elf_data.len());
+        unsafe { utcb.write_str(path)? };
         utcb.set_msg_tag(tag);
         // Note: passing large buffers might need another mechanism if it exceeds IPC_BUFFER_SIZE
         // For now we assume the caller handled it if it fits, or this is just a protocol definition.

@@ -8,7 +8,6 @@ name = "glenda"
 crate-type = ["staticlib", "rlib"]
 
 [dependencies]
-buddy_system_allocator = "0.9"
 serde = { version = "1.0", default-features = false, features = [
     "derive",
     "alloc",
@@ -18,6 +17,8 @@ postcard = { version = "1.0", default-features = false, features = ["alloc"] }
 bitflags = "2.10.0"
 serde-big-array = "0.5.1"
 num_enum = { version = "0.7.5", default-features = false }
+buddy_system_allocator = "0.12.0"
+linked_list_allocator = "0.10.5"
 
 [features]
 default = []

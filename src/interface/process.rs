@@ -6,11 +6,11 @@ use crate::ipc::{Badge, MsgArgs};
 pub trait ProcessService {
     fn get_pid(&mut self, pid: Badge) -> Result<usize, Error>;
     fn get_ppid(&mut self, pid: Badge) -> Result<usize, Error>;
-    fn spawn(&mut self, pid: Badge, name: &str) -> Result<usize, Error>;
+    fn spawn(&mut self, pid: Badge, path: &str) -> Result<usize, Error>;
     fn fork(&mut self, pid: Badge) -> Result<usize, Error>;
     fn exit(&mut self, pid: Badge, code: usize) -> Result<(), Error>;
     fn kill(&mut self, pid: Badge, target: usize) -> Result<(), Error>;
-    fn exec(&mut self, pid: Badge, elf_data: &[u8]) -> Result<(usize, usize), Error>;
+    fn exec(&mut self, pid: Badge, path: &str) -> Result<(usize, usize), Error>;
     fn get_cnode(&mut self, pid: Badge, target: Badge, recv: CapPtr) -> Result<CNode, Error>;
 }
 

@@ -10,15 +10,15 @@ use crate::set_mrs;
 pub const MONITOR_SLOT: CapPtr = CapPtr::from(4);
 pub const MONITOR_CAP: Endpoint = Endpoint::from(MONITOR_SLOT);
 
-pub fn sbrk(size: usize) -> Result<usize, Error> {
+pub fn sbrk(incr: isize) -> Result<usize, Error> {
     let tag = MsgTag::new(protocol::RESOURCE_PROTO, protocol::resource::SBRK, MsgFlags::NONE);
     let mut utcb = unsafe { UTCB::new() };
     utcb.clear();
-    set_mrs!(utcb, size);
+    set_mrs!(utcb, incr as usize);
     utcb.set_msg_tag(tag);
     MONITOR_CAP.call(&mut utcb)?;
     let ret = utcb.get_mr(0);
-    if ret > 0 { Ok(ret) } else { Err(Error::OutOfMemory) }
+    if ret != 0 { Ok(ret) } else { Err(Error::OutOfMemory) }
 }
 
 pub fn exit(code: usize) -> ! {
