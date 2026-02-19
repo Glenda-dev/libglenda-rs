@@ -65,11 +65,13 @@ pub enum LogicDeviceType {
     Block(PartitionMetadata),
     Net,
     Fb,
+    Uart,
+    Input,
+    Gpio,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LogicDeviceDesc {
-    pub name: String,
-    pub parent_name: String,
     pub dev_type: LogicDeviceType,
+    pub parent_name: String,
 }
