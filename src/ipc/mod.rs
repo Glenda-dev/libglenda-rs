@@ -12,6 +12,7 @@ pub use utcb::{MsgArgs, ThreadControlBlock, UTCB};
 
 use core::cmp::Ord;
 use core::fmt::{Debug, Display};
+use core::ops::{BitAnd, BitOr};
 
 #[derive(Clone, Copy, PartialEq, PartialOrd, Eq, Ord)]
 #[repr(C)]
@@ -40,5 +41,21 @@ impl Debug for Badge {
 impl Display for Badge {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         write!(f, "{}", self.0)
+    }
+}
+
+impl BitAnd for Badge {
+    type Output = Self;
+
+    fn bitand(self, rhs: Self) -> Self::Output {
+        Self(self.0 & rhs.0)
+    }
+}
+
+impl BitOr for Badge {
+    type Output = Self;
+
+    fn bitor(self, rhs: Self) -> Self::Output {
+        Self(self.0 | rhs.0)
     }
 }

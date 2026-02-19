@@ -1,4 +1,4 @@
-use crate::cap::{Endpoint, Frame, IrqHandler};
+use crate::cap::{CapPtr, Endpoint, Frame, IrqHandler};
 use crate::error::Error;
 use crate::interface::device::DeviceService;
 use crate::ipc::{Badge, MsgFlags, MsgTag, UTCB};
@@ -75,5 +75,81 @@ impl DeviceService for DeviceClient {
         }
         utcb.set_msg_tag(tag);
         self.endpoint.call(&mut utcb)
+    }
+
+    fn register_logic(
+        &mut self,
+        _badge: Badge,
+        desc: protocol::device::LogicDeviceDesc,
+        endpoint: CapPtr,
+    ) -> Result<(), Error> {
+        let mut utcb = unsafe { UTCB::new() };
+        let tag = MsgTag::new(
+            protocol::DEVICE_PROTO,
+            protocol::device::REGISTER_LOGIC,
+            MsgFlags::HAS_BUFFER | MsgFlags::HAS_CAP,
+        );
+        unsafe {
+            utcb.write_postcard(&desc)?;
+        }
+        utcb.set_cap_transfer(endpoint);
+        utcb.set_msg_tag(tag);
+        self.endpoint.call(&mut utcb)
+    }
+
+    fn alloc_logic(
+        &mut self,
+        _badge: Badge,
+        dev_type: u32,
+        criteria: &str,
+    ) -> Result<Endpoint, Error> {
+        let mut utcb = unsafe { UTCB::new() };
+        let tag = MsgTag::new(
+            protocol::DEVICE_PROTO,
+            protocol::device::ALLOC_LOGIC,
+            MsgFlags::HAS_BUFFER,
+        );
+        let recv = utcb.get_recv_window();
+        if recv.is_null() {
+            return Err(Error::InvalidArgs);
+        }
+        unsafe {
+            utcb.write_postcard(&(dev_type, criteria))?;
+        }
+        utcb.set_msg_tag(tag);
+        self.endpoint.call(&mut utcb)?;
+        Ok(Endpoint::from(recv))
+    }
+
+    fn query(
+        &mut self,
+        _badge: Badge,
+        query: protocol::device::DeviceQuery,
+    ) -> Result<Vec<String>, Error> {
+        let mut utcb = unsafe { UTCB::new() };
+        let tag =
+            MsgTag::new(protocol::DEVICE_PROTO, protocol::device::QUERY, MsgFlags::HAS_BUFFER);
+        unsafe {
+            utcb.write_postcard(&query)?;
+        }
+        utcb.set_msg_tag(tag);
+        self.endpoint.call(&mut utcb)?;
+        unsafe { utcb.read_postcard() }
+    }
+
+    fn get_desc(
+        &mut self,
+        _badge: Badge,
+        name: &str,
+    ) -> Result<protocol::device::DeviceDesc, Error> {
+        let mut utcb = unsafe { UTCB::new() };
+        let tag =
+            MsgTag::new(protocol::DEVICE_PROTO, protocol::device::GET_DESC, MsgFlags::HAS_BUFFER);
+        unsafe {
+            utcb.write_postcard(&name)?;
+        }
+        utcb.set_msg_tag(tag);
+        self.endpoint.call(&mut utcb)?;
+        unsafe { utcb.read_postcard() }
     }
 }

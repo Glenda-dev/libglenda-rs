@@ -1,0 +1,183 @@
+use core::sync::atomic::{AtomicU32, Ordering};
+
+// Operation Codes
+pub const IORING_OP_NOP: u8 = 0;
+pub const IORING_OP_READ: u8 = 1;
+pub const IORING_OP_WRITE: u8 = 2;
+pub const IORING_OP_SYNC: u8 = 3;
+
+#[repr(C)]
+#[derive(Debug, Clone, Copy, Default)]
+pub struct IoUringSqe {
+    pub opcode: u8,
+    pub flags: u8,
+    pub ioprio: u16,
+    pub fd: i32,
+    pub off: u64,
+    pub addr: u64,
+    pub len: u32,
+    pub user_data: u64,
+    pub __pad: [u64; 2],
+}
+
+#[repr(C)]
+#[derive(Debug, Clone, Copy, Default)]
+pub struct IoUringCqe {
+    pub user_data: u64,
+    pub res: i32,
+    pub flags: u32,
+}
+
+#[repr(C)]
+pub struct IoUring {
+    pub sq_head: AtomicU32,
+    pub sq_tail: AtomicU32,
+    pub sq_mask: u32,
+    pub sq_entries: u32,
+    pub cq_head: AtomicU32,
+    pub cq_tail: AtomicU32,
+    pub cq_mask: u32,
+    pub cq_entries: u32,
+    // SQEs are stored separately or inline?
+    // For simplicity, let's put them inline after header if size permits,
+    // or assume the memory layout is Header + SQEs + CQEs.
+}
+
+// Layout:
+// [ Header (64 bytes) ]
+// [ SQEs (N * 64 bytes) ]
+// [ CQEs (M * 16 bytes) ]
+
+pub const SQE_SIZE: usize = 64;
+pub const CQE_SIZE: usize = 16;
+pub const HEADER_SIZE: usize = 64; // round up to cache line
+
+pub struct IoUringBuffer {
+    ptr: *mut u8,
+    sq_entries: u32,
+    cq_entries: u32,
+}
+
+unsafe impl Send for IoUringBuffer {}
+unsafe impl Sync for IoUringBuffer {}
+
+impl IoUringBuffer {
+    pub unsafe fn new(ptr: *mut u8, _size: usize, sq_entries: u32, cq_entries: u32) -> Self {
+        unsafe {
+            let header = &mut *(ptr as *mut IoUring);
+            header.sq_entries = sq_entries;
+            header.sq_mask = sq_entries - 1;
+            header.cq_entries = cq_entries;
+            header.cq_mask = cq_entries - 1;
+            header.sq_head.store(0, Ordering::Release);
+            header.sq_tail.store(0, Ordering::Release);
+            header.cq_head.store(0, Ordering::Release);
+            header.cq_tail.store(0, Ordering::Release);
+        }
+
+        Self { ptr, sq_entries, cq_entries }
+    }
+
+    pub unsafe fn attach(ptr: *mut u8, _size: usize) -> Self {
+        let header = unsafe { &*(ptr as *const IoUring) };
+        Self { ptr, sq_entries: header.sq_entries, cq_entries: header.cq_entries }
+    }
+
+    fn header(&self) -> &mut IoUring {
+        unsafe { &mut *(self.ptr as *mut IoUring) }
+    }
+
+    fn sqes_mut(&self) -> *mut IoUringSqe {
+        unsafe { self.ptr.add(HEADER_SIZE) as *mut IoUringSqe }
+    }
+
+    fn cqes_mut(&self) -> *mut IoUringCqe {
+        unsafe {
+            self.ptr.add(HEADER_SIZE + self.sq_entries as usize * SQE_SIZE) as *mut IoUringCqe
+        }
+    }
+
+    pub fn push_sqe(&self, sqe: IoUringSqe) -> Result<(), ()> {
+        let header = self.header();
+        let tail = header.sq_tail.load(Ordering::Acquire);
+        let head = header.sq_head.load(Ordering::Acquire);
+
+        if tail.wrapping_sub(head) >= self.sq_entries {
+            return Err(());
+        }
+
+        let index = tail & header.sq_mask;
+        unsafe {
+            let ptr = self.sqes_mut().add(index as usize);
+            *ptr = sqe;
+        }
+
+        header.sq_tail.store(tail.wrapping_add(1), Ordering::Release);
+        Ok(())
+    }
+
+    pub fn pop_sqe(&self) -> Option<IoUringSqe> {
+        let header = self.header();
+        let head = header.sq_head.load(Ordering::Acquire);
+        let tail = header.sq_tail.load(Ordering::Acquire);
+
+        if head == tail {
+            return None;
+        }
+
+        let index = head & header.sq_mask;
+        let sqe = unsafe { *self.sqes_mut().add(index as usize) };
+
+        header.sq_head.store(head.wrapping_add(1), Ordering::Release);
+        Some(sqe)
+    }
+
+    pub fn push_cqe(&self, cqe: IoUringCqe) -> Result<(), ()> {
+        let header = self.header();
+        let tail = header.cq_tail.load(Ordering::Acquire);
+        let head = header.cq_head.load(Ordering::Acquire);
+
+        if tail.wrapping_sub(head) >= self.cq_entries {
+            return Err(());
+        }
+
+        let index = tail & header.cq_mask;
+        unsafe {
+            let ptr = self.cqes_mut().add(index as usize);
+            *ptr = cqe;
+        }
+
+        header.cq_tail.store(tail.wrapping_add(1), Ordering::Release);
+        Ok(())
+    }
+
+    pub fn pop_cqe(&self) -> Option<IoUringCqe> {
+        let header = self.header();
+        let head = header.cq_head.load(Ordering::Acquire);
+        let tail = header.cq_tail.load(Ordering::Acquire);
+
+        if head == tail {
+            return None;
+        }
+
+        let index = head & header.cq_mask;
+        let cqe = unsafe { *self.cqes_mut().add(index as usize) };
+
+        header.cq_head.store(head.wrapping_add(1), Ordering::Release);
+        Some(cqe)
+    }
+
+    pub fn sq_len(&self) -> u32 {
+        let header = self.header();
+        let tail = header.sq_tail.load(Ordering::Relaxed);
+        let head = header.sq_head.load(Ordering::Relaxed);
+        tail.wrapping_sub(head)
+    }
+
+    pub fn cq_len(&self) -> u32 {
+        let header = self.header();
+        let tail = header.cq_tail.load(Ordering::Relaxed);
+        let head = header.cq_head.load(Ordering::Relaxed);
+        tail.wrapping_sub(head)
+    }
+}

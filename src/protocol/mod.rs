@@ -1,6 +1,5 @@
 pub mod auth;
 pub mod device;
-pub mod drivers;
 pub mod fs;
 pub mod generic;
 pub mod init;
