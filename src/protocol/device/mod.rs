@@ -8,6 +8,9 @@ pub const REGISTER_LOGIC: usize = 6;
 pub const ALLOC_LOGIC: usize = 7;
 pub const QUERY: usize = 8;
 pub const GET_DESC: usize = 9;
+pub const HOOK: usize = 10;
+pub const UNHOOK: usize = 11;
+pub const GET_LOGIC_DESC: usize = 12;
 
 pub mod block;
 pub mod fb;
@@ -26,6 +29,17 @@ pub mod wifi;
 use alloc::string::String;
 use alloc::vec::Vec;
 use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum HookTarget {
+    Endpoint(u64),
+    Type(LogicDeviceType),
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum DeviceNotification {
+    Registered(u64, LogicDeviceDesc), // (badge, desc)
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct DeviceDesc {
@@ -53,17 +67,9 @@ pub struct DeviceQuery {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct PartitionMetadata {
-    pub parent: u64, // CPtr to the parent RawBlock
-    pub start_lba: u64,
-    pub num_blocks: u64,
-    pub block_size: u64,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum LogicDeviceType {
     RawBlock(u64), // Capacity in bytes
-    Block(PartitionMetadata),
+    Block(u64),    // Capacity in blocks (sectors)
     Net,
     Fb,
     Uart,
@@ -76,6 +82,7 @@ pub enum LogicDeviceType {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LogicDeviceDesc {
+    pub name: String,
     pub dev_type: LogicDeviceType,
     pub parent_name: String,
     pub badge: Option<u64>, // Badge meant for the hardware driver to distinguish logical units

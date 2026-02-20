@@ -157,6 +157,7 @@ impl MemoryService for ResourceClient {
     fn munmap(&mut self, _pid: Badge, addr: usize, len: usize) -> Result<(), Error> {
         let tag = MsgTag::new(RESOURCE_PROTO, resource::MUNMAP, MsgFlags::NONE);
         let mut utcb = unsafe { UTCB::new() };
+        utcb.clear();
         set_mrs!(utcb, addr, len);
         utcb.set_msg_tag(tag);
         self.endpoint.call(&mut utcb)?;

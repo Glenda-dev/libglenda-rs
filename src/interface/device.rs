@@ -35,13 +35,35 @@ pub trait DeviceService {
 
     /// Get description of a device by name.
     fn get_desc(&mut self, badge: Badge, name: &str) -> Result<DeviceDesc, Error>;
+
+    /// Get description of a logical device by name. Returns (id, desc)
+    fn get_logic_desc(&mut self, badge: Badge, name: &str)
+    -> Result<(u64, LogicDeviceDesc), Error>;
+
+    fn hook(
+        &mut self,
+        badge: Badge,
+        target: crate::protocol::device::HookTarget,
+        endpoint: CapPtr,
+    ) -> Result<(), Error>;
+    fn unhook(
+        &mut self,
+        badge: Badge,
+        target: crate::protocol::device::HookTarget,
+    ) -> Result<(), Error>;
 }
 
 /// ThermalService provides system-wide thermal monitoring.
 pub trait ThermalService {
     /// Get all thermal zones in the system.
-    fn get_thermal_zones(&mut self) -> Result<crate::protocol::device::thermal::ThermalZones, Error>;
+    fn get_thermal_zones(
+        &mut self,
+    ) -> Result<crate::protocol::device::thermal::ThermalZones, Error>;
 
     /// Report thermal zone information for a specific sensor.
-    fn update_thermal_zones(&mut self, badge: Badge, zones: crate::protocol::device::thermal::ThermalZones) -> Result<(), Error>;
+    fn update_thermal_zones(
+        &mut self,
+        badge: Badge,
+        zones: crate::protocol::device::thermal::ThermalZones,
+    ) -> Result<(), Error>;
 }

@@ -152,4 +152,57 @@ impl DeviceService for DeviceClient {
         self.endpoint.call(&mut utcb)?;
         unsafe { utcb.read_postcard() }
     }
+
+    fn get_logic_desc(
+        &mut self,
+        _badge: Badge,
+        name: &str,
+    ) -> Result<(u64, protocol::device::LogicDeviceDesc), Error> {
+        let mut utcb = unsafe { UTCB::new() };
+        let tag =
+            MsgTag::new(protocol::DEVICE_PROTO, protocol::device::GET_LOGIC_DESC, MsgFlags::NONE);
+        unsafe {
+            utcb.write_postcard(&name)?;
+        }
+        utcb.set_msg_tag(tag);
+        self.endpoint.call(&mut utcb)?;
+        let id = utcb.get_mr(0) as u64;
+        let desc = unsafe { utcb.read_postcard()? };
+        Ok((id, desc))
+    }
+
+    fn hook(
+        &mut self,
+        _badge: Badge,
+        target: crate::protocol::device::HookTarget,
+        endpoint: CapPtr,
+    ) -> Result<(), Error> {
+        let mut utcb = unsafe { UTCB::new() };
+        let tag = MsgTag::new(
+            protocol::DEVICE_PROTO,
+            protocol::device::HOOK,
+            MsgFlags::HAS_BUFFER | MsgFlags::HAS_CAP,
+        );
+        unsafe {
+            utcb.write_postcard(&target)?;
+        }
+        utcb.set_cap_transfer(endpoint);
+        utcb.set_msg_tag(tag);
+        self.endpoint.call(&mut utcb)
+    }
+
+    fn unhook(
+        &mut self,
+        _badge: Badge,
+        target: crate::protocol::device::HookTarget,
+    ) -> Result<(), Error> {
+        let mut utcb = unsafe { UTCB::new() };
+        let tag =
+            MsgTag::new(protocol::DEVICE_PROTO, protocol::device::UNHOOK, MsgFlags::HAS_BUFFER);
+        unsafe {
+            utcb.write_postcard(&target)?;
+        }
+        utcb.set_msg_tag(tag);
+        self.endpoint.call(&mut utcb)
+    }
 }
