@@ -18,6 +18,7 @@ pub mod net;
 pub mod pci;
 pub mod sdio;
 pub mod spi;
+pub mod thermal;
 pub mod uart;
 pub mod usb;
 pub mod wifi;
@@ -68,10 +69,14 @@ pub enum LogicDeviceType {
     Uart,
     Input,
     Gpio,
+    Platform,
+    Thermal,
+    Battery,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct LogicDeviceDesc {
     pub dev_type: LogicDeviceType,
     pub parent_name: String,
+    pub badge: Option<u64>, // Badge meant for the hardware driver to distinguish logical units
 }
