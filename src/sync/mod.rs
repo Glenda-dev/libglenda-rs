@@ -1,6 +1,7 @@
 pub mod channel;
 pub mod condvar;
 pub mod mutex;
+pub mod once;
 pub mod rwlock;
 pub mod semaphore;
 pub mod spinlock;
