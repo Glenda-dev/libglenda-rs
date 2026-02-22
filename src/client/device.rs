@@ -113,8 +113,13 @@ impl DeviceService for DeviceClient {
         if recv.is_null() {
             return Err(Error::InvalidArgs);
         }
+        let req = protocol::device::AllocLogicRequest {
+            dev_type,
+            criteria: alloc::string::String::from(criteria),
+            badge: _badge.bits() as u64,
+        };
         unsafe {
-            utcb.write_postcard(&(dev_type, criteria))?;
+            utcb.write_postcard(&req)?;
         }
         utcb.set_msg_tag(tag);
         self.endpoint.call(&mut utcb)?;
@@ -146,7 +151,7 @@ impl DeviceService for DeviceClient {
         let tag =
             MsgTag::new(protocol::DEVICE_PROTO, protocol::device::GET_DESC, MsgFlags::HAS_BUFFER);
         unsafe {
-            utcb.write_postcard(&name)?;
+            utcb.write_str(&name)?;
         }
         utcb.set_msg_tag(tag);
         self.endpoint.call(&mut utcb)?;
@@ -159,12 +164,15 @@ impl DeviceService for DeviceClient {
         name: &str,
     ) -> Result<(u64, protocol::device::LogicDeviceDesc), Error> {
         let mut utcb = unsafe { UTCB::new() };
-        let tag =
-            MsgTag::new(protocol::DEVICE_PROTO, protocol::device::GET_LOGIC_DESC, MsgFlags::NONE);
-        unsafe {
-            utcb.write_postcard(&name)?;
-        }
+        let tag = MsgTag::new(
+            protocol::DEVICE_PROTO,
+            protocol::device::GET_LOGIC_DESC,
+            MsgFlags::HAS_BUFFER,
+        );
         utcb.set_msg_tag(tag);
+        unsafe {
+            utcb.write_str(&name)?;
+        }
         self.endpoint.call(&mut utcb)?;
         let id = utcb.get_mr(0) as u64;
         let desc = unsafe { utcb.read_postcard()? };

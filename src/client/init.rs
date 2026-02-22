@@ -75,7 +75,7 @@ impl InitService for InitClient {
         utcb.clear();
         set_mrs!(utcb, stat);
         utcb.set_msg_tag(tag);
-        self.endpoint.send(&mut utcb)
+        self.endpoint.call(&mut utcb)
     }
 
     fn list_services(&self) -> Result<Vec<(String, ServiceStatus)>, Error> {

@@ -324,12 +324,19 @@ impl VSpaceService for VSpaceManager {
             )?;
 
             let idx0 = index(curr_vaddr, 0);
-            if leaf_map.contains_key(&idx0) {
+            if let Some(node) = leaf_map.get(&idx0) {
+                crate::println!(
+                    "VSpaceManager::map_frame: vaddr {:#x} (idx {}) already in shadow table: {:?}",
+                    curr_vaddr,
+                    idx0,
+                    node
+                );
                 return Err(Error::MappingFailed);
             }
         }
 
-        if self.root.map(frame, vaddr, perms).is_err() {
+        if let Err(e) = self.root.map(frame, vaddr, perms) {
+            crate::println!("VSpaceManager::map_frame: self.root.map failed with {:?}", e);
             return Err(Error::MappingFailed);
         }
 

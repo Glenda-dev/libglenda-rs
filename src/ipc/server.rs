@@ -91,13 +91,29 @@ where
     }
 }
 
+/// Special handler for asynchronous notifications (NOTIFY).
+///
+/// It executes the provided closure `f`.
+/// Returns `Err(Error::Success)` because notifications do not require a reply.
+pub fn handle_notify<F>(utcb: &mut UTCB, f: F) -> Result<(), Error>
+where
+    F: FnOnce(&mut UTCB) -> Result<(), Error>,
+{
+    match f(utcb) {
+        Ok(_) => {}
+        Err(e) => {
+            panic!("Notify should not return {:?}", e);
+        }
+    }
+    Err(Error::Success)
+}
+
 pub fn handle_buffer_call<F>(utcb: &mut UTCB, f: F) -> Result<(), Error>
 where
-    F: FnOnce() -> Result<(), Error>,
+    F: FnOnce(&mut UTCB) -> Result<CapPtr, Error>,
 {
-    match f() {
-        Ok(val) => {
-            val.to_mrs(utcb);
+    match f(utcb) {
+        Ok(_) => {
             utcb.set_msg_tag(MsgTag::new(
                 protocol::GENERIC_PROTO,
                 protocol::generic::REPLY,
@@ -106,20 +122,5 @@ where
             Ok(())
         }
         Err(e) => Err(e),
-    }
-}
-
-pub fn handle_call_noreply<T, F>(utcb: &mut UTCB, f: F) -> Result<(), Error>
-where
-    F: FnOnce(&mut UTCB) -> Result<T, Error>,
-    T: IpcReturn,
-{
-    match f(utcb) {
-        Ok(_) => {
-            Err(Error::Success) // Indicate success but avoid reply since caller doesn't expect it
-        }
-        Err(e) => {
-            panic!("handle_call_noreply: unexpected error: {:?}", e);
-        }
     }
 }

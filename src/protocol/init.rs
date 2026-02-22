@@ -1,4 +1,5 @@
 use alloc::string::String;
+use num_enum::FromPrimitive;
 use serde::{Deserialize, Serialize};
 
 pub const START: usize = 0x01;
@@ -7,7 +8,6 @@ pub const RESTART: usize = 0x03;
 pub const RELOAD: usize = 0x04;
 pub const QUERY: usize = 0x05;
 pub const LIST: usize = 0x06;
-
 pub const REPORT: usize = 0x10;
 
 #[repr(C)]
@@ -24,11 +24,13 @@ impl ServiceStatus {
     }
 }
 
-#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, FromPrimitive, PartialEq, Eq)]
 #[repr(usize)]
 pub enum ServiceState {
-    Starting = 0,
-    Running = 1,
-    Stopped = 2,
-    Exited = 3,
+    Starting = 1,
+    Running = 2,
+    Stopped = 3,
+    Exited = 4,
+    #[num_enum(default)]
+    Failed = 0,
 }

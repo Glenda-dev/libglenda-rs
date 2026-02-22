@@ -148,7 +148,7 @@ impl MemoryService for ResourceClient {
         let mut utcb = unsafe { UTCB::new() };
         utcb.clear();
         utcb.set_cap_transfer(frame.cap());
-        set_mrs!(utcb, frame.cap().bits(), addr, len);
+        set_mrs!(utcb, addr, len);
         utcb.set_msg_tag(tag);
         self.endpoint.call(&mut utcb)?;
         let new_addr = utcb.get_mr(0);

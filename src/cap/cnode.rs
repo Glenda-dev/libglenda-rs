@@ -64,11 +64,11 @@ impl CNode {
         self.0.invoke(cnodemethod::DEBUG_PRINT, &mut utcb)
     }
 
-    pub fn recycle(&self, cptr: CapPtr) -> Result<usize, Error> {
+    pub fn recycle(&self, cptr: CapPtr) -> Result<(usize, usize), Error> {
         let mut utcb = unsafe { UTCB::new() };
         utcb.clear();
         set_mrs!(utcb, cptr.bits());
         self.0.invoke(cnodemethod::RECYCLE, &mut utcb)?;
-        Ok(utcb.get_mr(0))
+        Ok((utcb.get_mr(0), utcb.get_mr(1)))
     }
 }

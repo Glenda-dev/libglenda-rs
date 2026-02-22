@@ -3,7 +3,7 @@ use crate::cap::{CNODE_BITS, CNODE_SLOTS, CNode, CapPtr};
 use crate::error::Error;
 use alloc::vec::Vec;
 
-const L0_DIRECT_LIMIT: usize = 192;
+const L0_DIRECT_LIMIT: usize = 64;
 const L1_START_SLOT: usize = L0_DIRECT_LIMIT + 1;
 const L1_SLOTS: usize = CNODE_SLOTS - L1_START_SLOT; // 63
 

@@ -9,13 +9,35 @@ use core::slice;
 pub struct SharedMemory {
     frame: Frame,
     vaddr: usize,
+    client_vaddr: usize,
+    paddr: u64,
     size: usize,
 }
 
 impl SharedMemory {
     /// Create a SharedMemory instance from an existing Frame.
     pub const fn from_frame(frame: Frame, vaddr: usize, size: usize) -> Self {
-        Self { frame, vaddr, size }
+        Self { frame, vaddr, client_vaddr: vaddr, paddr: 0, size }
+    }
+
+    pub const fn new(frame: Frame, vaddr: usize, size: usize) -> Self {
+        Self { frame, vaddr, client_vaddr: vaddr, paddr: 0, size }
+    }
+
+    pub fn set_client_vaddr(&mut self, vaddr: usize) {
+        self.client_vaddr = vaddr;
+    }
+
+    pub fn client_vaddr(&self) -> usize {
+        self.client_vaddr
+    }
+
+    pub fn set_paddr(&mut self, paddr: u64) {
+        self.paddr = paddr;
+    }
+
+    pub fn paddr(&self) -> u64 {
+        self.paddr
     }
 
     /// Map the shared memory into a VSpace.
@@ -57,5 +79,21 @@ impl SharedMemory {
     /// Get a pointer to the shared memory.
     pub fn as_ptr(&self) -> *mut u8 {
         self.vaddr as *mut u8
+    }
+
+    /// Check if the pointer is within the shared memory region.
+    pub fn contains_ptr(&self, ptr: *const u8) -> bool {
+        let p = ptr as usize;
+        p >= self.vaddr && p < self.vaddr + self.size
+    }
+
+    /// Get the client virtual address for a pointer within the shared memory region.
+    ///
+    /// # Panics
+    /// Panics if the pointer is not within the shared memory region.
+    pub fn client_vaddr_at(&self, ptr: *const u8) -> usize {
+        assert!(self.contains_ptr(ptr));
+        let offset = ptr as usize - self.vaddr;
+        self.client_vaddr + offset
     }
 }
