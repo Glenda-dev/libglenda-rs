@@ -110,7 +110,7 @@ where
 
 pub fn handle_buffer_call<F>(utcb: &mut UTCB, f: F) -> Result<(), Error>
 where
-    F: FnOnce(&mut UTCB) -> Result<CapPtr, Error>,
+    F: FnOnce(&mut UTCB) -> Result<(), Error>,
 {
     match f(utcb) {
         Ok(_) => {

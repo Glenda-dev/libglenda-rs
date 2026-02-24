@@ -16,7 +16,7 @@ unsafe impl<T: ?Sized + Send> Sync for Mutex<T> {}
 unsafe impl<T: ?Sized + Send> Send for Mutex<T> {}
 
 pub struct MutexGuard<'a, T: ?Sized> {
-    pub(crate) lock: &'a Mutex<T>,
+    pub lock: &'a Mutex<T>,
 }
 
 impl<T> Mutex<T> {

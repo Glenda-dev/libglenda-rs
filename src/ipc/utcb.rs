@@ -313,4 +313,71 @@ impl UTCB {
         let vec = unsafe { self.read_vec::<u8>() }?;
         String::from_utf8(vec).map_err(|_| Error::InvalidType)
     }
+
+    pub unsafe fn get_buffer_writer(&mut self) -> BufferWriter<'_> {
+        BufferWriter::new(&mut self.ipc_buffer, &mut self.size)
+    }
+
+    pub unsafe fn get_buffer_reader(&mut self) -> BufferReader<'_> {
+        BufferReader::new(&self.ipc_buffer, self.size)
+    }
+}
+
+pub struct BufferWriter<'a> {
+    buffer: &'a mut [u8],
+    size: &'a mut usize,
+    pos: usize,
+}
+
+impl<'a> BufferWriter<'a> {
+    pub fn new(buffer: &'a mut [u8], size: &'a mut usize) -> Self {
+        *size = 0;
+        Self { buffer, size, pos: 0 }
+    }
+
+    pub fn write_str(&mut self, s: &str) -> Result<(), Error> {
+        let bytes = s.as_bytes();
+        let len = bytes.len();
+        let total = core::mem::size_of::<usize>() + len;
+        if self.pos + total > IPC_BUFFER_SIZE {
+            return Err(Error::MessageTooLong);
+        }
+
+        self.buffer[self.pos..self.pos + core::mem::size_of::<usize>()]
+            .copy_from_slice(&(len as usize).to_le_bytes());
+        self.pos += core::mem::size_of::<usize>();
+        self.buffer[self.pos..self.pos + len].copy_from_slice(bytes);
+        self.pos += len;
+        *self.size = self.pos;
+        Ok(())
+    }
+}
+
+pub struct BufferReader<'a> {
+    buffer: &'a [u8],
+    size: usize,
+    pos: usize,
+}
+
+impl<'a> BufferReader<'a> {
+    pub fn new(buffer: &'a [u8], size: usize) -> Self {
+        Self { buffer, size, pos: 0 }
+    }
+
+    pub fn read_str(&mut self) -> Result<String, Error> {
+        if self.pos + core::mem::size_of::<usize>() > self.size {
+            return Err(Error::MessageTooLong);
+        }
+        let mut len_bytes = [0u8; core::mem::size_of::<usize>()];
+        len_bytes.copy_from_slice(&self.buffer[self.pos..self.pos + core::mem::size_of::<usize>()]);
+        let len = usize::from_le_bytes(len_bytes);
+        self.pos += core::mem::size_of::<usize>();
+
+        if self.pos + len > self.size {
+            return Err(Error::MessageTooLong);
+        }
+        let data = &self.buffer[self.pos..self.pos + len];
+        self.pos += len;
+        String::from_utf8(data.to_vec()).map_err(|_| Error::InvalidType)
+    }
 }

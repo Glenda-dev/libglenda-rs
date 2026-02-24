@@ -9,6 +9,8 @@ pub mod console;
 pub mod crt0;
 pub mod error;
 pub mod interface;
+pub use interface::fs;
+pub mod io;
 pub mod ipc;
 pub mod mem;
 pub mod protocol;

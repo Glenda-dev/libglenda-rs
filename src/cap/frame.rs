@@ -13,3 +13,15 @@ impl Frame {
         self.0
     }
 }
+
+impl From<CapPtr> for Frame {
+    fn from(cap: CapPtr) -> Self {
+        Self(cap)
+    }
+}
+
+impl From<Frame> for CapPtr {
+    fn from(frame: Frame) -> Self {
+        frame.0
+    }
+}

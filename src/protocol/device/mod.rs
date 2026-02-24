@@ -97,5 +97,4 @@ pub struct LogicDeviceDesc {
 pub struct AllocLogicRequest {
     pub dev_type: u32,
     pub criteria: String,
-    pub badge: u64,
 }

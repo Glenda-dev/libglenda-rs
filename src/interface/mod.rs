@@ -9,6 +9,7 @@ pub mod network;
 pub mod process;
 pub mod resource;
 pub mod system;
+pub mod volume;
 
 pub use auth::*;
 pub use device::*;
@@ -18,6 +19,7 @@ pub use init::*;
 pub use linux::*;
 pub use memory::*;
 pub use network::*;
+pub use volume::*;
 pub use process::*;
 pub use resource::*;
 pub use system::*;

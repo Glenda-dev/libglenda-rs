@@ -26,13 +26,15 @@ impl DeviceService for DeviceClient {
         self.endpoint.call(&mut utcb)
     }
 
-    fn get_mmio(&mut self, _badge: Badge, id: usize) -> Result<(Frame, usize, usize), Error> {
+    fn get_mmio(
+        &mut self,
+        _badge: Badge,
+        id: usize,
+        recv: CapPtr,
+    ) -> Result<(Frame, usize, usize), Error> {
         let mut utcb = unsafe { UTCB::new() };
         let tag = MsgTag::new(protocol::DEVICE_PROTO, protocol::device::GET_MMIO, MsgFlags::NONE);
-        let recv = utcb.get_recv_window();
-        if recv.is_null() {
-            return Err(Error::InvalidArgs);
-        }
+        utcb.set_recv_window(recv);
         utcb.set_mr(0, id);
         utcb.set_msg_tag(tag);
         self.endpoint.call(&mut utcb)?;
@@ -42,14 +44,11 @@ impl DeviceService for DeviceClient {
         Ok((Frame::from(recv), addr, size))
     }
 
-    fn get_irq(&mut self, _badge: Badge, id: usize) -> Result<IrqHandler, Error> {
+    fn get_irq(&mut self, _badge: Badge, id: usize, recv: CapPtr) -> Result<IrqHandler, Error> {
         let mut utcb = unsafe { UTCB::new() };
         let tag = MsgTag::new(protocol::DEVICE_PROTO, protocol::device::GET_IRQ, MsgFlags::NONE);
-        let recv = utcb.get_recv_window();
-        if recv.is_null() {
-            return Err(Error::InvalidArgs);
-        }
         utcb.set_mr(0, id);
+        utcb.set_recv_window(recv);
         utcb.set_msg_tag(tag);
         self.endpoint.call(&mut utcb)?;
         Ok(IrqHandler::from(recv))
@@ -102,6 +101,7 @@ impl DeviceService for DeviceClient {
         _badge: Badge,
         dev_type: u32,
         criteria: &str,
+        recv: CapPtr,
     ) -> Result<Endpoint, Error> {
         let mut utcb = unsafe { UTCB::new() };
         let tag = MsgTag::new(
@@ -109,14 +109,10 @@ impl DeviceService for DeviceClient {
             protocol::device::ALLOC_LOGIC,
             MsgFlags::HAS_BUFFER,
         );
-        let recv = utcb.get_recv_window();
-        if recv.is_null() {
-            return Err(Error::InvalidArgs);
-        }
+        utcb.set_recv_window(recv);
         let req = protocol::device::AllocLogicRequest {
             dev_type,
             criteria: alloc::string::String::from(criteria),
-            badge: _badge.bits() as u64,
         };
         unsafe {
             utcb.write_postcard(&req)?;

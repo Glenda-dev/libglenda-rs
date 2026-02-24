@@ -8,8 +8,10 @@ pub mod linux;
 pub mod network;
 pub mod process;
 pub mod resource;
+pub mod volume;
 
 // Protocol ID
+pub const VOLUME_PROTO: usize = 0x0900;
 pub const AUTH_PROTO: usize = 0x0800;
 pub const NETWORK_PROTO: usize = 0x0700;
 pub const FS_PROTO: usize = 0x0600;

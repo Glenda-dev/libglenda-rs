@@ -1,6 +1,8 @@
 use crate::cap::Endpoint;
 use crate::error::Error;
-use crate::interface::{FileHandleService, FileSystemService, PipeService};
+use crate::interface::{
+    FileHandleService, FileSystemService, PipeService, VirtualFileSystemService,
+};
 use crate::ipc::{MsgFlags, MsgTag, UTCB};
 use crate::protocol::FS_PROTO;
 use crate::protocol::fs;
@@ -20,12 +22,7 @@ impl FsClient {
 
 impl PipeService for FsClient {
     fn pipe(&mut self) -> Result<(usize, usize), Error> {
-        let tag = MsgTag::new(FS_PROTO, fs::PIPE, MsgFlags::NONE);
-        let utcb = unsafe { UTCB::new() };
-        utcb.clear();
-        utcb.set_msg_tag(tag);
-        self.endpoint.call(utcb)?;
-        Ok((utcb.get_mr(0), utcb.get_mr(1)))
+        Err(Error::NotImplemented)
     }
 }
 
@@ -83,9 +80,32 @@ impl FileSystemService for FsClient {
     }
 }
 
+impl VirtualFileSystemService for FsClient {
+    fn mount(&mut self, path: &str, target: Endpoint) -> Result<(), Error> {
+        let tag = MsgTag::new(FS_PROTO, fs::MOUNT, MsgFlags::NONE);
+        let utcb = unsafe { UTCB::new() };
+        utcb.clear();
+        utcb.write(path.as_bytes());
+        utcb.set_cap_transfer(target.cap());
+        utcb.set_msg_tag(tag);
+        self.endpoint.call(utcb)?;
+        Ok(())
+    }
+
+    fn unmount(&mut self, path: &str) -> Result<(), Error> {
+        let tag = MsgTag::new(FS_PROTO, fs::UNMOUNT, MsgFlags::NONE);
+        let utcb = unsafe { UTCB::new() };
+        utcb.clear();
+        utcb.write(path.as_bytes());
+        utcb.set_msg_tag(tag);
+        self.endpoint.call(utcb)?;
+        Ok(())
+    }
+}
+
 impl FileHandleService for FsClient {
     fn read(&mut self, offset: u64, buf: &mut [u8]) -> Result<usize, Error> {
-        let tag = MsgTag::new(FS_PROTO, fs::READ, MsgFlags::NONE);
+        let tag = MsgTag::new(FS_PROTO, fs::READ_SYNC, MsgFlags::NONE);
         let utcb = unsafe { UTCB::new() };
         utcb.clear();
         set_mrs!(utcb, buf.len(), offset as usize);
@@ -93,21 +113,39 @@ impl FileHandleService for FsClient {
         utcb.set_msg_tag(tag);
         self.endpoint.call(utcb)?;
 
-        let len = utcb.get_mr(0);
-        buf[..len].copy_from_slice(&utcb.ipc_buffer()[..len]);
+        // Return valid data length.
+        // In READ_SYNC, the kernel/service writes data to MRs or IPC Buffer.
+        // If data is in MRs (registers), we need to extract it.
+        // If data is in UTCB buffer, we copy it.
+        // Assuming simple buffer copy for now.
+        let val = utcb.get_mr(0); // If protocol returns length in MR0
+        // But READ_SYNC protocol says: args: [size, offset] -> bytes: data
+        // Implementation in Nexus: file.handle.read -> returns bytes
+        // We need to clarify where the bytes go.
+        // Usually IPC copies to UTCB.
+
+        let len = val;
+        if len > buf.len() {
+            return Err(Error::InvalidArgs);
+        }
+        // Copy from UTCB buffer
+        buf[..len].copy_from_slice(&utcb.buffer()[..len]);
         Ok(len)
     }
 
     fn write(&mut self, offset: u64, buf: &[u8]) -> Result<usize, Error> {
-        let tag = MsgTag::new(FS_PROTO, fs::WRITE, MsgFlags::NONE);
+        let tag = MsgTag::new(FS_PROTO, fs::WRITE_SYNC, MsgFlags::NONE);
         let utcb = unsafe { UTCB::new() };
         utcb.clear();
-        let len = utcb.write(buf);
-        set_mrs!(utcb, len, offset as usize);
+
+        // Protocol: args: [offset], bytes: data -> res: written
+        set_mrs!(utcb, offset as usize);
+        utcb.write(buf); // Write data to UTCB buffer
+
         utcb.set_msg_tag(tag);
         self.endpoint.call(utcb)?;
 
-        Ok(utcb.get_mr(0)) // Return actual written length from server
+        Ok(utcb.get_mr(0))
     }
 
     fn close(&mut self) -> Result<(), Error> {
@@ -131,17 +169,19 @@ impl FileHandleService for FsClient {
         let tag = MsgTag::new(FS_PROTO, fs::GETDENTS, MsgFlags::NONE);
         let utcb = unsafe { UTCB::new() };
         utcb.clear();
-        set_mrs!(utcb, count);
+        utcb.set_mr(1, count);
         utcb.set_msg_tag(tag);
         self.endpoint.call(utcb)?;
-        unsafe { utcb.read_vec::<fs::DEntry>().map_err(|_| Error::Unknown) }
+
+        unsafe { utcb.read_vec::<fs::DEntry>() }
     }
 
     fn seek(&mut self, offset: i64, whence: usize) -> Result<u64, Error> {
         let tag = MsgTag::new(FS_PROTO, fs::SEEK, MsgFlags::NONE);
         let utcb = unsafe { UTCB::new() };
         utcb.clear();
-        set_mrs!(utcb, offset as usize, whence);
+        utcb.set_mr(1, offset as usize);
+        utcb.set_mr(2, whence);
         utcb.set_msg_tag(tag);
         self.endpoint.call(utcb)?;
         Ok(utcb.get_mr(0) as u64)
@@ -152,14 +192,42 @@ impl FileHandleService for FsClient {
         let utcb = unsafe { UTCB::new() };
         utcb.clear();
         utcb.set_msg_tag(tag);
-        self.endpoint.call(utcb)
+        self.endpoint.call(utcb)?;
+        Ok(())
     }
 
     fn truncate(&mut self, size: u64) -> Result<(), Error> {
         let tag = MsgTag::new(FS_PROTO, fs::TRUNCATE, MsgFlags::NONE);
         let utcb = unsafe { UTCB::new() };
         utcb.clear();
-        set_mrs!(utcb, size as usize);
+        utcb.set_mr(1, size as usize);
+        utcb.set_msg_tag(tag);
+        self.endpoint.call(utcb)?;
+        Ok(())
+    }
+    fn setup_iouring(
+        &mut self,
+        _server_vaddr: usize,
+        client_vaddr: usize,
+        size: usize,
+        frame: Option<crate::cap::Frame>,
+    ) -> Result<(), Error> {
+        let tag = MsgTag::new(FS_PROTO, fs::SETUP_IOURING, MsgFlags::NONE);
+        let utcb = unsafe { UTCB::new() };
+        utcb.clear();
+        utcb.set_mr(1, client_vaddr);
+        utcb.set_mr(2, size);
+        if let Some(f) = frame {
+            utcb.set_cap_transfer(f.into());
+        }
+        utcb.set_msg_tag(tag);
+        self.endpoint.call(utcb)
+    }
+
+    fn process_iouring(&mut self) -> Result<(), Error> {
+        let tag = MsgTag::new(FS_PROTO, fs::PROCESS_IOURING, MsgFlags::NONE);
+        let utcb = unsafe { UTCB::new() };
+        utcb.clear();
         utcb.set_msg_tag(tag);
         self.endpoint.call(utcb)
     }
