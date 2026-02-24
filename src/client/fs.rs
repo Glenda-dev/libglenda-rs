@@ -1,9 +1,9 @@
-use crate::cap::Endpoint;
+use crate::cap::{Endpoint, Frame};
 use crate::error::Error;
 use crate::interface::{
     FileHandleService, FileSystemService, PipeService, VirtualFileSystemService,
 };
-use crate::ipc::{MsgFlags, MsgTag, UTCB};
+use crate::ipc::{Badge, MsgFlags, MsgTag, UTCB};
 use crate::protocol::FS_PROTO;
 use crate::protocol::fs;
 use crate::protocol::fs::{OpenFlags, Stat};
@@ -21,46 +21,52 @@ impl FsClient {
 }
 
 impl PipeService for FsClient {
-    fn pipe(&mut self) -> Result<(usize, usize), Error> {
+    fn pipe(&mut self, _pid: Badge) -> Result<(usize, usize), Error> {
         Err(Error::NotImplemented)
     }
 }
 
 impl FileSystemService for FsClient {
-    fn open(&mut self, path: &str, flags: OpenFlags, mode: u32) -> Result<usize, Error> {
-        let tag = MsgTag::new(FS_PROTO, fs::OPEN, MsgFlags::NONE);
+    fn open(
+        &mut self,
+        _pid: Badge,
+        path: &str,
+        flags: OpenFlags,
+        mode: u32,
+    ) -> Result<usize, Error> {
+        let tag = MsgTag::new(FS_PROTO, fs::OPEN, MsgFlags::HAS_BUFFER);
         let utcb = unsafe { UTCB::new() };
         utcb.clear();
-        utcb.write(path.as_bytes());
+        unsafe { utcb.write_str(&path)? };
         set_mrs!(utcb, flags.bits(), mode);
         utcb.set_msg_tag(tag);
         self.endpoint.call(utcb)?;
         Ok(utcb.get_mr(0))
     }
 
-    fn mkdir(&mut self, path: &str, mode: u32) -> Result<(), Error> {
-        let tag = MsgTag::new(FS_PROTO, fs::MKDIR, MsgFlags::NONE);
+    fn mkdir(&mut self, _pid: Badge, path: &str, mode: u32) -> Result<(), Error> {
+        let tag = MsgTag::new(FS_PROTO, fs::MKDIR, MsgFlags::HAS_BUFFER);
         let utcb = unsafe { UTCB::new() };
         utcb.clear();
-        utcb.write(path.as_bytes());
+        unsafe { utcb.write_str(&path)? };
         set_mrs!(utcb, mode);
         utcb.set_msg_tag(tag);
         self.endpoint.call(utcb)?;
         Ok(())
     }
 
-    fn unlink(&mut self, path: &str) -> Result<(), Error> {
-        let tag = MsgTag::new(FS_PROTO, fs::UNLINK, MsgFlags::NONE);
+    fn unlink(&mut self, _pid: Badge, path: &str) -> Result<(), Error> {
+        let tag = MsgTag::new(FS_PROTO, fs::UNLINK, MsgFlags::HAS_BUFFER);
         let utcb = unsafe { UTCB::new() };
         utcb.clear();
-        utcb.write(path.as_bytes());
+        unsafe { utcb.write_str(&path)? };
         utcb.set_msg_tag(tag);
         self.endpoint.call(utcb)?;
         Ok(())
     }
 
-    fn rename(&mut self, old_path: &str, new_path: &str) -> Result<(), Error> {
-        let tag = MsgTag::new(FS_PROTO, fs::RENAME, MsgFlags::NONE);
+    fn rename(&mut self, _pid: Badge, old_path: &str, new_path: &str) -> Result<(), Error> {
+        let tag = MsgTag::new(FS_PROTO, fs::RENAME, MsgFlags::HAS_BUFFER);
         let utcb = unsafe { UTCB::new() };
         utcb.clear();
         unsafe { utcb.write_postcard(&(old_path, new_path))? };
@@ -69,11 +75,11 @@ impl FileSystemService for FsClient {
         Ok(())
     }
 
-    fn stat_path(&mut self, path: &str) -> Result<Stat, Error> {
-        let tag = MsgTag::new(FS_PROTO, fs::STAT_PATH, MsgFlags::NONE);
+    fn stat_path(&mut self, _pid: Badge, path: &str) -> Result<Stat, Error> {
+        let tag = MsgTag::new(FS_PROTO, fs::STAT_PATH, MsgFlags::HAS_BUFFER);
         let utcb = unsafe { UTCB::new() };
         utcb.clear();
-        utcb.write(path.as_bytes());
+        unsafe { utcb.write_str(&path)? };
         utcb.set_msg_tag(tag);
         self.endpoint.call(utcb)?;
         unsafe { utcb.read_obj::<Stat>().map_err(|_| Error::Unknown) }
@@ -81,22 +87,22 @@ impl FileSystemService for FsClient {
 }
 
 impl VirtualFileSystemService for FsClient {
-    fn mount(&mut self, path: &str, target: Endpoint) -> Result<(), Error> {
-        let tag = MsgTag::new(FS_PROTO, fs::MOUNT, MsgFlags::NONE);
+    fn mount(&mut self, _pid: Badge, path: &str, target: Endpoint) -> Result<(), Error> {
+        let tag = MsgTag::new(FS_PROTO, fs::MOUNT, MsgFlags::HAS_BUFFER | MsgFlags::HAS_CAP);
         let utcb = unsafe { UTCB::new() };
         utcb.clear();
-        utcb.write(path.as_bytes());
+        unsafe { utcb.write_str(&path)? };
         utcb.set_cap_transfer(target.cap());
         utcb.set_msg_tag(tag);
         self.endpoint.call(utcb)?;
         Ok(())
     }
 
-    fn unmount(&mut self, path: &str) -> Result<(), Error> {
-        let tag = MsgTag::new(FS_PROTO, fs::UNMOUNT, MsgFlags::NONE);
+    fn unmount(&mut self, _pid: Badge, path: &str) -> Result<(), Error> {
+        let tag = MsgTag::new(FS_PROTO, fs::UNMOUNT, MsgFlags::HAS_BUFFER);
         let utcb = unsafe { UTCB::new() };
         utcb.clear();
-        utcb.write(path.as_bytes());
+        unsafe { utcb.write_str(&path)? };
         utcb.set_msg_tag(tag);
         self.endpoint.call(utcb)?;
         Ok(())
@@ -104,7 +110,7 @@ impl VirtualFileSystemService for FsClient {
 }
 
 impl FileHandleService for FsClient {
-    fn read(&mut self, offset: u64, buf: &mut [u8]) -> Result<usize, Error> {
+    fn read(&mut self, _pid: Badge, offset: u64, buf: &mut [u8]) -> Result<usize, Error> {
         let tag = MsgTag::new(FS_PROTO, fs::READ_SYNC, MsgFlags::NONE);
         let utcb = unsafe { UTCB::new() };
         utcb.clear();
@@ -133,8 +139,8 @@ impl FileHandleService for FsClient {
         Ok(len)
     }
 
-    fn write(&mut self, offset: u64, buf: &[u8]) -> Result<usize, Error> {
-        let tag = MsgTag::new(FS_PROTO, fs::WRITE_SYNC, MsgFlags::NONE);
+    fn write(&mut self, _pid: Badge, offset: u64, buf: &[u8]) -> Result<usize, Error> {
+        let tag = MsgTag::new(FS_PROTO, fs::WRITE_SYNC, MsgFlags::HAS_BUFFER);
         let utcb = unsafe { UTCB::new() };
         utcb.clear();
 
@@ -148,7 +154,7 @@ impl FileHandleService for FsClient {
         Ok(utcb.get_mr(0))
     }
 
-    fn close(&mut self) -> Result<(), Error> {
+    fn close(&mut self, _pid: Badge) -> Result<(), Error> {
         let tag = MsgTag::new(FS_PROTO, fs::CLOSE, MsgFlags::NONE);
         let utcb = unsafe { UTCB::new() };
         utcb.clear();
@@ -156,7 +162,7 @@ impl FileHandleService for FsClient {
         self.endpoint.call(utcb)
     }
 
-    fn stat(&self) -> Result<Stat, Error> {
+    fn stat(&self, _pid: Badge) -> Result<Stat, Error> {
         let tag = MsgTag::new(FS_PROTO, fs::STAT, MsgFlags::NONE);
         let utcb = unsafe { UTCB::new() };
         utcb.clear();
@@ -165,7 +171,7 @@ impl FileHandleService for FsClient {
         unsafe { utcb.read_obj::<Stat>().map_err(|_| Error::Unknown) }
     }
 
-    fn getdents(&mut self, count: usize) -> Result<Vec<fs::DEntry>, Error> {
+    fn getdents(&mut self, _pid: Badge, count: usize) -> Result<Vec<fs::DEntry>, Error> {
         let tag = MsgTag::new(FS_PROTO, fs::GETDENTS, MsgFlags::NONE);
         let utcb = unsafe { UTCB::new() };
         utcb.clear();
@@ -176,7 +182,7 @@ impl FileHandleService for FsClient {
         unsafe { utcb.read_vec::<fs::DEntry>() }
     }
 
-    fn seek(&mut self, offset: i64, whence: usize) -> Result<u64, Error> {
+    fn seek(&mut self, _pid: Badge, offset: i64, whence: usize) -> Result<u64, Error> {
         let tag = MsgTag::new(FS_PROTO, fs::SEEK, MsgFlags::NONE);
         let utcb = unsafe { UTCB::new() };
         utcb.clear();
@@ -187,7 +193,7 @@ impl FileHandleService for FsClient {
         Ok(utcb.get_mr(0) as u64)
     }
 
-    fn sync(&mut self) -> Result<(), Error> {
+    fn sync(&mut self, _pid: Badge) -> Result<(), Error> {
         let tag = MsgTag::new(FS_PROTO, fs::SYNC, MsgFlags::NONE);
         let utcb = unsafe { UTCB::new() };
         utcb.clear();
@@ -196,7 +202,7 @@ impl FileHandleService for FsClient {
         Ok(())
     }
 
-    fn truncate(&mut self, size: u64) -> Result<(), Error> {
+    fn truncate(&mut self, _pid: Badge, size: u64) -> Result<(), Error> {
         let tag = MsgTag::new(FS_PROTO, fs::TRUNCATE, MsgFlags::NONE);
         let utcb = unsafe { UTCB::new() };
         utcb.clear();
@@ -207,12 +213,13 @@ impl FileHandleService for FsClient {
     }
     fn setup_iouring(
         &mut self,
+        _pid: Badge,
         _server_vaddr: usize,
         client_vaddr: usize,
         size: usize,
-        frame: Option<crate::cap::Frame>,
+        frame: Option<Frame>,
     ) -> Result<(), Error> {
-        let tag = MsgTag::new(FS_PROTO, fs::SETUP_IOURING, MsgFlags::NONE);
+        let tag = MsgTag::new(FS_PROTO, fs::SETUP_IOURING, MsgFlags::HAS_CAP);
         let utcb = unsafe { UTCB::new() };
         utcb.clear();
         utcb.set_mr(1, client_vaddr);
@@ -224,7 +231,7 @@ impl FileHandleService for FsClient {
         self.endpoint.call(utcb)
     }
 
-    fn process_iouring(&mut self) -> Result<(), Error> {
+    fn process_iouring(&mut self, _pid: Badge) -> Result<(), Error> {
         let tag = MsgTag::new(FS_PROTO, fs::PROCESS_IOURING, MsgFlags::NONE);
         let utcb = unsafe { UTCB::new() };
         utcb.clear();
