@@ -211,28 +211,25 @@ impl IoUringBuffer {
 
 use crate::cap::Endpoint;
 use crate::error::Error;
+use crate::ipc::Badge;
+
+/// 默认 IO_URING 发送队列通知位
+pub const NOTIFY_IO_URING_SQ: usize = 1 << 33;
+/// 默认 IO_URING 完成队列通知位
+pub const NOTIFY_IO_URING_CQ: usize = 1 << 34;
 
 pub struct IoUringServer {
     pub ring: IoUringBuffer,
     pub client_ep: Option<Endpoint>,
-    pub notify_tag: crate::ipc::MsgTag,
 }
 
 impl IoUringServer {
     pub fn new(ring: IoUringBuffer) -> Self {
-        Self {
-            ring,
-            client_ep: None,
-            notify_tag: crate::ipc::MsgTag::new(0, 0, crate::ipc::MsgFlags::NONE),
-        }
+        Self { ring, client_ep: None }
     }
 
     pub fn set_client_notify(&mut self, ep: Endpoint) {
         self.client_ep = Some(ep);
-    }
-
-    pub fn set_notify_tag(&mut self, tag: crate::ipc::MsgTag) {
-        self.notify_tag = tag;
     }
 
     pub fn next_request(&mut self) -> Option<IoUringSqe> {
@@ -244,10 +241,7 @@ impl IoUringServer {
         self.ring.push_cqe(cqe).map_err(|_| Error::OutOfMemory)?;
 
         if let Some(ep) = self.client_ep {
-            let mut utcb = unsafe { crate::ipc::UTCB::new() };
-            utcb.clear();
-            utcb.set_msg_tag(self.notify_tag);
-            ep.notify(&mut utcb)?;
+            ep.notify(Badge::new(NOTIFY_IO_URING_CQ))?;
         }
         Ok(())
     }
@@ -256,34 +250,22 @@ impl IoUringServer {
 pub struct IoUringClient {
     pub ring: IoUringBuffer,
     pub server_ep: Option<Endpoint>,
-    pub notify_tag: crate::ipc::MsgTag,
 }
 
 impl IoUringClient {
     pub fn new(ring: IoUringBuffer) -> Self {
-        Self {
-            ring,
-            server_ep: None,
-            notify_tag: crate::ipc::MsgTag::new(0, 0, crate::ipc::MsgFlags::NONE),
-        }
+        Self { ring, server_ep: None }
     }
 
     pub fn set_server_notify(&mut self, ep: Endpoint) {
         self.server_ep = Some(ep);
     }
 
-    pub fn set_notify_tag(&mut self, tag: crate::ipc::MsgTag) {
-        self.notify_tag = tag;
-    }
-
     pub fn submit(&self, sqe: IoUringSqe) -> Result<(), Error> {
         self.ring.push_sqe(sqe).map_err(|_| Error::OutOfMemory)?;
 
         if let Some(ep) = self.server_ep {
-            let mut utcb = unsafe { crate::ipc::UTCB::new() };
-            utcb.clear();
-            utcb.set_msg_tag(self.notify_tag);
-            ep.notify(&mut utcb)?;
+            ep.notify(Badge::new(NOTIFY_IO_URING_SQ))?;
         }
         Ok(())
     }

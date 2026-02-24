@@ -46,13 +46,4 @@ impl GeneralService for GeneralClient {
         self.endpoint.call(utcb)?;
         Ok(())
     }
-
-    fn notify(&mut self) -> Result<(), Error> {
-        let tag = MsgTag::new(GENERIC_PROTO, generic::NOTIFY, MsgFlags::NONE);
-        let utcb = unsafe { UTCB::new() };
-        utcb.clear();
-        utcb.set_msg_tag(tag);
-        self.endpoint.notify(utcb)?;
-        Ok(())
-    }
 }

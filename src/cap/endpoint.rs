@@ -1,7 +1,7 @@
 use super::CapPtr;
 use super::ipcmethod;
 use crate::error::Error;
-use crate::ipc::UTCB;
+use crate::ipc::{Badge, UTCB};
 
 #[repr(transparent)]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -29,8 +29,10 @@ impl Endpoint {
         utcb.error_check()
     }
 
-    pub fn notify(&self, utcb: &mut UTCB) -> Result<(), Error> {
-        self.0.invoke(ipcmethod::NOTIFY, utcb)
+    pub fn notify(&self, badge: Badge) -> Result<(), Error> {
+        let mut utcb = unsafe { UTCB::new() };
+        utcb.set_badge(badge);
+        self.0.invoke(ipcmethod::NOTIFY, &mut utcb)
     }
 
     pub fn proxy(&self, utcb: &mut UTCB) -> Result<(), Error> {

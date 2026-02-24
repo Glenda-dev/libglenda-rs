@@ -12,9 +12,6 @@ pub const HOOK: usize = 10;
 pub const UNHOOK: usize = 11;
 pub const GET_LOGIC_DESC: usize = 12;
 
-/// Async notification for hook events
-pub const NOTIFY_HOOK: usize = 0x20;
-
 pub mod block;
 pub mod fb;
 pub mod gpio;
@@ -32,6 +29,8 @@ pub mod wifi;
 use alloc::string::String;
 use alloc::vec::Vec;
 use serde::{Deserialize, Serialize};
+
+pub const NOTIFY_HOOK: usize = 1 << 35; // Base badge for device hooks, can be ORed with specific event bits
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum HookTarget {

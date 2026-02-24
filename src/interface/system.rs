@@ -20,6 +20,6 @@ pub trait IpcClient {
     fn send(&mut self, utcb: &mut UTCB) -> Result<(), Error>;
     fn recv(&mut self, utcb: &mut UTCB) -> Result<Box<dyn Any>, Error>;
     fn call(&mut self, utcb: &mut UTCB, callback: fn() -> ()) -> Result<(), Error>;
-    fn notify(&mut self, utcb: &mut UTCB) -> Result<(), Error>;
+    fn notify(&mut self) -> Result<(), Error>;
     fn disconnect(&mut self);
 }

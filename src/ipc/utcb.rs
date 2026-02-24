@@ -84,9 +84,8 @@ impl UTCB {
     }
 
     pub fn set_mr(&mut self, index: usize, value: usize) {
-        if index < MAX_MRS {
-            unsafe { write_volatile(&mut self.mrs_regs[index], value) }
-        }
+        assert!(index < MAX_MRS, "MR index out of bounds");
+        unsafe { write_volatile(&mut self.mrs_regs[index], value) }
     }
 
     pub fn get_mrs(&self) -> [usize; MAX_MRS] {
@@ -105,6 +104,10 @@ impl UTCB {
 
     pub fn get_badge(&self) -> Badge {
         unsafe { read_volatile(&self.badge) }
+    }
+
+    pub fn set_badge(&mut self, badge: Badge) {
+        unsafe { write_volatile(&mut self.badge, badge) }
     }
 
     pub fn get_size(&self) -> usize {
