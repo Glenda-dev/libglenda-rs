@@ -38,10 +38,10 @@ impl TCB {
         self.0.invoke(tcbmethod::CONFIGURE, &mut utcb)
     }
 
-    pub fn set_priority(&self, priority: u8) -> Result<(), Error> {
+    pub fn set_priority(&self, priority: u8, incr: i8) -> Result<(), Error> {
         let mut utcb = unsafe { UTCB::new() };
         utcb.clear();
-        set_mrs!(utcb, priority as usize);
+        set_mrs!(utcb, priority as usize, incr as usize);
         self.0.invoke(tcbmethod::SET_PRIORITY, &mut utcb)
     }
 
