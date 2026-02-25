@@ -34,7 +34,7 @@ impl Badge {
 
 impl Debug for Badge {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
-        write!(f, "{}", self.0)
+        write!(f, "{:#x}", self.0)
     }
 }
 
