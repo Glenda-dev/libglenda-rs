@@ -1,17 +1,45 @@
-use crate::cap::Endpoint;
+use crate::cap::{Endpoint, Frame};
 use crate::error::Error;
 use crate::interface::{NetworkService, SocketService};
+use crate::io::uring::{IOURING_OP_READ, IOURING_OP_WRITE, IoUringClient, IoUringSqe};
 use crate::ipc::{MsgFlags, MsgTag, UTCB};
 use crate::protocol::{NETWORK_PROTO, network};
 use crate::set_mrs;
 
 pub struct NetworkClient {
     endpoint: Endpoint,
+    uring: Option<IoUringClient>,
 }
 
 impl NetworkClient {
     pub const fn new(endpoint: Endpoint) -> Self {
-        Self { endpoint }
+        Self { endpoint, uring: None }
+    }
+
+    pub fn setup_uring(&mut self, uring: IoUringClient) {
+        self.uring = Some(uring);
+    }
+
+    pub fn read_uring(&self, addr: u64, len: u32, user_data: u64) -> Result<(), Error> {
+        let Some(uring) = &self.uring else {
+            return Err(Error::InvalidArgs);
+        };
+        let sqe =
+            IoUringSqe { opcode: IOURING_OP_READ, addr, len, user_data, ..Default::default() };
+        uring.submit(sqe)
+    }
+
+    pub fn write_uring(&self, addr: u64, len: u32, user_data: u64) -> Result<(), Error> {
+        let Some(uring) = &self.uring else {
+            return Err(Error::InvalidArgs);
+        };
+        let sqe =
+            IoUringSqe { opcode: IOURING_OP_WRITE, addr, len, user_data, ..Default::default() };
+        uring.submit(sqe)
+    }
+
+    pub fn peek_completion(&self) -> Option<crate::io::uring::IoUringCqe> {
+        self.uring.as_ref().and_then(|u| u.peek_completion())
     }
 }
 
@@ -140,5 +168,34 @@ impl SocketService for NetworkClient {
         let len = utcb.get_mr(0);
         optval[..len].copy_from_slice(&utcb.ipc_buffer()[..len]);
         Ok(len)
+    }
+
+    fn setup_iouring(
+        &mut self,
+        client_vaddr: usize,
+        size: usize,
+        frame: Option<Frame>,
+    ) -> Result<(), Error> {
+        let mut flags = MsgFlags::NONE;
+        if frame.is_some() {
+            flags |= MsgFlags::HAS_CAP;
+        }
+        let tag = MsgTag::new(NETWORK_PROTO, network::SETUP_IOURING, flags);
+        let mut utcb = unsafe { UTCB::new() };
+        utcb.clear();
+        set_mrs!(utcb, client_vaddr, size);
+        if let Some(f) = frame {
+            utcb.set_cap_transfer(f.cap());
+        }
+        utcb.set_msg_tag(tag);
+        self.endpoint.call(&mut utcb)
+    }
+
+    fn process_iouring(&mut self) -> Result<(), Error> {
+        let tag = MsgTag::new(NETWORK_PROTO, network::PROCESS_IOURING, MsgFlags::NONE);
+        let mut utcb = unsafe { UTCB::new() };
+        utcb.clear();
+        utcb.set_msg_tag(tag);
+        self.endpoint.call(&mut utcb)
     }
 }

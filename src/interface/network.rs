@@ -42,4 +42,15 @@ pub trait SocketService {
 
     /// Get socket options.
     fn getsockopt(&self, level: i32, optname: i32, optval: &mut [u8]) -> Result<usize, Error>;
+
+    /// Setup io_uring for zero-copy data transfer.
+    fn setup_iouring(
+        &mut self,
+        client_vaddr: usize,
+        size: usize,
+        frame: Option<crate::cap::Frame>,
+    ) -> Result<(), Error>;
+
+    /// Notify server to process entries in io_uring.
+    fn process_iouring(&mut self) -> Result<(), Error>;
 }

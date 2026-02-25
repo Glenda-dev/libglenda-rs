@@ -22,6 +22,9 @@ pub const GET_PEERNAME: usize = 0x18;
 pub const SET_SOCKOPT: usize = 0x19;
 pub const GET_SOCKOPT: usize = 0x1A;
 
+pub const SETUP_IOURING: usize = 0x20; // args: [client_vaddr, size], cap: Frame -> res: Status
+pub const PROCESS_IOURING: usize = 0x21; // args: none -> res: Status
+
 // Address Familes (Domain)
 pub const AF_INET: i32 = 2;
 pub const AF_INET6: i32 = 10;
