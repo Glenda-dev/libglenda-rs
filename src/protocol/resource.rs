@@ -22,9 +22,10 @@ pub enum ResourceType {
     Kernel = 1,
     Untyped = 2,
     Bootinfo = 3,
-    Mmio = 4,
+    Console = 4,
     Irq = 5,
     Endpoint = 6,
+    IrqControl = 7,
     #[num_enum(default)]
     Unknown = 0,
 }

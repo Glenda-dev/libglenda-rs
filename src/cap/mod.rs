@@ -1,10 +1,10 @@
 mod cnode;
+mod console;
 mod endpoint;
 mod frame;
 mod irq;
 mod kernel;
 mod method;
-mod mmio;
 pub mod pagetable;
 mod reply;
 mod tcb;
@@ -12,12 +12,12 @@ mod untyped;
 mod vspace;
 
 pub use cnode::CNode;
+pub use console::Console;
 pub use endpoint::Endpoint;
 pub use frame::Frame;
 pub use irq::IrqHandler;
 pub use kernel::Kernel;
 pub use method::*;
-pub use mmio::Mmio;
 pub use pagetable::PageTable;
 pub use reply::Reply;
 pub use tcb::TCB;
@@ -123,6 +123,7 @@ pub enum CapType {
     IrqHandler = 8,
     Kernel = 9,
     VSpace = 10,
+    Console = 11,
     #[num_enum(default)]
     Unknown = 255,
 }
@@ -152,15 +153,15 @@ pub const CSPACE_SLOT: CapPtr = CapPtr::from(1);
 pub const VSPACE_SLOT: CapPtr = CapPtr::from(2);
 pub const TCB_SLOT: CapPtr = CapPtr::from(3);
 pub const MONITOR_SLOT: CapPtr = CapPtr::from(4);
-pub const KERNEL_SLOT: CapPtr = CapPtr::from(5);
-pub const ENDPOINT_SLOT: CapPtr = CapPtr::from(6);
-pub const REPLY_SLOT: CapPtr = CapPtr::from(7);
-pub const RECV_SLOT: CapPtr = CapPtr::from(8);
+pub const CONSOLE_SLOT: CapPtr = CapPtr::from(5);
+pub const REPLY_SLOT: CapPtr = CapPtr::from(6);
+pub const RECV_SLOT: CapPtr = CapPtr::from(7);
+pub const ENDPOINT_SLOT: CapPtr = CapPtr::from(8);
 
 pub const CSPACE_CAP: CNode = CNode::from(CSPACE_SLOT);
 pub const VSPACE_CAP: VSpace = VSpace::from(VSPACE_SLOT);
 pub const TCB_CAP: TCB = TCB::from(TCB_SLOT);
-pub const KERNEL_CAP: Kernel = Kernel::from(KERNEL_SLOT);
-pub const ENDPOINT_CAP: Endpoint = Endpoint::from(ENDPOINT_SLOT);
 pub const MONITOR_CAP: Endpoint = Endpoint::from(MONITOR_SLOT);
+pub const CONSOLE_CAP: Console = Console::from(CONSOLE_SLOT);
 pub const REPLY_CAP: Reply = Reply::from(REPLY_SLOT);
+pub const ENDPOINT_CAP: Endpoint = Endpoint::from(ENDPOINT_SLOT);

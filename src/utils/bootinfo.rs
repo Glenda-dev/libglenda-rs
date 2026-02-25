@@ -31,6 +31,8 @@ pub struct BootInfo {
     pub build: [u8; 64],
     pub git_hash: [u8; 8],
 
+    pub cpus: usize,
+
     /// Number of valid entries in `untyped_list`
     pub untyped_count: usize,
 
@@ -52,6 +54,7 @@ impl BootInfo {
             addr: 0,
             size: 0,
             version: 0,
+            cpus: 0,
             build: [0; 64],
             git_hash: [0; 8],
             cmdline: [0; 256],
@@ -98,6 +101,9 @@ impl Display for BootInfo {
         writeln!(f, "  Build: {}", build_str)?;
         writeln!(f, "  Git Hash: {}", git_hash_str)?;
 
+        // CPU Count
+        writeln!(f, "  CPUs: {}", self.cpus)?;
+
         // Cmdline
         let cmdline_str =
             core::str::from_utf8(&self.cmdline).unwrap_or("Invalid UTF-8").trim_matches('\0');
@@ -116,7 +122,7 @@ impl Display for BootInfo {
         // Untyped
         writeln!(f, "  Untyped Regions ({}):", self.untyped_count)?;
         for i in 0..self.untyped_count {
-            if i >= MAX_UNTYPED_REGIONS {
+            if i >= MAX_UNTYPED_REGIONS as usize {
                 break;
             }
             let region = &self.untyped_list[i];

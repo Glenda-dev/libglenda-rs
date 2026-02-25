@@ -1,15 +1,12 @@
 use crate::arch::mem::PGSIZE;
 use crate::arch::runtime::backtrace;
-use crate::cap::{KERNEL_CAP, KERNEL_SLOT, MONITOR_CAP};
+use crate::cap::CONSOLE_CAP;
 use crate::console::KConsole;
 use crate::console::{ANSI_RED, ANSI_RESET};
 use crate::error::Error;
-use crate::ipc::{MsgFlags, MsgTag, ThreadControlBlock, UTCB};
+use crate::ipc::ThreadControlBlock;
 use crate::mem::HEAP_VA;
 use crate::println;
-use crate::protocol;
-use crate::protocol::resource::ResourceType;
-use crate::set_mrs;
 use crate::sync::mutex::Mutex;
 use crate::sys::{exit, sbrk};
 use crate::utils::align::align_up;
@@ -111,17 +108,9 @@ pub fn init_heap() {
 }
 
 pub fn init_console() {
-    let tag = MsgTag::new(protocol::RESOURCE_PROTO, protocol::resource::GET_CAP, MsgFlags::NONE);
-    let mut utcb = unsafe { UTCB::new() };
-    utcb.clear();
-    set_mrs!(utcb, ResourceType::Kernel as usize);
-    utcb.set_recv_window(KERNEL_SLOT);
-    utcb.set_msg_tag(tag);
-    let res = MONITOR_CAP.call(&mut utcb);
-    if let Err(_) = res {
-        exit(usize::MAX);
-    }
-    KERNEL_CONSOLE.lock().initialize(KERNEL_CAP);
+    // Console capability is already pre-populated into CONSOLE_SLOT (5)
+    // by the monitor (warren) during process creation.
+    KERNEL_CONSOLE.lock().initialize(CONSOLE_CAP);
 }
 
 #[macro_export]

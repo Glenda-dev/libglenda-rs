@@ -32,10 +32,19 @@ impl IrqHandler {
         self.0.invoke(irqmethod::CLEAR_NOTIFICATION, &mut utcb)
     }
 
-    pub fn set_priority(&self, prio: usize) -> Result<(), Error> {
+    pub fn set_priority(&self, irq: usize, prio: usize) -> Result<(), Error> {
         let mut utcb = unsafe { UTCB::new() };
         utcb.clear();
-        utcb.set_mr(0, prio);
+        utcb.set_mr(0, irq);
+        utcb.set_mr(1, prio);
         self.0.invoke(irqmethod::SET_PRIORITY, &mut utcb)
+    }
+
+    pub fn set_threshold(&self, cpu: usize, threshold: usize) -> Result<(), Error> {
+        let mut utcb = unsafe { UTCB::new() };
+        utcb.clear();
+        utcb.set_mr(0, cpu);
+        utcb.set_mr(1, threshold);
+        self.0.invoke(irqmethod::SET_THRESHOLD, &mut utcb)
     }
 }

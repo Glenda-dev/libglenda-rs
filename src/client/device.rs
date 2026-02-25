@@ -47,8 +47,8 @@ impl DeviceService for DeviceClient {
     fn get_irq(&mut self, _badge: Badge, id: usize, recv: CapPtr) -> Result<IrqHandler, Error> {
         let mut utcb = unsafe { UTCB::new() };
         let tag = MsgTag::new(protocol::DEVICE_PROTO, protocol::device::GET_IRQ, MsgFlags::NONE);
-        utcb.set_mr(0, id);
         utcb.set_recv_window(recv);
+        utcb.set_mr(0, id);
         utcb.set_msg_tag(tag);
         self.endpoint.call(&mut utcb)?;
         Ok(IrqHandler::from(recv))

@@ -1,20 +1,20 @@
 use crate::arch::runtime::panic_break;
-use crate::cap::Kernel;
+use crate::cap::Console;
 use core::fmt;
 use core::fmt::Write;
 
-pub struct KConsole(Kernel);
+pub struct KConsole(Console);
 
 impl KConsole {
-    pub const fn new(cap: Kernel) -> Self {
+    pub const fn new(cap: Console) -> Self {
         Self(cap)
     }
 
     pub const fn null() -> Self {
-        Self(Kernel::null())
+        Self(Console::null())
     }
 
-    pub fn initialize(&mut self, cap: Kernel) {
+    pub fn initialize(&mut self, cap: Console) {
         self.0 = cap;
     }
 

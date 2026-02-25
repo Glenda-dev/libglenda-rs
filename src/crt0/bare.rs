@@ -1,5 +1,5 @@
 use crate::arch::runtime::{backtrace, panic_break};
-use crate::cap::KERNEL_CAP;
+use crate::cap::{CONSOLE_CAP, CapPtr, Frame, IrqHandler, Kernel, Untyped};
 use crate::console::KConsole;
 use crate::console::{ANSI_RED, ANSI_RESET};
 use crate::ipc::ThreadControlBlock;
@@ -7,12 +7,24 @@ use crate::mem::{HEAP_SIZE, HEAP_VA};
 use crate::sync::spinlock::SpinLock;
 use buddy_system_allocator::LockedHeap;
 
+// Root Task slots provided by the kernel
+pub const BOOTINFO_SLOT: CapPtr = CapPtr::from(9);
+pub const UNTYPED_SLOT: CapPtr = CapPtr::from(10);
+pub const KERNEL_SLOT: CapPtr = CapPtr::from(11);
+pub const IRQ_CONTROL_SLOT: CapPtr = CapPtr::from(12);
+
+// Root Task aliases for capabilities provided by the kernel
+pub const BOOTINFO_CAP: Frame = Frame::from(BOOTINFO_SLOT);
+pub const UNTYPED_CAP: Untyped = Untyped::from(UNTYPED_SLOT);
+pub const KERNEL_CAP: Kernel = Kernel::from(KERNEL_SLOT);
+pub const IRQ_CONTROL_CAP: IrqHandler = IrqHandler::from(IRQ_CONTROL_SLOT);
+
 #[unsafe(no_mangle)]
 static mut MAIN_TCB: ThreadControlBlock = ThreadControlBlock::new();
 
 #[global_allocator]
 pub static HEAP_ALLOCATOR: LockedHeap<32> = LockedHeap::empty();
-pub static KERNEL_CONSOLE: SpinLock<KConsole> = SpinLock::new(KConsole::new(KERNEL_CAP));
+pub static KERNEL_CONSOLE: SpinLock<KConsole> = SpinLock::new(KConsole::new(CONSOLE_CAP));
 unsafe extern "Rust" {
     fn main() -> usize;
 }
