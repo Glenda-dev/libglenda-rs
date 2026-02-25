@@ -25,13 +25,6 @@ impl Kernel {
         self.0.invoke(kernelmethod::SHELL, &mut utcb)
     }
 
-    pub fn get_time(&self) -> Result<usize, Error> {
-        let mut utcb = unsafe { UTCB::new() };
-        utcb.clear();
-        self.0.invoke(kernelmethod::GET_TIME, &mut utcb)?;
-        Ok(utcb.get_mr(0))
-    }
-
     pub fn get_irq(&self, irq: usize, dest_cptr: CapPtr) -> Result<(), Error> {
         let mut utcb = unsafe { UTCB::new() };
         utcb.clear();
@@ -47,5 +40,13 @@ impl Kernel {
         utcb.set_mr(1, pages);
         utcb.set_mr(2, dest_cptr.bits());
         self.0.invoke(kernelmethod::GET_MMIO, &mut utcb)
+    }
+
+    pub fn set_alarm(&self, ms: usize, ntfn_cptr: CapPtr) -> Result<(), Error> {
+        let mut utcb = unsafe { UTCB::new() };
+        utcb.clear();
+        utcb.set_mr(0, ms);
+        utcb.set_mr(1, ntfn_cptr.bits());
+        self.0.invoke(kernelmethod::SET_ALARM, &mut utcb)
     }
 }

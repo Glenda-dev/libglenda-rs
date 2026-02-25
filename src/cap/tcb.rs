@@ -75,6 +75,19 @@ impl TCB {
         self.0.invoke(tcbmethod::SET_REGISTERS, &mut utcb)
     }
 
+    pub fn yield_now(&self) -> Result<(), Error> {
+        let mut utcb = unsafe { UTCB::new() };
+        utcb.clear();
+        self.0.invoke(tcbmethod::YIELD, &mut utcb)
+    }
+
+    pub fn set_timeslice(&self, timeslice_ms: usize) -> Result<(), Error> {
+        let mut utcb = unsafe { UTCB::new() };
+        utcb.clear();
+        set_mrs!(utcb, timeslice_ms);
+        self.0.invoke(tcbmethod::SET_TIMESLICE, &mut utcb)
+    }
+
     pub fn resume(&self) -> Result<(), Error> {
         let mut utcb = unsafe { UTCB::new() };
         utcb.clear();
