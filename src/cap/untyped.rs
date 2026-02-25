@@ -57,4 +57,11 @@ impl Untyped {
     pub fn retype_endpoint(&self, dest: CapPtr) -> Result<(), Error> {
         self.retype(CapType::Endpoint, 0, dest)
     }
+
+    pub fn merge(&self, other: &Untyped) -> Result<(), Error> {
+        let mut utcb = unsafe { UTCB::new() };
+        utcb.clear();
+        set_mrs!(utcb, other.0.bits(), 0);
+        self.0.invoke(untypedmethod::MERGE, &mut utcb)
+    }
 }

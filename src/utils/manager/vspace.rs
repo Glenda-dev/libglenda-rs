@@ -335,7 +335,7 @@ impl VSpaceService for VSpaceManager {
             }
         }
 
-        if let Err(e) = self.root.map(frame, vaddr, perms) {
+        if let Err(e) = self.root.map(frame, vaddr, perms, pages) {
             crate::println!("VSpaceManager::map_frame: self.root.map failed with {:?}", e);
             return Err(Error::MappingFailed);
         }

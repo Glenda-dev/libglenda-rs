@@ -1,7 +1,9 @@
+use crate::arch::mem::PGSIZE;
 use crate::cap::Frame;
 use crate::cap::VSpace;
 use crate::error::Error;
 use crate::mem::Perms;
+use crate::utils::align::align_up;
 use core::slice;
 
 /// A shared memory region.
@@ -42,7 +44,7 @@ impl SharedMemory {
 
     /// Map the shared memory into a VSpace.
     pub fn map(&self, vspace: &VSpace, perms: Perms) -> Result<(), Error> {
-        vspace.map(self.frame, self.vaddr, perms)
+        vspace.map(self.frame, self.vaddr, perms, align_up(self.size, PGSIZE) / PGSIZE)
     }
 
     /// Get the virtual address of the shared memory.

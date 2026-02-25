@@ -1,6 +1,7 @@
 use crate::arch::runtime::panic_break;
 use crate::arch::syscall::syscall;
 use crate::cap::{CapPtr, Endpoint};
+use crate::console::{ANSI_RED, ANSI_RESET};
 use crate::error::Error;
 use crate::ipc::{MsgFlags, MsgTag, UTCB};
 use crate::print;
@@ -28,7 +29,7 @@ pub fn exit(code: usize) -> ! {
     set_mrs!(utcb, code);
     utcb.set_msg_tag(tag);
     let _ = MONITOR_CAP.send(&mut utcb);
-    print!("Failed to exit with code {}\n", code);
+    print!("{}Failed to exit with code {}{}\n", ANSI_RED, code, ANSI_RESET);
     loop {
         unsafe {
             panic_break();

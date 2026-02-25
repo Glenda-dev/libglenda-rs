@@ -17,10 +17,10 @@ impl VSpace {
         self.0
     }
 
-    pub fn map(&self, frame: Frame, vaddr: usize, perms: Perms) -> Result<(), Error> {
+    pub fn map(&self, frame: Frame, vaddr: usize, perms: Perms, pages: usize) -> Result<(), Error> {
         let mut utcb = unsafe { UTCB::new() };
         utcb.clear();
-        set_mrs!(utcb, frame.cap().bits(), vaddr, perms.bits());
+        set_mrs!(utcb, frame.cap().bits(), vaddr, perms.bits(), pages);
         self.0.invoke(vspacemethod::MAP, &mut utcb)
     }
 

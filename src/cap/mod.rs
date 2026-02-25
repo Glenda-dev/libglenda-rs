@@ -109,7 +109,7 @@ impl Debug for CapPtr {
     }
 }
 
-#[derive(Debug, Clone, Copy, FromPrimitive)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, FromPrimitive)]
 #[repr(usize)]
 pub enum CapType {
     Empty = 0,
