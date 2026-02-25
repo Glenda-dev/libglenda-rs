@@ -12,20 +12,6 @@ pub const HOOK: usize = 10;
 pub const UNHOOK: usize = 11;
 pub const GET_LOGIC_DESC: usize = 12;
 
-pub mod block;
-pub mod fb;
-pub mod gpio;
-pub mod i2c;
-pub mod input;
-pub mod net;
-pub mod pci;
-pub mod sdio;
-pub mod spi;
-pub mod thermal;
-pub mod uart;
-pub mod usb;
-pub mod wifi;
-
 use alloc::string::String;
 use alloc::vec::Vec;
 use serde::{Deserialize, Serialize};

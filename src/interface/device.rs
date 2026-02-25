@@ -58,18 +58,3 @@ pub trait DeviceService {
         target: crate::protocol::device::HookTarget,
     ) -> Result<(), Error>;
 }
-
-/// ThermalService provides system-wide thermal monitoring.
-pub trait ThermalService {
-    /// Get all thermal zones in the system.
-    fn get_thermal_zones(
-        &mut self,
-    ) -> Result<crate::protocol::device::thermal::ThermalZones, Error>;
-
-    /// Report thermal zone information for a specific sensor.
-    fn update_thermal_zones(
-        &mut self,
-        badge: Badge,
-        zones: crate::protocol::device::thermal::ThermalZones,
-    ) -> Result<(), Error>;
-}
