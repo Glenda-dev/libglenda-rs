@@ -9,6 +9,7 @@ pub mod network;
 pub mod process;
 pub mod resource;
 pub mod system;
+pub mod time;
 pub mod volume;
 
 pub use auth::*;
@@ -23,3 +24,4 @@ pub use volume::*;
 pub use process::*;
 pub use resource::*;
 pub use system::*;
+pub use time::*;

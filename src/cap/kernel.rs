@@ -42,11 +42,18 @@ impl Kernel {
         self.0.invoke(kernelmethod::GET_MMIO, &mut utcb)
     }
 
-    pub fn set_alarm(&self, ms: usize, ntfn_cptr: CapPtr) -> Result<(), Error> {
+    pub fn set_alarm(&self, ticks: usize, ntfn_cptr: CapPtr) -> Result<(), Error> {
         let mut utcb = unsafe { UTCB::new() };
         utcb.clear();
-        utcb.set_mr(0, ms);
+        utcb.set_mr(0, ticks);
         utcb.set_mr(1, ntfn_cptr.bits());
         self.0.invoke(kernelmethod::SET_ALARM, &mut utcb)
+    }
+
+    pub fn get_freq(&self) -> Result<usize, Error> {
+        let mut utcb = unsafe { UTCB::new() };
+        utcb.clear();
+        self.0.invoke(kernelmethod::GET_FREQ, &mut utcb)?;
+        Ok(utcb.get_mr(0))
     }
 }

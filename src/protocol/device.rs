@@ -68,6 +68,7 @@ pub enum LogicDeviceType {
     Platform,
     Thermal,
     Battery,
+    Timer(u64), // Frequency in Hz
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

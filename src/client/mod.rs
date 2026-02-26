@@ -6,6 +6,7 @@ pub mod network;
 pub mod process;
 pub mod resource;
 pub mod volume;
+pub mod time;
 
 pub use device::DeviceClient;
 pub use fs::FsClient;
@@ -15,3 +16,4 @@ pub use network::NetworkClient;
 pub use process::ProcessClient;
 pub use resource::ResourceClient;
 pub use volume::VolumeClient;
+pub use time::TimeClient;

@@ -37,6 +37,12 @@ impl IpcReturn for (usize, usize) {
     }
 }
 
+impl IpcReturn for u64 {
+    fn to_mrs(&self, utcb: &mut UTCB) {
+        set_mrs!(utcb, *self as usize);
+    }
+}
+
 /// A wrapper to handle IPC requests.
 ///
 /// It executes the provided closure `f`.
