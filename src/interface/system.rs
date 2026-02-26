@@ -15,7 +15,7 @@ pub trait SystemService {
 }
 
 /// SystemClient interfaces for system services.
-pub trait IpcClient {
+pub trait SystemClient {
     fn connect(&mut self, ep: Endpoint, reply: CapPtr, recv: CapPtr) -> Result<(), Error>;
     fn send(&mut self, utcb: &mut UTCB) -> Result<(), Error>;
     fn recv(&mut self, utcb: &mut UTCB) -> Result<Box<dyn Any>, Error>;

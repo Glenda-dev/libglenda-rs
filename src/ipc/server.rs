@@ -85,6 +85,9 @@ where
 {
     match f(utcb) {
         Ok(cap) => {
+            if cap.is_null() {
+                panic!("Cap must be set for sending");
+            }
             utcb.set_cap_transfer(cap);
             utcb.set_msg_tag(MsgTag::new(
                 protocol::GENERIC_PROTO,

@@ -1,4 +1,4 @@
-use crate::cap::{Endpoint, Frame};
+use crate::cap::Endpoint;
 use crate::error::Error;
 use crate::ipc::Badge;
 use crate::protocol::fs::{DEntry, OpenFlags, Stat};
@@ -49,19 +49,6 @@ pub trait FileHandleService {
 
     /// Truncate file to specified size.
     fn truncate(&mut self, pid: Badge, size: u64) -> Result<(), Error>;
-
-    /// Setup io_uring for this file handle.
-    fn setup_iouring(
-        &mut self,
-        pid: Badge,
-        server_vaddr: usize,
-        client_vaddr: usize,
-        size: usize,
-        frame: Option<Frame>,
-    ) -> Result<(), Error>;
-
-    /// Process pending io_uring entries.
-    fn process_iouring(&mut self, pid: Badge) -> Result<(), Error>;
 }
 
 /// Virtual Filesystem Service Interface (for VFS/Nexus)

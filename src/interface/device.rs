@@ -31,7 +31,7 @@ pub trait DeviceService {
     fn alloc_logic(
         &mut self,
         badge: Badge,
-        dev_type: u32,
+        dev_type: crate::protocol::device::LogicDeviceType,
         criteria: &str,
         recv: CapPtr,
     ) -> Result<Endpoint, Error>;

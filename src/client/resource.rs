@@ -6,6 +6,7 @@ use crate::protocol::{RESOURCE_PROTO, resource};
 use crate::set_mrs;
 use crate::utils::manager::CSpaceProvider;
 
+#[derive(Clone)]
 pub struct ResourceClient {
     endpoint: Endpoint,
 }

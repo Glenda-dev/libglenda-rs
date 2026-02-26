@@ -1,6 +1,5 @@
 use crate::arch::mem::PGSIZE;
-use crate::cap::Frame;
-use crate::cap::VSpace;
+use crate::cap::{Frame, VSpace, CapPtr};
 use crate::error::Error;
 use crate::mem::Perms;
 use crate::utils::align::align_up;
@@ -14,6 +13,15 @@ pub struct SharedMemory {
     client_vaddr: usize,
     paddr: u64,
     size: usize,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct ShmParams {
+    pub frame: Frame,
+    pub vaddr: usize,
+    pub paddr: u64,
+    pub size: usize,
+    pub recv_slot: CapPtr,
 }
 
 impl SharedMemory {

@@ -1,4 +1,4 @@
-use crate::cap::{Endpoint, Frame};
+use crate::cap::Endpoint;
 use crate::error::Error;
 use crate::interface::{
     FileHandleService, FileSystemService, PipeService, VirtualFileSystemService,
@@ -210,32 +210,5 @@ impl FileHandleService for FsClient {
         utcb.set_msg_tag(tag);
         self.endpoint.call(utcb)?;
         Ok(())
-    }
-    fn setup_iouring(
-        &mut self,
-        _pid: Badge,
-        _server_vaddr: usize,
-        client_vaddr: usize,
-        size: usize,
-        frame: Option<Frame>,
-    ) -> Result<(), Error> {
-        let tag = MsgTag::new(FS_PROTO, fs::SETUP_IOURING, MsgFlags::HAS_CAP);
-        let utcb = unsafe { UTCB::new() };
-        utcb.clear();
-        utcb.set_mr(1, client_vaddr);
-        utcb.set_mr(2, size);
-        if let Some(f) = frame {
-            utcb.set_cap_transfer(f.into());
-        }
-        utcb.set_msg_tag(tag);
-        self.endpoint.call(utcb)
-    }
-
-    fn process_iouring(&mut self, _pid: Badge) -> Result<(), Error> {
-        let tag = MsgTag::new(FS_PROTO, fs::PROCESS_IOURING, MsgFlags::NONE);
-        let utcb = unsafe { UTCB::new() };
-        utcb.clear();
-        utcb.set_msg_tag(tag);
-        self.endpoint.call(utcb)
     }
 }

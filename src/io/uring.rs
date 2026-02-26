@@ -1,3 +1,4 @@
+use crate::cap::{Endpoint, CapPtr};
 use core::sync::atomic::{AtomicU32, Ordering};
 
 // Operation Codes
@@ -79,6 +80,7 @@ pub struct IoUringLayout {
     pub cq_entries: u32,
 }
 
+#[derive(Debug, Clone, Copy)]
 pub struct IoUringBuffer {
     ptr: *mut u8,
     sq_entries: u32,
@@ -209,9 +211,18 @@ impl IoUringBuffer {
     }
 }
 
-use crate::cap::Endpoint;
 use crate::error::Error;
 use crate::ipc::Badge;
+
+#[derive(Debug, Clone, Copy)]
+pub struct RingParams {
+    pub sq_entries: usize,
+    pub cq_entries: usize,
+    pub notify_ep: Endpoint,
+    pub recv_slot: CapPtr,
+    pub vaddr: usize,
+    pub size: usize,
+}
 
 /// 默认 IO_URING 发送队列通知位
 pub const NOTIFY_IO_URING_SQ: usize = 1 << 33;
@@ -247,6 +258,7 @@ impl IoUringServer {
     }
 }
 
+#[derive(Debug, Clone, Copy)]
 pub struct IoUringClient {
     pub ring: IoUringBuffer,
     pub server_ep: Option<Endpoint>,

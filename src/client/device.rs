@@ -99,7 +99,7 @@ impl DeviceService for DeviceClient {
     fn alloc_logic(
         &mut self,
         _badge: Badge,
-        dev_type: u32,
+        dev_type: protocol::device::LogicDeviceType,
         criteria: &str,
         recv: CapPtr,
     ) -> Result<Endpoint, Error> {

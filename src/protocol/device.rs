@@ -1,22 +1,25 @@
 // Device Interface
-pub const GET_MMIO: usize = 1;
-pub const GET_IRQ: usize = 2;
-pub const SCAN_PLATFORM: usize = 3;
-pub const REPORT: usize = 4;
-pub const UPDATE: usize = 5;
-pub const REGISTER_LOGIC: usize = 6;
-pub const ALLOC_LOGIC: usize = 7;
-pub const QUERY: usize = 8;
-pub const GET_DESC: usize = 9;
-pub const HOOK: usize = 10;
-pub const UNHOOK: usize = 11;
-pub const GET_LOGIC_DESC: usize = 12;
+pub const GET_MMIO: usize = 0x01;
+pub const GET_IRQ: usize = 0x02;
+pub const SCAN_PLATFORM: usize = 0x03;
+pub const REPORT: usize = 0x04;
+pub const UPDATE: usize = 0x05;
+pub const QUERY: usize = 0x06;
+pub const GET_DESC: usize = 0x07;
+
+pub const REGISTER_LOGIC: usize = 0x10;
+pub const ALLOC_LOGIC: usize = 0x11;
+pub const GET_LOGIC_DESC: usize = 0x12;
+
+pub const HOOK: usize = 0x20;
+pub const UNHOOK: usize = 0x21;
 
 use alloc::string::String;
 use alloc::vec::Vec;
+use num_enum::FromPrimitive;
 use serde::{Deserialize, Serialize};
 
-pub const NOTIFY_HOOK: usize = 1 << 35; // Base badge for device hooks, can be ORed with specific event bits
+pub const NOTIFY_HOOK: usize = 1 << 35;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum HookTarget {
@@ -53,22 +56,27 @@ pub struct DeviceDescNode {
 pub struct DeviceQuery {
     pub name: Option<String>,
     pub compatible: Vec<String>,
-    pub dev_type: Option<u32>, // 0 for any, others match specific LogicDeviceType discriminant or similar
+    pub dev_type: Option<LogicDeviceType>, // Change dev_type from u32 to Option<LogicDeviceType>
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(
+    Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, FromPrimitive,
+)]
+#[repr(u16)]
 pub enum LogicDeviceType {
-    RawBlock(u64), // Capacity in bytes
-    Block(u64),    // Capacity in blocks (sectors)
-    Net,
-    Fb,
-    Uart,
-    Input,
-    Gpio,
-    Platform,
-    Thermal,
-    Battery,
-    Timer(u64), // Frequency in Hz
+    #[default]
+    Generic = 0,
+    Block = 1,
+    Volume = 2,
+    Net = 3,
+    Fb = 4,
+    Uart = 5,
+    Timer = 6,
+    Input = 7,
+    Gpio = 8,
+    Platform = 9,
+    Thermal = 10,
+    Battery = 11,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -76,11 +84,11 @@ pub struct LogicDeviceDesc {
     pub name: String,
     pub dev_type: LogicDeviceType,
     pub parent_name: String,
-    pub badge: Option<u64>, // Badge meant for the hardware driver to distinguish logical units
+    pub badge: Option<usize>, // Badge meant for the hardware driver to distinguish logical units
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AllocLogicRequest {
-    pub dev_type: u32,
+    pub dev_type: LogicDeviceType,
     pub criteria: String,
 }
