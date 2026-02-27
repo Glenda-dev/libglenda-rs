@@ -3,15 +3,19 @@ pub mod device;
 pub mod fs;
 pub mod generic;
 pub mod init;
+pub mod input;
 pub mod kernel;
 pub mod linux;
 pub mod network;
 pub mod process;
 pub mod resource;
+pub mod terminal;
 pub mod time;
 pub mod volume;
 
 // Protocol ID
+pub const INPUT_PROTO: usize = 0x0C00;
+pub const TERMINAL_PROTO: usize = 0x0B00;
 pub const TIME_PROTO: usize = 0x0A00;
 pub const VOLUME_PROTO: usize = 0x0900;
 pub const AUTH_PROTO: usize = 0x0800;

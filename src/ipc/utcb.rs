@@ -83,6 +83,10 @@ impl UTCB {
         if index < MAX_MRS { unsafe { read_volatile(&self.mrs_regs[index]) } } else { 0 }
     }
 
+    pub fn mr_ptr(&self, index: usize) -> *const usize {
+        &self.mrs_regs[index] as *const usize
+    }
+
     pub fn set_mr(&mut self, index: usize, value: usize) {
         assert!(index < MAX_MRS, "MR index out of bounds");
         unsafe { write_volatile(&mut self.mrs_regs[index], value) }

@@ -24,8 +24,7 @@ pub const INITRD_VA: usize = 0x5000_0000;
 pub const HEAP_PAGES: usize = 256; // 用户堆页面数 256 * 4KB = 1MB
 pub const HEAP_SIZE: usize = HEAP_PAGES * PGSIZE; // 1MB
 
-// pub mod io_uring;
-// moved to io::uring
+pub mod pool;
 pub mod ringbuf;
 pub mod shm;
 

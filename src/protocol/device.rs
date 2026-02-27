@@ -77,6 +77,7 @@ pub enum LogicDeviceType {
     Platform = 9,
     Thermal = 10,
     Battery = 11,
+    Terminal = 12,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

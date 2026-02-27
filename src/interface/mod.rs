@@ -9,6 +9,7 @@ pub mod network;
 pub mod process;
 pub mod resource;
 pub mod system;
+pub mod terminal;
 pub mod time;
 pub mod volume;
 
@@ -20,8 +21,9 @@ pub use init::*;
 pub use linux::*;
 pub use memory::*;
 pub use network::*;
-pub use volume::*;
 pub use process::*;
 pub use resource::*;
 pub use system::*;
+pub use terminal::*;
 pub use time::*;
+pub use volume::*;

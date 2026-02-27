@@ -63,6 +63,7 @@ pub mod kernelmethod {
     pub const GET_MMIO: usize = 3;
     pub const SET_ALARM: usize = 4;
     pub const GET_FREQ: usize = 5;
+    pub const SET_CONSOLE_ENDPOINT: usize = 6;
 }
 
 pub mod vspacemethod {
