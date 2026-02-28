@@ -90,6 +90,12 @@ pub const TERM_SET_WINSIZE: usize = 0x13;
 pub const TERM_SET_DISPLAY: usize = 0x14;
 pub const TERM_IOCTL: usize = 0x15;
 
+// UART IOCTL split
+pub const TERM_SET_BAUD: usize = 0x30;
+pub const TERM_SET_LCR: usize = 0x31;
+pub const TERM_SET_FCR: usize = 0x32;
+pub const TERM_GET_BAUD: usize = 0x33;
+
 /// Character stream constants
 pub const CTRL_C: u8 = 0x03;
 pub const CTRL_D: u8 = 0x04;

@@ -58,7 +58,11 @@ pub trait TerminalService {
     /// Configure and obtain the io_uring zero-copy interface config.
     /// The manager returns a shared memory frame (Frame capability)
     /// containing the Submission and Completion rings, and the data buffer.
-    fn get_uring_config(&mut self, badge: Badge) -> Result<(Frame, TerminalUringConfig), Error>;
+    fn get_uring_config(
+        &mut self,
+        badge: Badge,
+        recv_frame: crate::cap::CapPtr,
+    ) -> Result<(Frame, TerminalUringConfig), Error>;
 
     /// Change the operational mode of the terminal (Raw, Canonical, etc.).
     fn set_mode(&mut self, badge: Badge, mode: u32) -> Result<(), Error>;

@@ -64,7 +64,11 @@ impl TerminalClient {
 }
 
 impl TerminalService for TerminalClient {
-    fn get_uring_config(&mut self, _badge: Badge) -> Result<(Frame, TerminalUringConfig), Error> {
+    fn get_uring_config(
+        &mut self,
+        _badge: Badge,
+        _recv_frame: CapPtr,
+    ) -> Result<(Frame, TerminalUringConfig), Error> {
         if let (Some(frame), Some(config)) = (self.frame, self.config) {
             return Ok((frame, config));
         }
@@ -174,7 +178,7 @@ impl VirtualTerminalService for VirtualTerminalClient {
         let tag = MsgTag::new(
             protocol::TERMINAL_PROTO,
             protocol::terminal::VTS_ALLOC_VT,
-            MsgFlags::HAS_BUFFER | MsgFlags::HAS_CAP,
+            MsgFlags::HAS_BUFFER,
         );
         utcb.set_recv_window(recv);
         unsafe {

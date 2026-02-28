@@ -136,13 +136,12 @@ impl VolumeClient {
 
     /// Read data from disk directly to a shared memory address.
     /// This assumes shm_vaddr is within the shm region provided to set_shm.
-    pub fn read_shm(&self, offset: u64, len: u32, shm_vaddr: usize) -> Result<(), Error> {
+    pub fn read_shm(&self, sector: u64, len: u32, shm_vaddr: usize) -> Result<(), Error> {
         let ring = self.ring.as_ref().ok_or(Error::NotInitialized)?;
         let _shm = self.shm.as_ref().ok_or(Error::NotInitialized)?;
 
         // Ensure alignment to block_size
         if self.block_size == 0
-            || offset % self.block_size as u64 != 0
             || len % self.block_size != 0
         {
             return Err(Error::InvalidArgs);
@@ -150,7 +149,7 @@ impl VolumeClient {
 
         let id = self.next_user_data();
 
-        let sqe = volume::sqe_read(offset, shm_vaddr as u64, len, id);
+        let sqe = volume::sqe_read(sector, shm_vaddr as u64, len, id);
         ring.submit(sqe)?;
 
         // Block until completion
@@ -168,15 +167,13 @@ impl VolumeClient {
         }
     }
 
-    /// Read data at byte offset and length.
-    /// Both offset and len MUST be aligned to block_size.
-    pub fn read_at(&self, offset: u64, len: u32, buf: &mut [u8]) -> Result<(), Error> {
+    /// Read data at sector offset and count.
+    pub fn read_at(&self, sector: u64, len: u32, buf: &mut [u8]) -> Result<(), Error> {
         let ring = self.ring.as_ref().ok_or(Error::NotInitialized)?;
         let shm = self.shm.as_ref().ok_or(Error::NotInitialized)?;
 
         // Ensure alignment to block_size
         if self.block_size == 0
-            || offset % self.block_size as u64 != 0
             || len % self.block_size != 0
         {
             return Err(Error::InvalidArgs);
@@ -192,7 +189,7 @@ impl VolumeClient {
         // We use client_vaddr because that's what the server expects.
         let src_addr = shm.client_vaddr() as u64;
 
-        let sqe = volume::sqe_read(offset, src_addr, len, id);
+        let sqe = volume::sqe_read(sector, src_addr, len, id);
         ring.submit(sqe)?;
 
         // Block until completion
@@ -216,15 +213,13 @@ impl VolumeClient {
         }
     }
 
-    /// Write data at byte offset and length.
-    /// Both offset and len MUST be aligned to block_size.
-    pub fn write_at(&self, offset: u64, len: u32, buf: &[u8]) -> Result<(), Error> {
+    /// Write data at sector offset and count.
+    pub fn write_at(&self, sector: u64, len: u32, buf: &[u8]) -> Result<(), Error> {
         let ring = self.ring.as_ref().ok_or(Error::NotInitialized)?;
         let shm = self.shm.as_ref().ok_or(Error::NotInitialized)?;
 
         // Ensure alignment to block_size
         if self.block_size == 0
-            || offset % self.block_size as u64 != 0
             || len % self.block_size != 0
         {
             return Err(Error::InvalidArgs);
@@ -246,7 +241,7 @@ impl VolumeClient {
         // We use client_vaddr because that's what the server expects.
         let dst_addr = shm.client_vaddr() as u64;
 
-        let sqe = volume::sqe_write(offset, dst_addr, len, id);
+        let sqe = volume::sqe_write(sector, dst_addr, len, id);
         ring.submit(sqe)?;
 
         let wait_ep = self.notify_ep.as_ref().unwrap_or(&self.endpoint);
@@ -265,12 +260,12 @@ impl VolumeClient {
 
     /// Synchronous read using io_uring (compat).
     pub fn read_blocks(&self, sector: u64, count: u32, buf: &mut [u8]) -> Result<(), Error> {
-        self.read_at(sector * self.block_size as u64, count * self.block_size, buf)
+        self.read_at(sector, count * self.block_size, buf)
     }
 
     /// Synchronous write using io_uring (compat).
     pub fn write_blocks(&self, sector: u64, count: u32, buf: &[u8]) -> Result<(), Error> {
-        self.write_at(sector * self.block_size as u64, count * self.block_size, buf)
+        self.write_at(sector, count * self.block_size, buf)
     }
 
     fn setup_ring_internal(&mut self) -> Result<(), Error> {

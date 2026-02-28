@@ -38,3 +38,4 @@ pub const NET_ENDPOINT: usize = 4;
 pub const FS_ENDPOINT: usize = 5;
 pub const VOLUME_ENDPOINT: usize = 6;
 pub const TIME_ENDPOINT: usize = 7;
+pub const VT_ENDPOINT: usize = 8;
