@@ -7,8 +7,6 @@ pub const MAP: usize = 0x10;
 pub const UNMAP: usize = 0x11;
 pub const CLONE: usize = 0x12;
 // Memory management
-pub const MMAP: usize = 0x20;
-pub const MUNMAP: usize = 0x21;
 pub const SBRK: usize = 0x22;
 // Resources
 pub const GET_CAP: usize = 0x30;

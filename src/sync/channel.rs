@@ -1,7 +1,7 @@
+use super::condvar::Condvar;
+use super::mutex::Mutex;
 use alloc::collections::VecDeque;
 use alloc::sync::Arc;
-use super::mutex::Mutex;
-use super::condvar::Condvar;
 
 struct Shared<T> {
     queue: Mutex<VecDeque<T>>,
@@ -58,7 +58,7 @@ impl<T> Receiver<T> {
     pub fn recv(&self) -> T {
         let mut queue = self.shared.queue.lock();
         while queue.is_empty() {
-             queue = self.shared.not_empty.wait(queue);
+            queue = self.shared.not_empty.wait(queue);
         }
         let t = queue.pop_front().unwrap();
         self.shared.not_full.notify_one();

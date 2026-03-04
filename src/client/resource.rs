@@ -1,10 +1,9 @@
 use crate::cap::{CapPtr, CapType, Endpoint, Frame};
 use crate::error::Error;
-use crate::interface::{MemoryService, ResourceService};
+use crate::interface::{CSpaceProvider, ResourceService, VSpaceProvider};
 use crate::ipc::{Badge, MsgFlags, MsgTag, UTCB};
 use crate::protocol::{RESOURCE_PROTO, resource};
 use crate::set_mrs;
-use crate::utils::manager::CSpaceProvider;
 
 #[derive(Clone)]
 pub struct ResourceClient {
@@ -14,6 +13,37 @@ pub struct ResourceClient {
 impl ResourceClient {
     pub const fn new(endpoint: Endpoint) -> Self {
         Self { endpoint }
+    }
+
+    pub fn brk(&mut self, increment: isize) -> Result<usize, Error> {
+        let tag = MsgTag::new(RESOURCE_PROTO, resource::SBRK, MsgFlags::NONE);
+        let mut utcb = unsafe { UTCB::new() };
+        utcb.clear();
+        set_mrs!(utcb, increment as usize);
+        utcb.set_msg_tag(tag);
+        self.endpoint.call(&mut utcb)?;
+        let new_brk = utcb.get_mr(0);
+        Ok(new_brk)
+    }
+}
+
+impl CSpaceProvider for ResourceClient {
+    fn alloc_cnode(&mut self, dest: CapPtr) -> Result<(), Error> {
+        self.alloc(Badge::null(), CapType::CNode, 0, dest).map(|_| ())
+    }
+
+    fn free_cnode(&mut self, addr: CapPtr) -> Result<(), Error> {
+        self.free(Badge::null(), addr)
+    }
+}
+
+impl VSpaceProvider for ResourceClient {
+    fn alloc_pagetable(&mut self, dest: CapPtr) -> Result<(), Error> {
+        self.alloc(Badge::null(), CapType::PageTable, 0, dest).map(|_| ())
+    }
+
+    fn free_pagetable(&mut self, addr: CapPtr) -> Result<(), Error> {
+        self.free(Badge::null(), addr)
     }
 }
 
@@ -130,45 +160,5 @@ impl ResourceService for ResourceClient {
         let frame = Frame::from(recv);
         let size = utcb.get_mr(0);
         Ok((frame, size))
-    }
-}
-
-impl MemoryService for ResourceClient {
-    fn brk(&mut self, _pid: Badge, increment: isize) -> Result<usize, Error> {
-        let tag = MsgTag::new(RESOURCE_PROTO, resource::SBRK, MsgFlags::NONE);
-        let mut utcb = unsafe { UTCB::new() };
-        utcb.clear();
-        set_mrs!(utcb, increment as usize);
-        utcb.set_msg_tag(tag);
-        self.endpoint.call(&mut utcb)?;
-        let new_brk = utcb.get_mr(0);
-        Ok(new_brk)
-    }
-    fn mmap(&mut self, _pid: Badge, frame: Frame, addr: usize, len: usize) -> Result<usize, Error> {
-        let tag = MsgTag::new(RESOURCE_PROTO, resource::MMAP, MsgFlags::HAS_CAP);
-        let mut utcb = unsafe { UTCB::new() };
-        utcb.clear();
-        utcb.set_cap_transfer(frame.cap());
-        set_mrs!(utcb, addr, len);
-        utcb.set_msg_tag(tag);
-        self.endpoint.call(&mut utcb)?;
-        let new_addr = utcb.get_mr(0);
-        Ok(new_addr)
-    }
-    fn munmap(&mut self, _pid: Badge, addr: usize, len: usize) -> Result<(), Error> {
-        let tag = MsgTag::new(RESOURCE_PROTO, resource::MUNMAP, MsgFlags::NONE);
-        let mut utcb = unsafe { UTCB::new() };
-        utcb.clear();
-        set_mrs!(utcb, addr, len);
-        utcb.set_msg_tag(tag);
-        self.endpoint.call(&mut utcb)?;
-        Ok(())
-    }
-}
-
-impl CSpaceProvider for ResourceClient {
-    fn alloc_cnode(&mut self, dest: CapPtr) -> Result<(), Error> {
-        let _ = self.alloc(Badge::null(), CapType::CNode, 0, dest)?;
-        Ok(())
     }
 }

@@ -2,9 +2,11 @@ use crate::arch::mem::PGSIZE;
 use crate::cap::{CapPtr, CapType, Frame};
 use crate::client::ResourceClient;
 use crate::error::Error;
-use crate::interface::{MemoryService, ResourceService};
+use crate::interface::{CSpaceService, ResourceService, VSpaceProvider, VSpaceService};
 use crate::ipc::Badge;
+use crate::mem::Perms;
 use crate::mem::shm::SharedMemory;
+use crate::utils::align::align_up;
 use alloc::vec::Vec;
 use core::sync::atomic::{AtomicUsize, Ordering};
 
@@ -38,6 +40,8 @@ impl MemoryPool {
     /// - `recv_slot`: Slot where the new frame capability will be received.
     pub fn alloc_shm(
         &mut self,
+        vm: &mut dyn VSpaceService,
+        cm: &mut dyn CSpaceService,
         res_client: &mut ResourceClient,
         size: usize,
         shm_type: ShmType,
@@ -61,9 +65,14 @@ impl MemoryPool {
             }
         };
 
-        // FIXME: Use res_client to map frame for better intermediate PT allocation
-        // Map locally in the service's VSpace via resource manager
-        res_client.mmap(Badge::null(), shm.frame(), vaddr, size_aligned)?;
+        vm.map_frame(
+            shm.frame(),
+            vaddr,
+            Perms::READ | Perms::WRITE,
+            size_aligned / PGSIZE,
+            res_client,
+            cm,
+        )?;
 
         self.shms.push(shm);
         Ok(shm)
@@ -87,18 +96,20 @@ impl MemoryPool {
     /// Map an existing frame into the pool and manage it.
     pub fn map_shm(
         &mut self,
-        res_client: &mut ResourceClient,
+        vm: &mut dyn VSpaceService,
+        cm: &mut dyn CSpaceService,
+        provider: &mut dyn VSpaceProvider,
         frame: Frame,
         size: usize,
-        _perms: crate::mem::Perms,
+        perms: Perms,
     ) -> Result<SharedMemory, Error> {
-        let size_aligned = (size + PGSIZE - 1) & !(PGSIZE - 1);
+        let size_aligned = align_up(size, PGSIZE);
         let vaddr = self.next_vaddr.fetch_add(size_aligned, Ordering::SeqCst);
 
         let shm = SharedMemory::new(frame, vaddr, size);
 
-        // FIXME: Use res_client to map frame for better intermediate PT allocation
-        res_client.mmap(Badge::null(), frame, vaddr, size_aligned)?;
+        // Map locally in the service's VSpace via VSpaceManager
+        vm.map_frame(frame, vaddr, perms, size_aligned / PGSIZE, provider, cm)?;
 
         self.shms.push(shm);
         Ok(shm)

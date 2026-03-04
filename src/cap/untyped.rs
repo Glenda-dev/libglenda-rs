@@ -19,7 +19,7 @@ impl Untyped {
     fn retype(&self, obj_type: CapType, flags: usize, dest: CapPtr) -> Result<(), Error> {
         let mut utcb = unsafe { UTCB::new() };
         utcb.clear();
-        set_mrs!(utcb, obj_type, flags, dest.bits(), 0);
+        set_mrs!(utcb, obj_type, flags, dest.bits());
         self.0.invoke(untypedmethod::RETYPE, &mut utcb)
     }
 
@@ -58,10 +58,10 @@ impl Untyped {
         self.retype(CapType::Endpoint, 0, dest)
     }
 
-    pub fn merge(&self, other: &Untyped) -> Result<(), Error> {
+    pub fn get_info(&self) -> Result<(usize, usize), Error> {
         let mut utcb = unsafe { UTCB::new() };
         utcb.clear();
-        set_mrs!(utcb, other.0.bits(), 0);
-        self.0.invoke(untypedmethod::MERGE, &mut utcb)
+        self.0.invoke(untypedmethod::GET_INFO, &mut utcb)?;
+        Ok((utcb.get_mr(0), utcb.get_mr(1)))
     }
 }

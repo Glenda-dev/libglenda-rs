@@ -1,16 +1,17 @@
-use core::sync::atomic::{AtomicU64, Ordering};
-
+use crate::arch::mem::PGSIZE;
 use crate::cap::{CapPtr, Endpoint, Frame};
 use crate::client::resource::ResourceClient;
 use crate::error::Error;
-use crate::interface::MemoryService;
+use crate::interface::{CSpaceService, VSpaceService};
 use crate::io::uring::IoUringBuffer;
 use crate::io::uring::{IoUringClient, RingParams};
 use crate::ipc::{Badge, MsgFlags, MsgTag, UTCB};
-use crate::mem::shm::SharedMemory;
-use crate::mem::shm::ShmParams;
+use crate::mem::Perms;
+use crate::mem::shm::{SharedMemory, ShmParams};
 use crate::protocol::volume;
+use crate::utils::align::align_up;
 use alloc::sync::Arc;
+use core::sync::atomic::{AtomicU64, Ordering};
 
 #[derive(Clone)]
 pub struct VolumeClient {
@@ -27,7 +28,11 @@ pub struct VolumeClient {
 }
 
 impl VolumeClient {
-    pub fn connect(&mut self) -> Result<(), Error> {
+    pub fn connect(
+        &mut self,
+        vm: &mut dyn VSpaceService,
+        cm: &mut dyn CSpaceService,
+    ) -> Result<(), Error> {
         let tag = MsgTag::new(crate::protocol::VOLUME_PROTO, volume::GET_INFO, MsgFlags::NONE);
         let u = unsafe { UTCB::new() };
         u.set_msg_tag(tag);
@@ -40,8 +45,8 @@ impl VolumeClient {
         self.block_size = u.get_mr(0) as u32;
         self.total_sectors = u.get_mr(1) as u64;
 
-        self.setup_ring_internal()?;
-        self.setup_shm_internal()?;
+        self.setup_ring_internal(vm, cm)?;
+        self.setup_shm_internal(vm, cm)?;
 
         Ok(())
     }
@@ -141,9 +146,7 @@ impl VolumeClient {
         let _shm = self.shm.as_ref().ok_or(Error::NotInitialized)?;
 
         // Ensure alignment to block_size
-        if self.block_size == 0
-            || len % self.block_size != 0
-        {
+        if self.block_size == 0 || len % self.block_size != 0 {
             return Err(Error::InvalidArgs);
         }
 
@@ -173,9 +176,7 @@ impl VolumeClient {
         let shm = self.shm.as_ref().ok_or(Error::NotInitialized)?;
 
         // Ensure alignment to block_size
-        if self.block_size == 0
-            || len % self.block_size != 0
-        {
+        if self.block_size == 0 || len % self.block_size != 0 {
             return Err(Error::InvalidArgs);
         }
 
@@ -219,9 +220,7 @@ impl VolumeClient {
         let shm = self.shm.as_ref().ok_or(Error::NotInitialized)?;
 
         // Ensure alignment to block_size
-        if self.block_size == 0
-            || len % self.block_size != 0
-        {
+        if self.block_size == 0 || len % self.block_size != 0 {
             return Err(Error::InvalidArgs);
         }
 
@@ -268,7 +267,11 @@ impl VolumeClient {
         self.write_at(sector, count * self.block_size, buf)
     }
 
-    fn setup_ring_internal(&mut self) -> Result<(), Error> {
+    fn setup_ring_internal(
+        &mut self,
+        vm: &mut dyn VSpaceService,
+        cm: &mut dyn CSpaceService,
+    ) -> Result<(), Error> {
         let sq_entries = self.ring_params.sq_entries;
         let cq_entries = self.ring_params.cq_entries;
         let notify_ep = self.ring_params.notify_ep;
@@ -288,7 +291,15 @@ impl VolumeClient {
         self.endpoint.call(&mut utcb)?;
 
         let frame = Frame::from(recv);
-        self.res_client.mmap(Badge::null(), frame.clone(), vaddr, size)?;
+        vm.map_frame(
+            frame.clone(),
+            vaddr,
+            Perms::READ | Perms::WRITE,
+            align_up(size, PGSIZE) / PGSIZE,
+            &mut self.res_client,
+            cm,
+        )?;
+
         let ring_buf = unsafe {
             IoUringBuffer::new(vaddr as *mut u8, size, sq_entries as u32, cq_entries as u32)
         };
@@ -298,7 +309,11 @@ impl VolumeClient {
         Ok(())
     }
 
-    fn setup_shm_internal(&mut self) -> Result<(), Error> {
+    fn setup_shm_internal(
+        &mut self,
+        vm: &mut dyn VSpaceService,
+        cm: &mut dyn CSpaceService,
+    ) -> Result<(), Error> {
         let vaddr = self.shm_params.vaddr;
         let recv = self.shm_params.recv_slot;
 
@@ -328,7 +343,15 @@ impl VolumeClient {
 
         // 3. Map it locally (use server's suggested vaddr as default)
         let local_vaddr = if vaddr != 0 { vaddr } else { srv_vaddr };
-        self.res_client.mmap(Badge::null(), actual_frame.clone(), local_vaddr, srv_size)?;
+
+        vm.map_frame(
+            actual_frame.clone(),
+            local_vaddr,
+            Perms::READ | Perms::WRITE,
+            align_up(srv_size, PGSIZE) / PGSIZE,
+            &mut self.res_client,
+            cm,
+        )?;
 
         // 4. Register our local mapping with Fossil to allow SQE translation
         utcb.clear();
@@ -341,7 +364,6 @@ impl VolumeClient {
 
         let mut shm = SharedMemory::new(actual_frame, local_vaddr, srv_size);
         shm.set_client_vaddr(local_vaddr);
-        // shm.set_paddr(srv_paddr as u64); // We don't have it, and we don't need it.
         self.shm = Some(shm);
 
         Ok(())

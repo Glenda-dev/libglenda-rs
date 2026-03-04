@@ -1,6 +1,6 @@
 use crate::arch::runtime::panic_break;
 use crate::arch::syscall::syscall;
-use crate::cap::{CapPtr, Endpoint};
+use crate::cap::MONITOR_CAP;
 use crate::console::{ANSI_RED, ANSI_RESET};
 use crate::error::Error;
 use crate::ipc::{MsgFlags, MsgTag, UTCB};
@@ -8,9 +8,7 @@ use crate::print;
 use crate::protocol;
 use crate::set_mrs;
 
-pub const MONITOR_SLOT: CapPtr = CapPtr::from(4);
-pub const MONITOR_CAP: Endpoint = Endpoint::from(MONITOR_SLOT);
-
+#[cfg(not(feature = "rt-bare"))]
 pub fn sbrk(incr: isize) -> Result<usize, Error> {
     let tag = MsgTag::new(protocol::RESOURCE_PROTO, protocol::resource::SBRK, MsgFlags::NONE);
     let mut utcb = unsafe { UTCB::new() };
@@ -20,6 +18,11 @@ pub fn sbrk(incr: isize) -> Result<usize, Error> {
     MONITOR_CAP.call(&mut utcb)?;
     let ret = utcb.get_mr(0);
     if ret != 0 { Ok(ret) } else { Err(Error::OutOfMemory) }
+}
+
+#[cfg(feature = "rt-bare")]
+pub fn sbrk(_incr: isize) -> Result<usize, Error> {
+    Err(Error::OutOfMemory)
 }
 
 pub fn exit(code: usize) -> ! {

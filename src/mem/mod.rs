@@ -1,5 +1,4 @@
 use crate::arch::mem::{PGSIZE, USER_VA, VA_MAX};
-use bitflags::bitflags;
 
 pub const TRAMPOLINE_VA: usize = VA_MAX - PGSIZE; // Trampoline 映射地址
 
@@ -24,6 +23,7 @@ pub const INITRD_VA: usize = 0x5000_0000;
 pub const HEAP_PAGES: usize = 256; // 用户堆页面数 256 * 4KB = 1MB
 pub const HEAP_SIZE: usize = HEAP_PAGES * PGSIZE; // 1MB
 
+pub mod allocator;
 pub mod pool;
 pub mod ringbuf;
 pub mod shm;
@@ -44,12 +44,15 @@ code + data (N pages)
 empty space (1 page) 最低的4096字节 不分配物理页，同时不可访问
 */
 
-bitflags! {
+bitflags::bitflags! {
     #[derive(Clone,Copy,Debug)]
     pub struct Perms: usize {
         const READ = 1 << 1;
         const WRITE = 1 << 2;
         const EXECUTE = 1 << 3;
-        const USER = 1 << 4;
+        const SUPERVISOR = 1 << 4; // 设置该位则用户不可读
+        const DEVICE = 1 << 5;
+        const FRAMEBUFFER = 1 << 6;
+        const GLOBAL = 1 << 7;
     }
 }

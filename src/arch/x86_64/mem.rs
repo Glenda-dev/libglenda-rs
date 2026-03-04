@@ -5,3 +5,4 @@ pub const VPN_MASK: usize = 0x1FF;
 pub const SHIFTS: [usize; 4] = [12, 21, 30, 39]; // L0, L1, L2, L3
 pub const USER_VA: usize = 0x400000;
 pub const KSTACK_PAGES: usize = 1;
+pub const PT_LEVELS: usize = 4;

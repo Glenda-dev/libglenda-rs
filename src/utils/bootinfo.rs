@@ -38,7 +38,7 @@ pub struct BootInfo {
 
     /// List of untyped memory regions available to the system
     /// The i-th entry here corresponds to the capability at `untyped.start + i`
-    pub untyped_list: [UntypedRegion; MAX_UNTYPED_REGIONS],
+    pub untyped_list: [usize; MAX_UNTYPED_REGIONS],
 
     pub cmdline: [u8; 256],
 }
@@ -47,7 +47,7 @@ impl BootInfo {
     pub fn new() -> Self {
         Self {
             untyped_count: 0,
-            untyped_list: [UntypedRegion::empty(); MAX_UNTYPED_REGIONS],
+            untyped_list: [0; MAX_UNTYPED_REGIONS],
             initrd_paddr: 0,
             initrd_size: 0,
             platform_type: PlatformType::NULL,
@@ -71,20 +71,6 @@ impl BootInfo {
 
     pub fn patch(&self) -> u32 {
         self.version & 0xFFFF
-    }
-}
-
-#[derive(Clone, Copy, Debug)]
-#[repr(C)]
-pub struct UntypedRegion {
-    pub start: usize,
-    pub pages: usize,
-    pub watermark: usize,
-}
-
-impl UntypedRegion {
-    pub fn empty() -> Self {
-        Self { start: 0, pages: 0, watermark: 0 }
     }
 }
 
@@ -125,12 +111,8 @@ impl Display for BootInfo {
             if i >= MAX_UNTYPED_REGIONS as usize {
                 break;
             }
-            let region = &self.untyped_list[i];
-            writeln!(
-                f,
-                "    [{}] Start: {:#x}, Pages: {}, Watermark: {:#x}",
-                i, region.start, region.pages, region.watermark
-            )?;
+            let start = self.untyped_list[i];
+            writeln!(f, "    [{}] Start: {:#x}", i, start)?;
         }
 
         write!(f, "}}")

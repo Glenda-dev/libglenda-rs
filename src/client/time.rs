@@ -1,8 +1,8 @@
 use crate::cap::Endpoint;
 use crate::error::Error;
-use crate::ipc::{MsgFlags, MsgTag, UTCB, Badge};
-use crate::protocol::{TIME_PROTO, time};
 use crate::interface::TimeService;
+use crate::ipc::{Badge, MsgFlags, MsgTag, UTCB};
+use crate::protocol::{TIME_PROTO, time};
 use crate::set_mrs;
 
 pub struct TimeClient(Endpoint);

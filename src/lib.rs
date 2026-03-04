@@ -6,10 +6,10 @@ pub mod arch;
 pub mod cap;
 pub mod client;
 pub mod console;
+#[macro_use]
 pub mod crt0;
 pub mod error;
 pub mod interface;
-pub use interface::fs;
 pub mod io;
 pub mod ipc;
 pub mod mem;

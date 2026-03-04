@@ -1,4 +1,4 @@
-use crate::cap::{Endpoint, CapPtr};
+use crate::cap::{CapPtr, Endpoint};
 use core::sync::atomic::{AtomicU32, Ordering};
 
 // Operation Codes

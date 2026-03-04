@@ -13,7 +13,7 @@ impl CNode {
         Self(cap)
     }
 
-    pub fn cap(&self) -> CapPtr {
+    pub const fn cap(&self) -> CapPtr {
         self.0
     }
 

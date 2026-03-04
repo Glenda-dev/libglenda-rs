@@ -1,20 +1,25 @@
-use super::{CSpaceService, UntypedService, VSpaceService};
 use crate::arch::mem::{PGSIZE, SHIFTS, VPN_MASK};
-use crate::cap::{CNode, CapPtr, CapType, Frame, PageTable, VSpace};
+use crate::cap::{CapPtr, Frame, PageTable, VSpace};
 use crate::error::Error;
+use crate::interface::{CSpaceService, VSpaceProvider, VSpaceService};
 use crate::mem::Perms;
+use crate::mem::TRAMPOLINE_VA;
 use alloc::boxed::Box;
 use alloc::collections::BTreeMap;
+use alloc::vec::Vec;
+
+pub const MAP_START: usize = 0x30000000;
+pub const MAP_END: usize = 0x3F_0000_0000;
 
 #[derive(Debug)]
 enum ShadowNode {
-    Table { _cap: CapPtr, entries: BTreeMap<usize, Box<ShadowNode>> },
+    Table { cap: CapPtr, entries: BTreeMap<usize, Box<ShadowNode>> },
     Frame { cap: CapPtr, pages: usize, perms: Perms },
 }
 
 impl ShadowNode {
     fn new_table(cap: CapPtr) -> Self {
-        ShadowNode::Table { _cap: cap, entries: BTreeMap::new() }
+        ShadowNode::Table { cap, entries: BTreeMap::new() }
     }
 }
 
@@ -25,17 +30,118 @@ pub struct VSpaceManager {
     scratch_start: usize,
     scratch_len: usize,
     scratch_ptr: usize,
+    // Cached pagetables: (Capability, last_mapped_vaddr, level)
+    pages_cache: Vec<(CapPtr, usize, usize)>,
 }
 
 impl VSpaceManager {
+    #[cfg(feature = "rt-bare")]
     pub fn new(root: VSpace, scratch_start: usize, scratch_len: usize) -> Self {
-        Self { root, shadow: BTreeMap::new(), scratch_start, scratch_len, scratch_ptr: 0 }
+        Self {
+            root,
+            shadow: BTreeMap::new(),
+            scratch_start,
+            scratch_len,
+            scratch_ptr: 0,
+            pages_cache: Vec::new(),
+        }
     }
 
-    pub fn setup(&self) -> Result<(), Error> {
-        if self.root.setup().is_err() {
-            return Err(Error::MappingFailed);
+    #[cfg(feature = "rt-service")]
+    pub fn new(root: VSpace, scratch_start: usize, scratch_len: usize) -> Self {
+        let mut slf = Self {
+            root,
+            shadow: BTreeMap::new(),
+            scratch_start,
+            scratch_len,
+            scratch_ptr: 0,
+            pages_cache: Vec::new(),
+        };
+
+        slf.init();
+        slf
+    }
+
+    #[cfg(feature = "rt-service")]
+    fn init(&mut self) {
+        {
+            use crate::mem::{
+                ENTRY_VA, HEAP_VA, STACK_BASE, TRAMPOLINE_VA, get_trapframe_va, get_utcb_va,
+            };
+            self.mark_existing(TRAMPOLINE_VA, PGSIZE);
+            // 1. Text/Data - Low mem (Initial page)
+            self.mark_existing(ENTRY_VA, PGSIZE);
+            // 2. Stack - High mem
+            self.mark_existing(STACK_BASE - PGSIZE, PGSIZE);
+            // 3. Heap
+            self.mark_existing(HEAP_VA, PGSIZE);
+            // 4. UTCB/TrapFrame for TID 0
+            self.mark_existing(get_utcb_va(0), PGSIZE);
+            self.mark_existing(get_trapframe_va(0), PGSIZE);
         }
+    }
+
+    pub fn drop(&mut self, provider: &mut dyn VSpaceProvider, slots: &mut dyn CSpaceService) {
+        // 1. 清理缓存中的页表
+        while let Some((cap, _, _)) = self.pages_cache.pop() {
+            let _ = provider.free_pagetable(cap);
+            let _ = slots.free(cap);
+        }
+
+        // 2. 递归清理影子页表中的资源
+        let mut shadow = core::mem::take(&mut self.shadow);
+        for (_, node) in shadow.iter_mut() {
+            Self::drop_rec(node, provider, slots);
+        }
+    }
+
+    fn drop_rec(
+        node: &mut ShadowNode,
+        provider: &mut dyn VSpaceProvider,
+        slots: &mut dyn CSpaceService,
+    ) {
+        match node {
+            ShadowNode::Table { cap, entries } => {
+                // 递归清理子节点
+                for (_, sub_node) in entries.iter_mut() {
+                    Self::drop_rec(sub_node, provider, slots);
+                }
+                // 清理当前页表
+                if !cap.is_null() {
+                    let _ = provider.free_pagetable(*cap);
+                    let _ = slots.free(*cap);
+                }
+            }
+            ShadowNode::Frame { cap, .. } => {
+                // Frame 的回收通常由 UntypedManager 处理，但如果 VSpaceManager 拥有这个 Capability 的所有权，
+                // 则需要在这里 free slot。
+                // 注意：在 Glenda 中，Frame 的物理内存由 Untyped 分配，这里只 free CSpace 中的 slot。
+                if !cap.is_null() {
+                    let _ = slots.free(*cap);
+                }
+            }
+        }
+    }
+
+    pub fn setup(
+        &mut self,
+        provider: &mut dyn VSpaceProvider,
+        slots: &mut dyn CSpaceService,
+    ) -> Result<(), Error> {
+        // 1. 确保 TRAMPOLINE_VA 的路径在影子页表中存在
+        // 这会逐级创建页表直到 L1，并调用 map_table 挂载到内核
+        Self::ensure_path(
+            &mut self.pages_cache,
+            &mut self.shadow,
+            TRAMPOLINE_VA,
+            SHIFTS.len() - 1,
+            provider,
+            slots,
+            self.root,
+        )?;
+        // 2. 调用内核 VSpace 的 Setup，同步内核上下文
+        self.root.setup()?;
+
         Ok(())
     }
 
@@ -67,9 +173,8 @@ impl VSpaceManager {
     pub fn clone_space(
         &self,
         dest_mgr: &mut VSpaceManager,
-        objects: &mut dyn UntypedService,
+        provider: &mut dyn VSpaceProvider,
         slots: &mut dyn CSpaceService,
-        root_cnode: CNode,
         src_scratch_va: usize,
         dest_scratch_va: usize,
         current_vspace: &mut VSpaceManager,
@@ -77,9 +182,8 @@ impl VSpaceManager {
         self.clone_level(
             &self.shadow,
             dest_mgr,
-            objects,
+            provider,
             slots,
-            root_cnode,
             0,
             SHIFTS.len() - 1,
             src_scratch_va,
@@ -92,9 +196,8 @@ impl VSpaceManager {
         &self,
         entries: &BTreeMap<usize, Box<ShadowNode>>,
         dest_mgr: &mut VSpaceManager,
-        objects: &mut dyn UntypedService,
+        provider: &mut dyn VSpaceProvider,
         slots: &mut dyn CSpaceService,
-        root_cnode: CNode,
         base_vaddr: usize,
         level: usize,
         src_scratch_va: usize,
@@ -113,9 +216,8 @@ impl VSpaceManager {
                     self.clone_level(
                         sub_entries,
                         dest_mgr,
-                        objects,
+                        provider,
                         slots,
-                        root_cnode,
                         vaddr,
                         level - 1,
                         src_scratch_va,
@@ -131,9 +233,9 @@ impl VSpaceManager {
                     }
 
                     // Alloc slot and object
-                    let new_slot = slots.alloc(objects.as_cspace_provider())?;
-                    let full_dest = CapPtr::concat(root_cnode.cap(), new_slot);
-                    objects.alloc(CapType::Frame, 1, full_dest)?;
+                    let new_slot = slots.alloc(provider)?;
+                    let full_dest = new_slot;
+                    provider.alloc_pagetable(full_dest)?;
                     let new_frame = Frame::from(new_slot);
 
                     // Map both to copy
@@ -145,9 +247,8 @@ impl VSpaceManager {
                         src_scratch_va,
                         Perms::READ,
                         num_pages,
-                        objects,
+                        provider,
                         slots,
-                        root_cnode,
                     )?;
 
                     // Map dest using current_vspace
@@ -156,9 +257,8 @@ impl VSpaceManager {
                         dest_scratch_va,
                         Perms::READ | Perms::WRITE,
                         num_pages,
-                        objects,
+                        provider,
                         slots,
-                        root_cnode,
                     )?;
 
                     unsafe {
@@ -171,13 +271,11 @@ impl VSpaceManager {
                     }
 
                     // Unmap
-                    current_vspace.unmap(src_scratch_va, num_pages, objects, root_cnode)?;
-                    current_vspace.unmap(dest_scratch_va, num_pages, objects, root_cnode)?;
+                    current_vspace.unmap(src_scratch_va, num_pages)?;
+                    current_vspace.unmap(dest_scratch_va, num_pages)?;
 
                     // Map to child
-                    dest_mgr.map_frame(
-                        new_frame, vaddr, *perms, num_pages, objects, slots, root_cnode,
-                    )?;
+                    dest_mgr.map_frame(new_frame, vaddr, *perms, num_pages, provider, slots)?;
                 }
             }
         }
@@ -185,12 +283,12 @@ impl VSpaceManager {
     }
 
     fn ensure_path<'a>(
+        pages_cache: &mut Vec<(CapPtr, usize, usize)>,
         entries: &'a mut BTreeMap<usize, Box<ShadowNode>>,
         vaddr: usize,
         level: usize,
-        objects: &mut dyn UntypedService,
+        provider: &mut dyn VSpaceProvider,
         slots: &mut dyn CSpaceService,
-        dest_cnode: CNode,
         pivot_root: VSpace,
     ) -> Result<&'a mut BTreeMap<usize, Box<ShadowNode>>, Error> {
         let idx = index(vaddr, level);
@@ -200,15 +298,43 @@ impl VSpaceManager {
         }
 
         if !entries.contains_key(&idx) {
-            let slot = slots.alloc(objects.as_cspace_provider())?;
-            let target_level = level - 1;
-            let full_dest = CapPtr::concat(dest_cnode.cap(), slot);
-            objects.alloc(CapType::PageTable, target_level, full_dest)?;
-            let pt = PageTable::from(slot);
+            // 首先检查缓存
+            let slot = if let Some(pos) =
+                pages_cache.iter().position(|&(_, old_vaddr, old_level)| {
+                    // 懒回收：如果缓存中有完全匹配的页表（层级相同且全路径相同），
+                    // 说明它在内核里依然挂载在原来的地方并没有被 unmap_table。直接重用。
+                    old_level == level && (old_vaddr >> SHIFTS[level]) == (vaddr >> SHIFTS[level])
+                }) {
+                let (cap, _, _) = pages_cache.swap_remove(pos);
+                // 不需要重新 map_table，因为依然留在由于懒回收导致的内核页表中。
+                cap
+            } else {
+                // 如果没有完全匹配的，尝试从缓存中取出一个并重新映射
+                // 此时必须清理目标位置，防止 "slot occupied"
+                let _ = pivot_root.unmap_table(vaddr, level);
 
-            if pivot_root.map_table(pt, vaddr, level).is_err() {
-                return Err(Error::MappingFailed);
-            }
+                if let Some((cap, old_vaddr, old_level)) = pages_cache.pop() {
+                    // 对于来自别的地址的重利用，它目前还挂载在 old_vaddr，这里先卸载它。
+                    let _ = pivot_root.unmap_table(old_vaddr, old_level);
+
+                    let pt = PageTable::from(cap);
+                    if pivot_root.map_table(pt, vaddr, level).is_err() {
+                        return Err(Error::MappingFailed);
+                    }
+                    cap
+                } else {
+                    // 缓存也为空，分配全新的
+                    let slot = slots.alloc(provider)?;
+                    provider.alloc_pagetable(slot)?;
+                    let pt = PageTable::from(slot);
+
+                    if pivot_root.map_table(pt, vaddr, level).is_err() {
+                        return Err(Error::MappingFailed);
+                    }
+                    slot
+                }
+            };
+
             entries.insert(idx, Box::new(ShadowNode::new_table(slot)));
         }
 
@@ -219,12 +345,12 @@ impl VSpaceManager {
                     Ok(sub_entries)
                 } else {
                     Self::ensure_path(
+                        pages_cache,
                         sub_entries,
                         vaddr,
                         level - 1,
-                        objects,
+                        provider,
                         slots,
-                        dest_cnode,
                         pivot_root,
                     )
                 }
@@ -234,38 +360,41 @@ impl VSpaceManager {
     }
 
     fn unmap_rec(
+        pivot_root: VSpace,
+        cache: &mut Vec<(CapPtr, usize, usize)>,
         entries: &mut BTreeMap<usize, Box<ShadowNode>>,
         vaddr: usize,
         level: usize,
-        objects: &mut dyn UntypedService,
-        cnode: CNode,
     ) {
         let idx = index(vaddr, level);
         if level == 0 {
-            if let Some(removed_node) = entries.remove(&idx) {
-                if let ShadowNode::Frame { cap, .. } = *removed_node {
-                    let _ = cnode.delete(cap);
-                    let _ = objects.free(cap);
+            // Level 0 对应的 entries 是页表项，直接移除并调用 unmap
+            if let Some(node) = entries.get_mut(&idx) {
+                match &mut **node {
+                    ShadowNode::Frame { pages: _, .. } => {
+                        // 如果是一个范围映射的起始点，我们需要知道是否该 unmap 整个范围
+                        // 但 unmap_rec 每次只处理一个 PGSIZE = 4KB 页面。
+                        // 如果 pages > 1，表示这是一个 superpage 或连续映射。
+                        // 在 Glenda 的 VSpaceManager 中目前似乎只支持单页或多页循环调用 unmap_rec。
+                        let _ = pivot_root.unmap(vaddr, 1 << SHIFTS[0]);
+                    }
+                    _ => {}
                 }
+                entries.remove(&idx);
             }
         } else if let Some(node) = entries.get_mut(&idx) {
-            match &mut **node {
-                ShadowNode::Table { entries: sub_entries, .. } => {
-                    Self::unmap_rec(sub_entries, vaddr, level - 1, objects, cnode);
+            if let ShadowNode::Table { entries: sub_entries, .. } = &mut **node {
+                Self::unmap_rec(pivot_root, cache, sub_entries, vaddr, level - 1);
+                // 仅当子页表现在完全变为空时，考虑回收当前层级的页表
+                if sub_entries.is_empty() {
+                    let removed = entries.remove(&idx).unwrap();
+                    if let ShadowNode::Table { cap, .. } = *removed {
+                        // 懒回收：不在这里显式向内核发送 unmap_table 解除该层级页表的映射，
+                        // 只是记录到 cache 中。这样下次如果在同位置重用，就可以省去系统调用。
+                        // 如果在其它位置复用，再执行 unmap_table。
+                        cache.push((cap, vaddr, level));
+                    }
                 }
-                _ => {}
-            }
-        }
-    }
-
-    fn unmap_rec_leak(entries: &mut BTreeMap<usize, Box<ShadowNode>>, vaddr: usize, level: usize) {
-        let idx = index(vaddr, level);
-        if let Some(node) = entries.get_mut(&idx) {
-            match &mut **node {
-                ShadowNode::Table { entries: sub_entries, .. } => {
-                    Self::unmap_rec_leak(sub_entries, vaddr, level - 1);
-                }
-                _ => {}
             }
         }
     }
@@ -305,50 +434,48 @@ impl VSpaceService for VSpaceManager {
         vaddr: usize,
         perms: Perms,
         pages: usize,
-        objects: &mut dyn UntypedService,
+        provider: &mut dyn VSpaceProvider,
         slots: &mut dyn CSpaceService,
-        dest_cnode: CNode,
     ) -> Result<(), Error> {
+        if !Self::check_addr(vaddr) || !Self::check_addr(vaddr + pages * PGSIZE - 1) {
+            return Err(Error::PermissionDenied);
+        }
         let levels = SHIFTS.len();
 
         for i in 0..pages {
             let curr_vaddr = vaddr + i * PGSIZE;
             let leaf_map = Self::ensure_path(
+                &mut self.pages_cache,
                 &mut self.shadow,
                 curr_vaddr,
                 levels - 1,
-                objects,
+                provider,
                 slots,
-                dest_cnode,
                 self.root,
             )?;
 
             let idx0 = index(curr_vaddr, 0);
-            if let Some(node) = leaf_map.get(&idx0) {
-                crate::println!(
-                    "VSpaceManager::map_frame: vaddr {:#x} (idx {}) already in shadow table: {:?}",
-                    curr_vaddr,
-                    idx0,
-                    node
-                );
-                return Err(Error::MappingFailed);
+            if let Some(_) = leaf_map.get(&idx0) {
+                // 如果已经存在映射，先清理它以防 PageTable 冲突
+                let _ = self.unmap(curr_vaddr, 1);
             }
         }
 
+        // 调用内核进行映射，并检查返回值
         if let Err(e) = self.root.map(frame, vaddr, perms, pages) {
-            crate::println!("VSpaceManager::map_frame: self.root.map failed with {:?}", e);
+            crate::error!("VSpaceManager::map_frame: self.root.map failed with {:?}", e);
             return Err(Error::MappingFailed);
         }
 
         for i in 0..pages {
             let curr_vaddr = vaddr + i * PGSIZE;
             let leaf_map = Self::ensure_path(
+                &mut self.pages_cache,
                 &mut self.shadow,
                 curr_vaddr,
                 levels - 1,
-                objects,
+                provider,
                 slots,
-                dest_cnode,
                 self.root,
             )?;
 
@@ -362,7 +489,67 @@ impl VSpaceService for VSpaceManager {
                 }),
             );
         }
+        Ok(())
+    }
 
+    fn map_pt(
+        &mut self,
+        level: usize,
+        vaddr: usize,
+        provider: &mut dyn VSpaceProvider,
+        slots: &mut dyn CSpaceService,
+    ) -> Result<PageTable, Error> {
+        if !Self::check_addr(vaddr) {
+            return Err(Error::PermissionDenied);
+        }
+        let levels = SHIFTS.len();
+        Self::ensure_path(
+            &mut self.pages_cache,
+            &mut self.shadow,
+            vaddr,
+            levels - 1,
+            provider,
+            slots,
+            self.root,
+        )?;
+
+        let mut curr = &self.shadow;
+        for curr_lvl in (level + 1..levels).rev() {
+            let idx = index(vaddr, curr_lvl);
+            if let Some(node) = curr.get(&idx) {
+                if let ShadowNode::Table { entries, .. } = &**node {
+                    curr = entries;
+                } else {
+                    return Err(Error::MappingFailed);
+                }
+            } else {
+                return Err(Error::MappingFailed);
+            }
+        }
+
+        let idx = index(vaddr, level);
+        if let Some(node) = curr.get(&idx) {
+            match &**node {
+                ShadowNode::Table { cap, .. } => return Ok(PageTable::from(*cap)),
+                _ => {}
+            }
+        }
+        Err(Error::MappingFailed)
+    }
+
+    fn unmap(&mut self, vaddr: usize, pages: usize) -> Result<(), Error> {
+        let levels = SHIFTS.len();
+        for i in 0..pages {
+            Self::unmap_rec(
+                self.root,
+                &mut self.pages_cache,
+                &mut self.shadow,
+                vaddr + i * PGSIZE,
+                levels - 1,
+            );
+        }
+        // 内核 unmap 已经由 unmap_rec 在叶子节点回收时显式处理。
+        // 重复调用会引发 MappingFailed (如果路径已被 unmap_table 移除)。
         Ok(())
     }
 
@@ -371,9 +558,8 @@ impl VSpaceService for VSpaceManager {
         frame: Frame,
         perms: Perms,
         pages: usize,
-        objects: &mut dyn UntypedService,
+        provider: &mut dyn VSpaceProvider,
         slots: &mut dyn CSpaceService,
-        dest_cnode: CNode,
     ) -> Result<usize, Error> {
         let size = pages * PGSIZE;
         if size > self.scratch_len {
@@ -402,7 +588,7 @@ impl VSpaceService for VSpaceManager {
             }
 
             if free {
-                self.map_frame(frame, vaddr, perms, pages, objects, slots, dest_cnode)?;
+                self.map_frame(frame, vaddr, perms, pages, provider, slots)?;
                 self.scratch_ptr = offset + size;
                 return Ok(vaddr);
             }
@@ -425,34 +611,6 @@ impl VSpaceService for VSpaceManager {
         }
     }
 
-    fn unmap(
-        &mut self,
-        vaddr: usize,
-        pages: usize,
-        objects: &mut dyn UntypedService,
-        cnode: CNode,
-    ) -> Result<(), Error> {
-        let levels = SHIFTS.len();
-        for i in 0..pages {
-            Self::unmap_rec(&mut self.shadow, vaddr + i * PGSIZE, levels - 1, objects, cnode);
-        }
-        if self.root.unmap(vaddr, pages * PGSIZE).is_err() {
-            return Err(Error::MappingFailed);
-        }
-        Ok(())
-    }
-
-    fn unmap_scratch(&mut self, vaddr: usize, pages: usize) -> Result<(), Error> {
-        let levels = SHIFTS.len();
-        for i in 0..pages {
-            Self::unmap_rec_leak(&mut self.shadow, vaddr + i * PGSIZE, levels - 1);
-        }
-        if self.root.unmap(vaddr, pages * PGSIZE).is_err() {
-            return Err(Error::MappingFailed);
-        }
-        Ok(())
-    }
-
     fn is_mapped(&self, vaddr: usize, level: usize) -> bool {
         Self::is_mapped_rec(&self.shadow, vaddr, level)
     }
@@ -460,4 +618,40 @@ impl VSpaceService for VSpaceManager {
 
 fn index(vaddr: usize, level: usize) -> usize {
     (vaddr >> SHIFTS[level]) & VPN_MASK
+}
+
+#[cfg(feature = "rt-bare")]
+impl VSpaceManager {
+    fn check_addr(addr: usize) -> bool {
+        use crate::arch::mem::VA_MAX;
+        if addr <= VA_MAX {
+            return true;
+        }
+        crate::println!(
+            "{}VSpaceManager: Address {:#x} out of allowed range [0, {:#x}]{}",
+            crate::console::ANSI_RED,
+            addr,
+            VA_MAX,
+            crate::console::ANSI_RESET
+        );
+        false
+    }
+}
+
+#[cfg(feature = "rt-service")]
+impl VSpaceManager {
+    fn check_addr(addr: usize) -> bool {
+        if addr >= MAP_START && addr < MAP_END {
+            return true;
+        }
+        crate::println!(
+            "{}VSpaceManager: Address {:#x} out of allowed range [{:#x}, {:#x}){}",
+            crate::console::ANSI_RED,
+            addr,
+            MAP_START,
+            MAP_END,
+            crate::console::ANSI_RESET
+        );
+        false
+    }
 }

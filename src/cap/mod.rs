@@ -5,7 +5,7 @@ mod frame;
 mod irq;
 mod kernel;
 mod method;
-pub mod pagetable;
+mod pagetable;
 mod reply;
 mod tcb;
 mod untyped;
@@ -39,7 +39,7 @@ pub const CNODE_SLOTS: usize = 1 << CNODE_BITS;
 pub const CNODE_MASK: usize = CNODE_SLOTS - 1;
 
 #[repr(transparent)]
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub struct CapPtr(usize);
 
 impl CapPtr {
@@ -59,41 +59,70 @@ impl CapPtr {
         self.0 == 0
     }
 
+    pub fn level_idx(&self, level: usize) -> usize {
+        (self.0 >> (level * CNODE_BITS)) & CNODE_MASK
+    }
+
     // --- Generic Invocation ---
     #[inline(always)]
     pub fn invoke(&self, method: usize, utcb: &mut UTCB) -> Result<(), Error> {
         sys_invoke(self.0, method, utcb)
     }
-
     pub const fn len(&self) -> usize {
-        if self.0 == 0 {
-            return 0; // NULL
-        } else if self.0 >> (CNODE_BITS * 1) == 0 {
-            return 1; // L0
-        } else if self.0 >> (CNODE_BITS * 2) == 0 {
-            return 2; // L1
-        } else if self.0 >> (CNODE_BITS * 3) == 0 {
-            return 3; // L2
-        } else if self.0 >> (CNODE_BITS * 4) == 0 {
-            return 4; // L3
-        } else if self.0 >> (CNODE_BITS * 5) == 0 {
-            return 5; // L4
-        } else if self.0 >> (CNODE_BITS * 6) == 0 {
-            return 6; // L5
-        } else if self.0 >> (CNODE_BITS * 7) == 0 {
-            return 7; // L6
-        } else {
-            return 8; // L7
-        }
+        self.effective_bits() / CNODE_BITS
     }
 
     pub const fn concat(root: CapPtr, ptr: CapPtr) -> CapPtr {
-        let root_len = root.len();
-        let ptr_len = ptr.len();
-        if root_len + ptr_len > 8 || root.is_null() || ptr.is_null() {
+        if root.0 == 0 {
+            return ptr;
+        }
+        if ptr.0 == 0 {
+            return root;
+        }
+        let root_bits = root.effective_bits();
+        CapPtr(root.0 | (ptr.0 << root_bits))
+    }
+
+    pub const fn effective_bits(&self) -> usize {
+        if self.0 == 0 {
+            return 0;
+        }
+        if self.0 <= 0xFF {
+            return 8;
+        }
+        if self.0 <= 0xFFFF {
+            return 16;
+        }
+        if self.0 <= 0xFF_FFFF {
+            return 24;
+        }
+        if self.0 <= 0xFFFF_FFFF {
+            return 32;
+        }
+        if self.0 <= 0xFF_FFFF_FFFF {
+            return 40;
+        }
+        if self.0 <= 0xFFFF_FFFF_FFFF {
+            return 48;
+        }
+        if self.0 <= 0xFF_FFFF_FFFF_FFFF {
+            return 56;
+        }
+        64
+    }
+
+    pub const fn relative(root: CapPtr, abs: CapPtr) -> CapPtr {
+        if root.0 == CSPACE_SLOT.0 {
+            return abs;
+        }
+        if abs.0 == 0 {
             return CapPtr::null();
         }
-        CapPtr::from(root.0 | ptr.0 << (root_len * CNODE_BITS))
+        let root_bits = root.effective_bits();
+        if abs.0 % (1 << root_bits) != root.0 {
+            return CapPtr::null(); // Not a descendant
+        }
+        CapPtr(abs.0 >> root_bits)
     }
 }
 
@@ -134,7 +163,25 @@ impl Into<usize> for CapType {
     }
 }
 
+impl CapType {
+    pub fn pages(&self, flags: usize) -> Result<usize, Error> {
+        let pages = match self {
+            CapType::Untyped => flags, // 由 flags 决定
+            CapType::TCB => 1,
+            CapType::Endpoint => 1,
+            CapType::Reply => 1,
+            CapType::Frame => flags, // 由 flags 决定
+            CapType::PageTable => 1,
+            CapType::CNode => CNODE_PAGES,
+            CapType::VSpace => 1,
+            _ => 0,
+        };
+        if pages == 0 { Err(Error::InvalidArgs) } else { Ok(pages) }
+    }
+}
+
 bitflags::bitflags! {
+    #[derive(Copy, Clone, Debug)]
     pub struct Rights: u8 {
         const NONE  = 0;
         const READ  = 1 << 0;
@@ -157,6 +204,7 @@ pub const CONSOLE_SLOT: CapPtr = CapPtr::from(5);
 pub const REPLY_SLOT: CapPtr = CapPtr::from(6);
 pub const RECV_SLOT: CapPtr = CapPtr::from(7);
 pub const ENDPOINT_SLOT: CapPtr = CapPtr::from(8);
+pub const ARENA_CSPACE_SLOT: CapPtr = CapPtr::from(10);
 
 pub const CSPACE_CAP: CNode = CNode::from(CSPACE_SLOT);
 pub const VSPACE_CAP: VSpace = VSpace::from(VSPACE_SLOT);

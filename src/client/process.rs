@@ -45,15 +45,6 @@ impl ProcessService for ProcessClient {
         Ok(utcb.get_mr(0))
     }
 
-    fn fork(&mut self, _pid: Badge) -> Result<usize, Error> {
-        let tag = MsgTag::new(PROCESS_PROTO, process::FORK, MsgFlags::NONE);
-        let mut utcb = unsafe { UTCB::new() };
-        utcb.clear();
-        utcb.set_msg_tag(tag);
-        self.endpoint.call(&mut utcb)?;
-        Ok(utcb.get_mr(0))
-    }
-
     fn exit(&mut self, _pid: Badge, code: usize) -> Result<(), Error> {
         let tag = MsgTag::new(PROCESS_PROTO, process::EXIT, MsgFlags::NONE);
         let mut utcb = unsafe { UTCB::new() };
@@ -71,19 +62,6 @@ impl ProcessService for ProcessClient {
         utcb.set_msg_tag(tag);
         self.endpoint.call(&mut utcb)?;
         Ok(())
-    }
-
-    fn exec(&mut self, _pid: Badge, path: &str) -> Result<(usize, usize), Error> {
-        let tag = MsgTag::new(PROCESS_PROTO, process::EXEC, MsgFlags::HAS_BUFFER);
-        let mut utcb = unsafe { UTCB::new() };
-        utcb.clear();
-        unsafe { utcb.write_str(path)? };
-        utcb.set_msg_tag(tag);
-        // Note: passing large buffers might need another mechanism if it exceeds IPC_BUFFER_SIZE
-        // For now we assume the caller handled it if it fits, or this is just a protocol definition.
-        // Usually, exec might use a Frame capability instead of raw data in IPC buffer.
-        self.endpoint.call(&mut utcb)?;
-        Ok((utcb.get_mr(0), utcb.get_mr(1)))
     }
 
     fn get_cnode(&mut self, _pid: Badge, target: Badge, recv: CapPtr) -> Result<CNode, Error> {
