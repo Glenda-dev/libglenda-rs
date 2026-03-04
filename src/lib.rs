@@ -1,4 +1,5 @@
 #![no_std]
+#![allow(dead_code)]
 
 extern crate alloc;
 
@@ -8,6 +9,7 @@ pub mod client;
 pub mod console;
 #[macro_use]
 pub mod crt0;
+pub mod drivers;
 pub mod error;
 pub mod interface;
 pub mod io;
