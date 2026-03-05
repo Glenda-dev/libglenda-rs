@@ -4,9 +4,12 @@ use crate::cap::MONITOR_CAP;
 use crate::console::{ANSI_RED, ANSI_RESET};
 use crate::error::Error;
 use crate::ipc::{MsgFlags, MsgTag, UTCB};
+#[cfg(not(feature = "rt-hosted"))]
 use crate::print;
 use crate::protocol;
 use crate::set_mrs;
+#[cfg(feature = "rt-hosted")]
+use std::print;
 
 #[cfg(not(feature = "rt-bare"))]
 pub fn sbrk(incr: isize) -> Result<usize, Error> {

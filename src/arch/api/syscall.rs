@@ -1,10 +1,8 @@
-use core::arch::asm;
+//! Syscall Interface API (Reference Only)
+//!
+//! This module defines the expected signatures for syscall-related functions
+//! that must be implemented by each architecture.
 
-// 系统调用
-#[inline(always)]
 pub unsafe fn syscall(cptr: usize, method: usize) -> usize {
-    unsafe {
-        asm!("");
-    }
-    0
+    unimplemented!("This is a reference API, not a concrete implementation.");
 }

@@ -2,6 +2,8 @@ pub mod auth;
 pub mod device;
 pub mod fs;
 pub mod generic;
+#[cfg(feature = "hosted")]
+pub mod hosted;
 pub mod init;
 pub mod input;
 pub mod kernel;

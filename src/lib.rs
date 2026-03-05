@@ -1,6 +1,7 @@
-#![no_std]
+#![cfg_attr(not(feature = "std"), no_std)]
 #![allow(dead_code)]
-
+#![allow(unused)]
+#![allow(ambiguous_glob_reexports)]
 extern crate alloc;
 
 pub mod arch;
