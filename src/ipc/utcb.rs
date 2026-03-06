@@ -83,6 +83,14 @@ impl UTCB {
         if index < MAX_MRS { unsafe { read_volatile(&self.mrs_regs[index]) } } else { 0 }
     }
 
+    pub fn get_buffer_ptr(&self) -> *const u8 {
+        self.ipc_buffer.as_ptr()
+    }
+
+    pub fn get_buffer_mut_ptr(&mut self) -> *mut u8 {
+        self.ipc_buffer.as_mut_ptr()
+    }
+
     pub fn mr_ptr(&self, index: usize) -> *const usize {
         &self.mrs_regs[index] as *const usize
     }
@@ -134,6 +142,10 @@ impl UTCB {
         self.set_size(core::cmp::min(len, IPC_BUFFER_SIZE));
     }
 
+    pub fn get_buffer_size(&self) -> usize {
+        self.get_size()
+    }
+
     pub fn clear(&mut self) {
         unsafe {
             write_volatile(&mut self.msg_tag, MsgTag::empty());
@@ -167,10 +179,6 @@ impl UTCB {
 
     pub fn get_cap_transfer(&self) -> CapPtr {
         unsafe { read_volatile(&self.cap_transfer) }
-    }
-
-    pub fn get_buffer_ptr(&mut self) -> *mut u8 {
-        self.ipc_buffer.as_mut_ptr()
     }
 
     pub fn set_cap_transfer(&mut self, cap: CapPtr) {

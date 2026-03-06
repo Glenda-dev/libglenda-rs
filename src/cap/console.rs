@@ -33,7 +33,7 @@ impl Console {
         let mut buffer_backup = [0u8; LOG_CHUNK_SIZE];
         unsafe {
             core::ptr::copy_nonoverlapping(
-                utcb.get_buffer_ptr(),
+                utcb.get_buffer_mut_ptr(),
                 buffer_backup.as_mut_ptr(),
                 LOG_CHUNK_SIZE,
             );
@@ -57,7 +57,7 @@ impl Console {
             unsafe {
                 core::ptr::copy_nonoverlapping(
                     bytes.as_ptr().add(offset),
-                    utcb.get_buffer_ptr(),
+                    utcb.get_buffer_mut_ptr(),
                     chunk_size,
                 );
             }
@@ -74,7 +74,7 @@ impl Console {
                 unsafe {
                     core::ptr::copy_nonoverlapping(
                         buffer_backup.as_ptr(),
-                        utcb.get_buffer_ptr(),
+                        utcb.get_buffer_mut_ptr(),
                         LOG_CHUNK_SIZE,
                     );
                 }
@@ -91,7 +91,7 @@ impl Console {
         unsafe {
             core::ptr::copy_nonoverlapping(
                 buffer_backup.as_ptr(),
-                utcb.get_buffer_ptr(),
+                utcb.get_buffer_mut_ptr(),
                 LOG_CHUNK_SIZE,
             );
         }
@@ -123,7 +123,7 @@ impl Console {
         let len = utcb.get_mr(0);
         let actual_len = core::cmp::min(len, buf.len());
         unsafe {
-            core::ptr::copy_nonoverlapping(utcb.get_buffer_ptr(), buf.as_mut_ptr(), actual_len);
+            core::ptr::copy_nonoverlapping(utcb.get_buffer_mut_ptr(), buf.as_mut_ptr(), actual_len);
         }
         Ok(actual_len)
     }

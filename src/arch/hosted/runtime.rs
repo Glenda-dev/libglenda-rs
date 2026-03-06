@@ -1,13 +1,35 @@
 use crate::arch::hosted::mem::UTCB_VA;
 use crate::arch::hosted::syscall::init_hosted_ipc;
-use std::env;
 use crate::ipc::ThreadControlBlock;
+use std::env;
+
+extern "C" fn siginfo_handler(
+    sig: libc::c_int,
+    info: *mut libc::siginfo_t,
+    _ucontext: *mut libc::c_void,
+) {
+    let addr = unsafe { if !info.is_null() { (*info).si_addr() } else { core::ptr::null_mut() } };
+    println!(
+        "--- Glenda Hosted Runtime Error ---\nReceived signal: {}\nFaulting address: {:?}",
+        sig, addr
+    );
+    std::process::exit(128 + sig as i32);
+}
 
 pub fn crt0_init() {
+    unsafe {
+        let mut sa: libc::sigaction = core::mem::zeroed();
+        sa.sa_sigaction = siginfo_handler as *const () as usize;
+        sa.sa_flags = libc::SA_SIGINFO;
+        libc::sigaction(libc::SIGSEGV, &sa, core::ptr::null_mut());
+        libc::sigaction(libc::SIGILL, &sa, core::ptr::null_mut());
+        libc::sigaction(libc::SIGBUS, &sa, core::ptr::null_mut());
+        libc::sigaction(libc::SIGFPE, &sa, core::ptr::null_mut());
+    }
+
     let socket_path = env::var("GLENDA_HUTCH_SOCK").unwrap_or("/tmp/glenda_hutch.sock".to_string());
     init_hosted_ipc(&socket_path).expect("Failed to connect to hutch");
 
-    // 映射 UTCB 区域。在 Hosted 模式下，我们将该地址固定，以便 hutch 识别。
     unsafe {
         let ret = libc::mmap(
             UTCB_VA as *mut libc::c_void,
@@ -20,12 +42,12 @@ pub fn crt0_init() {
         if ret == libc::MAP_FAILED {
             panic!(
                 "Failed to mmap fixed UTCB at 0x{:x}. Error: {}",
-                UTCB_VA, std::io::Error::last_os_error()
+                UTCB_VA,
+                std::io::Error::last_os_error()
             );
         }
     }
 
-    // 初始化主线程的 TCB 和 TLS 环境
     unsafe {
         static mut MAIN_TCB: ThreadControlBlock = ThreadControlBlock::new();
         MAIN_TCB.self_ptr = core::ptr::addr_of_mut!(MAIN_TCB) as usize;
@@ -36,7 +58,9 @@ pub fn crt0_init() {
 
 pub unsafe fn panic_break() {
     #[cfg(target_os = "linux")]
-    unsafe { libc::raise(libc::SIGTRAP); }
+    unsafe {
+        libc::raise(libc::SIGTRAP);
+    }
 }
 
 pub fn backtrace() {

@@ -1,19 +1,7 @@
 use std::ffi::{c_char, c_int};
 
-// This is the entry point that the Linux dynamic linker/loader will call.
-#[unsafe(no_mangle)]
-pub unsafe extern "C" fn main(_argc: c_int, _argv: *const *const c_char) -> c_int {
-    // 1. Initialize hosted shared memory (UTCB at 0x100000)
-    crate::arch::hosted::init_utcb();
-
-    // 2. Call the user's main
-    unsafe extern "Rust" {
-        fn main();
-    }
-    unsafe {
-        main();
-    }
-    0
+pub fn crt0_init() {
+    crate::arch::hosted::crt0_init();
 }
 
 #[macro_export]

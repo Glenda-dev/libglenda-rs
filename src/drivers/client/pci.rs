@@ -1,7 +1,7 @@
-use crate::drivers::interface::{PciDriver, DriverClient};
+use crate::cap::Endpoint;
+use crate::drivers::interface::{DriverClient, PciDriver};
 use crate::drivers::protocol::pci::PciAddress;
 use crate::drivers::protocol::{PCI_PROTO, pci};
-use crate::cap::Endpoint;
 use crate::error::Error;
 use crate::interface::{CSpaceService, VSpaceService};
 use crate::ipc::{MsgFlags, MsgTag, UTCB};

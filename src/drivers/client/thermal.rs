@@ -1,9 +1,9 @@
 use crate::cap::Endpoint;
+use crate::drivers::interface::{DriverClient, ThermalDriver};
+use crate::drivers::protocol::{THERMAL_PROTO, thermal};
 use crate::error::Error;
 use crate::interface::{CSpaceService, VSpaceService};
 use crate::ipc::{MsgFlags, MsgTag, UTCB};
-use crate::drivers::interface::{ThermalDriver, DriverClient};
-use crate::drivers::protocol::{THERMAL_PROTO, thermal};
 
 pub struct ThermalClient {
     endpoint: Endpoint,

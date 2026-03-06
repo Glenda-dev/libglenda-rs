@@ -1,9 +1,9 @@
 use crate::cap::Endpoint;
+use crate::drivers::interface::{DriverClient, TimerDriver};
+use crate::drivers::protocol::{TIMER_PROTO, timer};
 use crate::error::Error;
 use crate::interface::{CSpaceService, VSpaceService};
-use crate::drivers::interface::{TimerDriver, DriverClient};
 use crate::ipc::{MsgFlags, MsgTag, UTCB};
-use crate::drivers::protocol::{TIMER_PROTO, timer};
 use crate::set_mrs;
 
 pub struct TimerClient {

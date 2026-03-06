@@ -1,7 +1,7 @@
+use crate::cap::Endpoint;
 use crate::drivers::interface::{DriverClient, FrameBufferDriver};
 use crate::drivers::protocol::fb::FbInfo;
 use crate::drivers::protocol::{FB_PROTO, fb};
-use crate::cap::Endpoint;
 use crate::error::Error;
 use crate::interface::{CSpaceService, VSpaceService};
 use crate::ipc::{MsgFlags, MsgTag, UTCB};

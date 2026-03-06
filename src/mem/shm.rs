@@ -1,8 +1,8 @@
 use crate::arch::mem::PGSIZE;
 use crate::cap::{CapPtr, Frame};
 use crate::error::Error;
-use crate::mem::Perms;
 use crate::interface::{CSpaceService, VSpaceProvider, VSpaceService};
+use crate::mem::Perms;
 use crate::utils::align::align_up;
 use crate::utils::manager::VSpaceManager;
 use core::slice;

@@ -6,12 +6,12 @@ use crate::drivers::protocol::sdio::SdioCommand;
 use crate::drivers::protocol::thermal::ThermalZones;
 use crate::drivers::protocol::usb::UsbSetupPacket;
 use crate::drivers::protocol::wifi::WifiApInfo;
-use alloc::string::String;
-use alloc::vec::Vec;
 use crate::error::Error;
 use crate::interface::{CSpaceService, VSpaceService};
 use crate::ipc::Badge;
 use crate::protocol::device::DeviceDescNode;
+use alloc::string::String;
+use alloc::vec::Vec;
 pub trait DriverService {
     fn init(&mut self) -> Result<(), Error>;
     fn enable(&mut self);

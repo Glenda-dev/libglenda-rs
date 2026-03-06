@@ -1,9 +1,9 @@
 use crate::cap::Endpoint;
+use crate::drivers::interface::{DriverClient, PlatformDriver};
+use crate::drivers::protocol::{PLATFORM_PROTO, platform};
 use crate::error::Error;
 use crate::interface::{CSpaceService, VSpaceService};
 use crate::ipc::{MsgFlags, MsgTag, UTCB};
-use crate::drivers::interface::{PlatformDriver, DriverClient};
-use crate::drivers::protocol::{PLATFORM_PROTO, platform};
 
 pub struct PlatformClient {
     endpoint: Endpoint,
