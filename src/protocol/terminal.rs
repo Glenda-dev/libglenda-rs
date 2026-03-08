@@ -38,6 +38,7 @@ pub struct SeatDesc {
     pub name: String,
     pub active_vt: Option<u32>,
     pub input_devices: Vec<String>,
+    pub output_devices: Vec<String>,
 }
 
 /// Dynamic input events for graphics mode (pixel-based VT)

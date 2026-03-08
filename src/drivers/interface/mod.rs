@@ -50,9 +50,8 @@ pub trait NetDriver {
 
 /// UartDriver provides serial communication.
 pub trait UartDriver {
-    fn put_char(&mut self, c: u8);
-    fn get_char(&mut self) -> Option<u8>;
-    fn put_str(&mut self, s: &str);
+    fn write(&mut self, buf: &[u8]) -> Result<usize, Error>;
+    fn read(&mut self, buf: &mut [u8]) -> Result<usize, Error>;
     fn set_baud_rate(&mut self, baud: u32);
 }
 

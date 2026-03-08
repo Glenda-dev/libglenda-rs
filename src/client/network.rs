@@ -38,8 +38,8 @@ impl NetworkClient {
         uring.submit(sqe)
     }
 
-    pub fn peek_completion(&self) -> Option<crate::io::uring::IoUringCqe> {
-        self.uring.as_ref().and_then(|u| u.peek_completion())
+    pub fn pop_completion(&self) -> Option<crate::io::uring::IoUringCqe> {
+        self.uring.as_ref().and_then(|u| u.pop_completion())
     }
 }
 

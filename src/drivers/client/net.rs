@@ -115,7 +115,7 @@ impl NetClient {
 
         let wait_ep = self.notify_ep.as_ref().unwrap_or(&self.endpoint);
         loop {
-            if let Some(cqe) = ring.peek_completion() {
+            if let Some(cqe) = ring.pop_completion() {
                 if cqe.user_data == id {
                     if cqe.res < 0 {
                         return Err(Error::Generic);
@@ -145,7 +145,7 @@ impl NetClient {
     }
 
     pub fn peek_cqe(&self) -> Option<IoUringCqe> {
-        self.ring.as_ref()?.peek_completion()
+        self.ring.as_ref()?.pop_completion()
     }
 }
 

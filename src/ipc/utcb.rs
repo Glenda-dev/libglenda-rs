@@ -154,7 +154,6 @@ impl UTCB {
             }
             write_volatile(&mut self.cap_transfer, CapPtr::null());
             write_volatile(&mut self.recv_window, CapPtr::null());
-            write_volatile(&mut self.reply_window, CapPtr::null());
             write_volatile(&mut self.badge, Badge::null());
             write_volatile(&mut self.head, 0);
             write_volatile(&mut self.size, 0);

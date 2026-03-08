@@ -1,11 +1,9 @@
 //! UART Device Protocol
 
-/// Write a single character
-pub const PUT_CHAR: usize = 0x01;
-/// Read a single character (blocking?)
-pub const GET_CHAR: usize = 0x02;
-/// Write a string
-pub const PUT_STR: usize = 0x03;
+/// Write a byte buffer (Synchronous)
+pub const WRITE: usize = 0x01;
+/// Read a byte buffer (Synchronous/Polled)
+pub const READ: usize = 0x02;
 /// Configuration
 pub const SET_BAUD_RATE: usize = 0x04;
 pub const GET_CONFIG: usize = 0x05;

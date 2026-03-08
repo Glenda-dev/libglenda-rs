@@ -275,15 +275,32 @@ impl IoUringClient {
 
     pub fn submit(&self, sqe: IoUringSqe) -> Result<(), Error> {
         self.ring.push_sqe(sqe).map_err(|_| Error::OutOfMemory)?;
+        self.notify_sq()
+    }
 
+    pub fn notify_sq(&self) -> Result<(), Error> {
         if let Some(ep) = self.server_ep {
             ep.notify(Badge::new(NOTIFY_IO_URING_SQ))?;
         }
         Ok(())
     }
 
-    pub fn peek_completion(&self) -> Option<IoUringCqe> {
+    pub fn pop_completion(&self) -> Option<IoUringCqe> {
         self.ring.pop_cqe()
+    }
+
+    pub fn peek_completion(&self) -> Option<IoUringCqe> {
+        let header = self.ring.header();
+        let head = header.cq_head.load(Ordering::Acquire);
+        let tail = header.cq_tail.load(Ordering::Acquire);
+
+        if head == tail {
+            return None;
+        }
+
+        let index = head & header.cq_mask;
+        let cqe = unsafe { *self.ring.cqes_mut().add(index as usize) };
+        Some(cqe)
     }
 
     pub fn wait_for_completions(&self, ep: &Endpoint) -> Result<(), Error> {

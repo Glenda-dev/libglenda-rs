@@ -149,8 +149,8 @@ impl InputClient {
         Ok(())
     }
 
-    pub fn peek_cqe(&self) -> Option<IoUringCqe> {
-        self.ring.as_ref()?.peek_completion()
+    pub fn pop_cqe(&self) -> Option<IoUringCqe> {
+        self.ring.as_ref()?.pop_completion()
     }
 
     pub fn wait_for_completions(&self) -> Result<(), Error> {
@@ -163,7 +163,7 @@ impl InputClient {
 impl InputDriver for InputClient {
     fn poll_event(&mut self) -> Option<InputEvent> {
         if let Some(ref ring) = self.ring {
-            if let Some(cqe) = ring.peek_completion() {
+            if let Some(cqe) = ring.pop_completion() {
                 if cqe.res >= 0 {
                     // Assuming user_data or some other mechanism links to the event
                     // For now, let's look at the fallback if it's not a read op.

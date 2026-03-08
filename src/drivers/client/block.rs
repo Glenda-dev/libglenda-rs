@@ -117,7 +117,7 @@ impl BlockClient {
 
         let wait_ep = self.notify_ep.as_ref().unwrap_or(&self.endpoint);
         loop {
-            if let Some(cqe) = ring.peek_completion() {
+            if let Some(cqe) = ring.pop_completion() {
                 if cqe.user_data == id {
                     if cqe.res < 0 {
                         return Err(Error::Generic);
@@ -230,10 +230,9 @@ impl BlockDriver for BlockClient {
         let id = self.next_user_data();
         let sqe = block::sqe_read(sector, shm.client_vaddr() as u64, count * self.block_size, id);
         ring.submit(sqe)?;
-
         let wait_ep = self.notify_ep.as_ref().unwrap_or(&self.endpoint);
         loop {
-            if let Some(cqe) = ring.peek_completion() {
+            if let Some(cqe) = ring.pop_completion() {
                 if cqe.user_data == id {
                     if cqe.res < 0 {
                         return Err(Error::Generic);
@@ -274,7 +273,7 @@ impl BlockDriver for BlockClient {
 
         let wait_ep = self.notify_ep.as_ref().unwrap_or(&self.endpoint);
         loop {
-            if let Some(cqe) = ring.peek_completion() {
+            if let Some(cqe) = ring.pop_completion() {
                 if cqe.user_data == id {
                     if cqe.res < 0 {
                         return Err(Error::Generic);

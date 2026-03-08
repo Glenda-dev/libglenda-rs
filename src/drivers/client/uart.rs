@@ -114,7 +114,9 @@ impl UartClient {
         let ring_buf = unsafe {
             IoUringBuffer::new(vaddr as *mut u8, size, sq_entries as u32, cq_entries as u32)
         };
-        self.ring = Some(IoUringClient::new(ring_buf));
+        let mut ring = IoUringClient::new(ring_buf);
+        ring.set_server_notify(self.endpoint);
+        self.ring = Some(ring);
         Ok(())
     }
 
@@ -132,7 +134,7 @@ impl UartClient {
         utcb.clear();
         utcb.set_cap_transfer(frame.cap());
         let tag = MsgTag::new(UART_PROTO, uart::SETUP_BUFFER, MsgFlags::HAS_CAP);
-        utcb.set_mr(0, vaddr);
+        utcb.set_mr(0, vaddr); // client_vaddr
         utcb.set_mr(1, size);
         utcb.set_mr(2, paddr as usize);
         utcb.set_msg_tag(tag);
@@ -140,8 +142,10 @@ impl UartClient {
         self.endpoint.call(&mut utcb)?;
 
         let mut shm = SharedMemory::new(frame, vaddr, size);
+        shm.set_client_vaddr(vaddr);
         shm.set_paddr(paddr);
         self.set_shm(shm);
+
         Ok(())
     }
 
@@ -157,8 +161,38 @@ impl UartClient {
         ring.submit(sqe)
     }
 
+    pub fn write(&mut self, bytes: &[u8]) -> Result<usize, Error> {
+        self.write_internal(bytes)
+    }
+
+    fn write_internal(&mut self, bytes: &[u8]) -> Result<usize, Error> {
+        let mut total = 0;
+        for chunk in bytes.chunks(IPC_BUFFER_SIZE) {
+            let mut utcb = unsafe { UTCB::new() };
+            utcb.clear();
+            let buf = &mut utcb.ipc_buffer();
+            buf[..chunk.len()].copy_from_slice(chunk);
+            let tag = MsgTag::new(UART_PROTO, uart::WRITE, MsgFlags::NONE);
+            utcb.set_msg_tag(tag);
+            utcb.set_size(chunk.len());
+
+            self.endpoint.call(&mut utcb)?;
+            total += chunk.len();
+        }
+        Ok(total)
+    }
+
     pub fn peek_cqe(&self) -> Option<IoUringCqe> {
         self.ring.as_ref()?.peek_completion()
+    }
+
+    pub fn pop_cqe(&self) -> Option<IoUringCqe> {
+        self.ring.as_ref()?.pop_completion()
+    }
+
+    pub fn notify_sq(&self) -> Result<(), Error> {
+        let ring = self.ring.as_ref().ok_or(Error::NotInitialized)?;
+        ring.notify_sq()
     }
 
     pub fn wait_for_completions(&self) -> Result<(), Error> {
@@ -167,47 +201,45 @@ impl UartClient {
         ring.wait_for_completions(ep)
     }
 
+    pub fn submit_raw_sqe(
+        &self,
+        opcode: u8,
+        addr: u64,
+        len: u32,
+        user_data: u64,
+    ) -> Result<(), Error> {
+        let ring = self.ring.as_ref().ok_or(Error::NotInitialized)?;
+        let mut sqe = crate::io::uring::IoUringSqe::default();
+        sqe.opcode = opcode;
+        sqe.addr = addr;
+        sqe.len = len;
+        sqe.user_data = user_data;
+        ring.submit(sqe)
+    }
+
     pub fn shm_params(&self) -> &ShmParams {
         &self.shm_params
     }
 }
 
 impl UartDriver for UartClient {
-    fn put_char(&mut self, c: u8) {
-        let mut utcb = unsafe { UTCB::new() };
-        utcb.clear();
-        let tag = MsgTag::new(UART_PROTO, uart::PUT_CHAR, MsgFlags::NONE);
-        utcb.set_msg_tag(tag);
-        utcb.set_mr(0, c as usize);
-
-        let _ = self.endpoint.call(&mut utcb);
+    fn write(&mut self, buf: &[u8]) -> Result<usize, Error> {
+        self.write_internal(buf)
     }
 
-    fn get_char(&mut self) -> Option<u8> {
+    fn read(&mut self, buf: &mut [u8]) -> Result<usize, Error> {
         let mut utcb = unsafe { UTCB::new() };
         utcb.clear();
-        let tag = MsgTag::new(UART_PROTO, uart::GET_CHAR, MsgFlags::NONE);
+        let tag = MsgTag::new(UART_PROTO, uart::READ, MsgFlags::NONE);
         utcb.set_msg_tag(tag);
+        utcb.set_mr(0, buf.len());
 
-        match self.endpoint.call(&mut utcb) {
-            Ok(_) => Some(utcb.get_mr(0) as u8),
-            Err(_) => None,
-        }
-    }
-
-    fn put_str(&mut self, s: &str) {
-        let bytes = s.as_bytes();
-        for chunk in bytes.chunks(IPC_BUFFER_SIZE) {
-            let mut utcb = unsafe { UTCB::new() };
-            utcb.clear();
-            let buf = &mut utcb.ipc_buffer();
-            buf[..chunk.len()].copy_from_slice(chunk);
-            let tag = MsgTag::new(UART_PROTO, uart::PUT_STR, MsgFlags::NONE);
-            utcb.set_msg_tag(tag);
-            utcb.set_size(chunk.len());
-
-            let _ = self.endpoint.call(&mut utcb);
-        }
+        self.endpoint.call(&mut utcb)?;
+        let count = utcb.get_mr(0);
+        let len = core::cmp::min(count, buf.len());
+        let ipc_buf = utcb.ipc_buffer();
+        buf[..len].copy_from_slice(&ipc_buf[..len]);
+        Ok(len)
     }
 
     fn set_baud_rate(&mut self, baud: u32) {
