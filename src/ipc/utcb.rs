@@ -38,7 +38,7 @@ macro_rules! set_mrs {
     };
 }
 
-#[repr(C)]
+#[repr(C, align(4096))]
 #[derive(Debug, Clone, Copy)]
 pub struct UTCB {
     msg_tag: MsgTag,
@@ -267,7 +267,6 @@ impl UTCB {
         let len = data.len();
         let size_bytes = len * core::mem::size_of::<T>();
         let total_size = core::mem::size_of::<usize>() + size_bytes;
-
         if total_size > IPC_BUFFER_SIZE {
             return Err(Error::MessageTooLong);
         }
@@ -283,7 +282,6 @@ impl UTCB {
 
         self.size = total_size;
         self.head = 0;
-
         Ok(total_size)
     }
 
@@ -311,22 +309,52 @@ impl UTCB {
     }
 
     pub unsafe fn write_postcard<T: Serialize>(&mut self, obj: &T) -> Result<usize, Error> {
-        let vec = postcard::to_allocvec(obj).map_err(|_| Error::InvalidType)?;
-        unsafe { self.write_vec(&vec) }
+        // 直接在 ipc_buffer 上执行序列化，跳过中间变量和 write_vec 的额外长度包装
+        let buffer = &mut self.ipc_buffer;
+        let data = postcard::to_slice(obj, buffer).map_err(|_| Error::InvalidType)?;
+        let size = data.len();
+        self.size = size;
+        self.head = 0;
+        Ok(size)
     }
 
     pub unsafe fn read_postcard<T: DeserializeOwned>(&mut self) -> Result<T, Error> {
-        let vec = unsafe { self.read_vec::<u8>() }?;
-        postcard::from_bytes(&vec).map_err(|_| Error::InvalidType)
+        // 直接从 ipc_buffer 当前位置反序列化，避免二次拷贝
+        let data = &self.ipc_buffer[self.head..self.size];
+        let (res, remaining) = postcard::take_from_bytes(data).map_err(|_| Error::InvalidType)?;
+        self.head = self.size - remaining.len();
+        Ok(res)
     }
 
     pub unsafe fn write_str(&mut self, s: &str) -> Result<usize, Error> {
-        unsafe { self.write_vec(s.as_bytes()) }
+        let len = s.len();
+        if len > IPC_BUFFER_SIZE {
+            return Err(Error::MessageTooLong);
+        }
+        self.ipc_buffer[..len].copy_from_slice(s.as_bytes());
+        self.size = len;
+        self.head = 0;
+        Ok(len)
+    }
+
+    pub unsafe fn read_str_slice(&mut self) -> Result<&str, Error> {
+        let data = &self.ipc_buffer[self.head..self.size];
+        let s = core::str::from_utf8(data).map_err(|_| Error::InvalidType)?;
+        self.head = self.size;
+        Ok(s)
     }
 
     pub unsafe fn read_str(&mut self) -> Result<String, Error> {
-        let vec = unsafe { self.read_vec::<u8>() }?;
-        String::from_utf8(vec).map_err(|_| Error::InvalidType)
+        let data = &self.ipc_buffer[self.head..self.size];
+        let len = data.len();
+
+        // 在栈上分配临时缓冲区以避免在复制过程中 UTCB 被覆盖
+        let mut stack_buf = [0u8; IPC_BUFFER_SIZE];
+
+        stack_buf[..len].copy_from_slice(data);
+        self.head = self.size;
+        let s = core::str::from_utf8(&stack_buf[..len]).map_err(|_| Error::InvalidType)?;
+        Ok(String::from(s))
     }
 
     pub unsafe fn get_buffer_writer(&mut self) -> BufferWriter<'_> {
@@ -379,7 +407,14 @@ impl<'a> BufferReader<'a> {
         Self { buffer, size, pos: 0 }
     }
 
-    pub fn read_str(&mut self) -> Result<String, Error> {
+    pub fn read_str_ptr(&mut self) -> Result<&'a str, Error> {
+        let data = &self.buffer[self.pos..self.size];
+        let s = core::str::from_utf8(data).map_err(|_| Error::InvalidType)?;
+        self.pos = self.size;
+        Ok(s)
+    }
+
+    pub fn read_str(&mut self) -> Result<alloc::string::String, Error> {
         if self.pos + core::mem::size_of::<usize>() > self.size {
             return Err(Error::MessageTooLong);
         }
@@ -393,6 +428,6 @@ impl<'a> BufferReader<'a> {
         }
         let data = &self.buffer[self.pos..self.pos + len];
         self.pos += len;
-        String::from_utf8(data.to_vec()).map_err(|_| Error::InvalidType)
+        core::str::from_utf8(data).map(alloc::string::String::from).map_err(|_| Error::InvalidType)
     }
 }

@@ -318,18 +318,25 @@ impl VSpaceManager {
                     let _ = pivot_root.unmap_table(old_vaddr, old_level);
 
                     let pt = PageTable::from(cap);
-                    if pivot_root.map_table(pt, vaddr, level).is_err() {
-                        return Err(Error::MappingFailed);
+                    if let Err(e) = pivot_root.map_table(pt, vaddr, level) {
+                        // 映射失败时，将 cap 放回缓存以备后用
+                        pages_cache.push((cap, old_vaddr, old_level));
+                        return Err(e);
                     }
                     cap
                 } else {
                     // 缓存也为空，分配全新的
                     let slot = slots.alloc(provider)?;
-                    provider.alloc_pagetable(slot)?;
+                    if let Err(e) = provider.alloc_pagetable(slot) {
+                        let _ = slots.free(slot);
+                        return Err(e);
+                    }
                     let pt = PageTable::from(slot);
 
-                    if pivot_root.map_table(pt, vaddr, level).is_err() {
-                        return Err(Error::MappingFailed);
+                    if let Err(e) = pivot_root.map_table(pt, vaddr, level) {
+                        let _ = provider.free_pagetable(slot);
+                        let _ = slots.free(slot);
+                        return Err(e);
                     }
                     slot
                 }

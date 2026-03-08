@@ -41,3 +41,10 @@ macro_rules! error {
         $crate::println!("{}{}: {}{}", $crate::console::ANSI_RED, *$crate::console::MODULE_NAME.get().unwrap(), format_args!($($arg)*), $crate::console::ANSI_RESET);
     };
 }
+
+#[macro_export]
+macro_rules! debug {
+    ($($arg:tt)*) => {
+        $crate::println!("{}{}: {}{}", $crate::console::ANSI_MAGENTA, *$crate::console::MODULE_NAME.get().unwrap(), format_args!($($arg)*), $crate::console::ANSI_RESET);
+    };
+}
