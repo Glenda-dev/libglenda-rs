@@ -11,7 +11,7 @@ use crate::mem::Perms;
 use crate::mem::shm::{SharedMemory, ShmParams};
 use crate::utils::align::align_up;
 use alloc::sync::Arc;
-use core::sync::atomic::{AtomicU64, Ordering};
+use core::sync::atomic::{AtomicUsize, Ordering};
 
 #[derive(Clone)]
 pub struct BlockClient {
@@ -21,7 +21,7 @@ pub struct BlockClient {
     shm: Option<SharedMemory>,
     block_size: u32,
     total_sectors: u64,
-    next_id: Arc<AtomicU64>,
+    next_id: Arc<AtomicUsize>,
     ring_params: RingParams,
     shm_params: ShmParams,
     res_client: ResourceClient,
@@ -79,7 +79,7 @@ impl BlockClient {
             shm: None,
             block_size: 0,
             total_sectors: 0,
-            next_id: Arc::new(AtomicU64::new(0x1000)),
+            next_id: Arc::new(AtomicUsize::new(0x1000)),
             ring_params,
             shm_params,
             res_client: res_client.clone(),
@@ -87,6 +87,7 @@ impl BlockClient {
     }
 
     pub fn total_sectors(&self) -> u64 {
+        #[allow(clippy::useless_conversion)]
         self.total_sectors
     }
 
@@ -98,21 +99,22 @@ impl BlockClient {
         self.ring.as_ref()
     }
 
-    fn next_user_data(&self) -> u64 {
+    fn next_user_data(&self) -> usize {
+        #[allow(clippy::useless_conversion)]
         self.next_id.fetch_add(1, Ordering::SeqCst)
     }
 
-    pub fn read_shm(&self, offset: u64, len: u32, shm_vaddr: usize) -> Result<(), Error> {
+    pub fn read_shm(&self, offset: usize, len: u32, shm_vaddr: usize) -> Result<(), Error> {
         let ring = self.ring.as_ref().ok_or(Error::NotInitialized)?;
         if self.block_size == 0
-            || offset % self.block_size as u64 != 0
+            || offset % self.block_size as usize != 0
             || len % self.block_size != 0
         {
             return Err(Error::InvalidArgs);
         }
 
         let id = self.next_user_data();
-        let sqe = block::sqe_read(offset, shm_vaddr as u64, len, id);
+        let sqe = block::sqe_read(offset, shm_vaddr as usize, len, id);
         ring.submit(sqe)?;
 
         let wait_ep = self.notify_ep.as_ref().unwrap_or(&self.endpoint);
@@ -213,7 +215,7 @@ impl BlockClient {
 }
 
 impl BlockDriver for BlockClient {
-    fn read_blocks(&self, sector: u64, count: u32, buf: &mut [u8]) -> Result<(), Error> {
+    fn read_blocks(&self, sector: usize, count: u32, buf: &mut [u8]) -> Result<(), Error> {
         let ring = self.ring.as_ref().ok_or(Error::NotInitialized)?;
         let shm = self.shm.as_ref().ok_or(Error::NotInitialized)?;
 
@@ -228,7 +230,7 @@ impl BlockDriver for BlockClient {
         }
 
         let id = self.next_user_data();
-        let sqe = block::sqe_read(sector, shm.client_vaddr() as u64, count * self.block_size, id);
+        let sqe = block::sqe_read(sector, shm.client_vaddr() as usize, count * self.block_size, id);
         ring.submit(sqe)?;
         let wait_ep = self.notify_ep.as_ref().unwrap_or(&self.endpoint);
         loop {
@@ -249,7 +251,7 @@ impl BlockDriver for BlockClient {
         }
     }
 
-    fn write_blocks(&self, sector: u64, count: u32, buf: &[u8]) -> Result<(), Error> {
+    fn write_blocks(&self, sector: usize, count: u32, buf: &[u8]) -> Result<(), Error> {
         let ring = self.ring.as_ref().ok_or(Error::NotInitialized)?;
         let shm = self.shm.as_ref().ok_or(Error::NotInitialized)?;
 
@@ -268,7 +270,8 @@ impl BlockDriver for BlockClient {
         shm_buf[..copy_len].copy_from_slice(&buf[..copy_len]);
 
         let id = self.next_user_data();
-        let sqe = block::sqe_write(sector, shm.client_vaddr() as u64, count * self.block_size, id);
+        let sqe =
+            block::sqe_write(sector, shm.client_vaddr() as usize, count * self.block_size, id);
         ring.submit(sqe)?;
 
         let wait_ep = self.notify_ep.as_ref().unwrap_or(&self.endpoint);
@@ -286,6 +289,7 @@ impl BlockDriver for BlockClient {
     }
 
     fn capacity(&self) -> u64 {
+        #[allow(clippy::useless_conversion)]
         self.total_sectors
     }
 

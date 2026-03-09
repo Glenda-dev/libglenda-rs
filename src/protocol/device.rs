@@ -19,17 +19,16 @@ use alloc::vec::Vec;
 use num_enum::FromPrimitive;
 use serde::{Deserialize, Serialize};
 
-pub const NOTIFY_HOOK: usize = 1 << 35;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum HookTarget {
-    Endpoint(u64),
+    Endpoint(usize),
     Type(LogicDeviceType),
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum DeviceNotification {
-    Registered(u64, LogicDeviceDesc), // (badge, desc)
+    Registered(usize, LogicDeviceDesc), // (badge, desc)
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -93,3 +92,5 @@ pub struct AllocLogicRequest {
     pub dev_type: LogicDeviceType,
     pub criteria: String,
 }
+#[cfg(target_pointer_width = "64")] pub const NOTIFY_HOOK: usize = 1 << 35;
+#[cfg(target_pointer_width = "32")] pub const NOTIFY_HOOK: usize = 1 << 30;

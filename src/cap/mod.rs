@@ -99,16 +99,26 @@ impl CapPtr {
         if self.0 <= 0xFFFF_FFFF {
             return 32;
         }
+        #[cfg(target_pointer_width = "64")]
         if self.0 <= 0xFF_FFFF_FFFF {
             return 40;
         }
+        #[cfg(target_pointer_width = "64")]
         if self.0 <= 0xFFFF_FFFF_FFFF {
             return 48;
         }
+        #[cfg(target_pointer_width = "64")]
         if self.0 <= 0xFF_FFFF_FFFF_FFFF {
             return 56;
         }
-        64
+        #[cfg(target_pointer_width = "64")]
+        {
+            return 64;
+        }
+        #[cfg(target_pointer_width = "32")]
+        {
+            return 32;
+        }
     }
 
     pub const fn relative(root: CapPtr, abs: CapPtr) -> CapPtr {

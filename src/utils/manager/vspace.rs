@@ -9,7 +9,10 @@ use alloc::collections::BTreeMap;
 use alloc::vec::Vec;
 
 pub const MAP_START: usize = 0x30000000;
+#[cfg(target_pointer_width = "64")]
 pub const MAP_END: usize = 0x3F_0000_0000;
+#[cfg(target_pointer_width = "32")]
+pub const MAP_END: usize = 0x7F_0000_00;
 
 #[derive(Debug)]
 enum ShadowNode {

@@ -7,7 +7,10 @@ pub const STACK_PAGES: usize = 32;
 pub const STACK_SIZE: usize = STACK_PAGES * PGSIZE;
 pub const ENTRY_VA: usize = USER_VA; // 用户程序入口地址
 
+#[cfg(target_pointer_width = "64")]
 pub const THREAD_AREA_BASE: usize = 0x3F_0000_0000;
+#[cfg(target_pointer_width = "32")]
+pub const THREAD_AREA_BASE: usize = 0x7F_0000_00;
 
 pub const fn get_utcb_va(tid: usize) -> usize {
     THREAD_AREA_BASE + tid * 2 * PGSIZE

@@ -56,7 +56,7 @@ impl MemoryPool {
                 let (paddr, frame_cap) = res_client.dma_alloc(Badge::null(), pages, recv_slot)?;
 
                 let mut shm = SharedMemory::new(frame_cap, vaddr, size);
-                shm.set_paddr(paddr as u64);
+                shm.set_paddr(paddr as usize);
                 shm
             }
             ShmType::Regular => {

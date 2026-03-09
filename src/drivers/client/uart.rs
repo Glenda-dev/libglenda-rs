@@ -13,7 +13,7 @@ use crate::mem::Perms;
 use crate::mem::shm::SharedMemory;
 use crate::utils::align::align_up;
 use alloc::sync::Arc;
-use core::sync::atomic::{AtomicU64, Ordering};
+use core::sync::atomic::{AtomicUsize, Ordering};
 
 #[derive(Clone)]
 pub struct UartClient {
@@ -21,7 +21,7 @@ pub struct UartClient {
     notify_ep: Option<Endpoint>,
     ring: Option<IoUringClient>,
     shm: Option<SharedMemory>,
-    next_id: Arc<AtomicU64>,
+    next_id: Arc<AtomicUsize>,
     ring_params: RingParams,
     shm_params: ShmParams,
     res_client: ResourceClient,
@@ -56,7 +56,7 @@ impl UartClient {
             notify_ep: None,
             ring: None,
             shm: None,
-            next_id: Arc::new(AtomicU64::new(0x1000)),
+            next_id: Arc::new(AtomicUsize::new(0x1000)),
             ring_params,
             shm_params,
             res_client: res_client.clone(),
@@ -76,7 +76,8 @@ impl UartClient {
         self.ring = Some(ring);
     }
 
-    fn next_user_data(&self) -> u64 {
+    fn next_user_data(&self) -> usize {
+    #[allow(clippy::useless_conversion)]
         self.next_id.fetch_add(1, Ordering::SeqCst)
     }
 
@@ -149,13 +150,13 @@ impl UartClient {
         Ok(())
     }
 
-    pub fn read_async(&self, addr: u64, len: u32, user_data: u64) -> Result<(), Error> {
+    pub fn read_async(&self, addr: usize, len: u32, user_data: usize) -> Result<(), Error> {
         let ring = self.ring.as_ref().ok_or(Error::NotInitialized)?;
         let sqe = uart::sqe_read(addr, len, user_data);
         ring.submit(sqe)
     }
 
-    pub fn write_async(&self, addr: u64, len: u32, user_data: u64) -> Result<(), Error> {
+    pub fn write_async(&self, addr: usize, len: u32, user_data: usize) -> Result<(), Error> {
         let ring = self.ring.as_ref().ok_or(Error::NotInitialized)?;
         let sqe = uart::sqe_write(addr, len, user_data);
         ring.submit(sqe)
@@ -204,9 +205,9 @@ impl UartClient {
     pub fn submit_raw_sqe(
         &self,
         opcode: u8,
-        addr: u64,
+        addr: usize,
         len: u32,
-        user_data: u64,
+        user_data: usize,
     ) -> Result<(), Error> {
         let ring = self.ring.as_ref().ok_or(Error::NotInitialized)?;
         let mut sqe = crate::io::uring::IoUringSqe::default();

@@ -14,17 +14,17 @@ pub struct IoUringSqe {
     pub flags: u8,
     pub ioprio: u16,
     pub fd: i32,
-    pub off: u64,
-    pub addr: u64,
+    pub off: usize,
+    pub addr: usize,
     pub len: u32,
-    pub user_data: u64,
-    pub __pad: [u64; 2],
+    pub user_data: usize,
+    pub __pad: [usize; 2],
 }
 
 #[repr(C)]
 #[derive(Debug, Clone, Copy, Default)]
 pub struct IoUringCqe {
-    pub user_data: u64,
+    pub user_data: usize,
     pub res: i32,
     pub flags: u32,
 }
@@ -225,9 +225,7 @@ pub struct RingParams {
 }
 
 /// 默认 IO_URING 发送队列通知位
-pub const NOTIFY_IO_URING_SQ: usize = 1 << 33;
 /// 默认 IO_URING 完成队列通知位
-pub const NOTIFY_IO_URING_CQ: usize = 1 << 34;
 
 pub struct IoUringServer {
     pub ring: IoUringBuffer,
@@ -247,7 +245,7 @@ impl IoUringServer {
         self.ring.pop_sqe()
     }
 
-    pub fn complete(&mut self, user_data: u64, res: i32) -> Result<(), Error> {
+    pub fn complete(&mut self, user_data: usize, res: i32) -> Result<(), Error> {
         let cqe = IoUringCqe { user_data, res, flags: 0 };
         self.ring.push_cqe(cqe).map_err(|_| Error::OutOfMemory)?;
 
@@ -313,3 +311,7 @@ impl IoUringClient {
         Ok(())
     }
 }
+#[cfg(target_pointer_width = "64")] pub const NOTIFY_IO_URING_SQ: usize = 1 << 33;
+#[cfg(target_pointer_width = "32")] pub const NOTIFY_IO_URING_SQ: usize = 1 << 29;
+#[cfg(target_pointer_width = "64")] pub const NOTIFY_IO_URING_CQ: usize = 1 << 34;
+#[cfg(target_pointer_width = "32")] pub const NOTIFY_IO_URING_CQ: usize = 1 << 30;

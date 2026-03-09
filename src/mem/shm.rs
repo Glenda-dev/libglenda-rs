@@ -13,7 +13,7 @@ pub struct SharedMemory {
     frame: Frame,
     vaddr: usize,
     client_vaddr: usize,
-    paddr: u64,
+    paddr: usize,
     size: usize,
 }
 
@@ -21,7 +21,7 @@ pub struct SharedMemory {
 pub struct ShmParams {
     pub frame: Frame,
     pub vaddr: usize,
-    pub paddr: u64,
+    pub paddr: usize,
     pub size: usize,
     pub recv_slot: CapPtr,
 }
@@ -44,11 +44,11 @@ impl SharedMemory {
         self.client_vaddr
     }
 
-    pub fn set_paddr(&mut self, paddr: u64) {
+    pub fn set_paddr(&mut self, paddr: usize) {
         self.paddr = paddr;
     }
 
-    pub fn paddr(&self) -> u64 {
+    pub fn paddr(&self) -> usize {
         self.paddr
     }
 

@@ -158,7 +158,7 @@ impl DeviceService for DeviceClient {
         &mut self,
         _badge: Badge,
         name: &str,
-    ) -> Result<(u64, protocol::device::LogicDeviceDesc), Error> {
+    ) -> Result<(usize, protocol::device::LogicDeviceDesc), Error> {
         let mut utcb = unsafe { UTCB::new() };
         let tag = MsgTag::new(
             protocol::DEVICE_PROTO,
@@ -170,7 +170,7 @@ impl DeviceService for DeviceClient {
             utcb.write_str(&name)?;
         }
         self.endpoint.call(&mut utcb)?;
-        let id = utcb.get_mr(0) as u64;
+        let id = utcb.get_mr(0) as usize;
         let desc = unsafe { utcb.read_postcard()? };
         Ok((id, desc))
     }

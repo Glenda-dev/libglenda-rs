@@ -33,22 +33,22 @@ pub trait FileHandleService {
     fn stat(&self, pid: Badge) -> Result<Stat, Error>;
 
     /// Read data from file at specified offset.
-    fn read(&mut self, pid: Badge, offset: u64, buf: &mut [u8]) -> Result<usize, Error>;
+    fn read(&mut self, pid: Badge, offset: usize, buf: &mut [u8]) -> Result<usize, Error>;
 
     /// Write data to file at specified offset.
-    fn write(&mut self, pid: Badge, offset: u64, buf: &[u8]) -> Result<usize, Error>;
+    fn write(&mut self, pid: Badge, offset: usize, buf: &[u8]) -> Result<usize, Error>;
 
     /// Read directory entries.
     fn getdents(&mut self, pid: Badge, count: usize) -> Result<Vec<DEntry>, Error>;
 
     /// Move the read/write file offset.
-    fn seek(&mut self, pid: Badge, offset: i64, whence: usize) -> Result<u64, Error>;
+    fn seek(&mut self, pid: Badge, offset: i64, whence: usize) -> Result<usize, Error>;
 
     /// Synchronize file state with storage device.
     fn sync(&mut self, pid: Badge) -> Result<(), Error>;
 
     /// Truncate file to specified size.
-    fn truncate(&mut self, pid: Badge, size: u64) -> Result<(), Error>;
+    fn truncate(&mut self, pid: Badge, size: usize) -> Result<(), Error>;
 }
 
 /// Virtual Filesystem Service Interface (for VFS/Nexus)
@@ -70,15 +70,15 @@ pub trait PipeService {
 /// FileSystemJournalService provides transaction support for file systems.
 pub trait FileSystemJournalService {
     /// Start a transaction. Returns transaction ID.
-    fn transaction_start(&mut self, pid: Badge) -> Result<u64, Error>;
+    fn transaction_start(&mut self, pid: Badge) -> Result<usize, Error>;
 
     /// Commit a transaction.
-    fn transaction_commit(&mut self, pid: Badge, tid: u64) -> Result<(), Error>;
+    fn transaction_commit(&mut self, pid: Badge, tid: usize) -> Result<(), Error>;
 
     /// Abort a transaction.
-    fn transaction_abort(&mut self, pid: Badge, tid: u64) -> Result<(), Error>;
+    fn transaction_abort(&mut self, pid: Badge, tid: usize) -> Result<(), Error>;
 
     /// Log a block write operation within a transaction.
-    fn log_block(&mut self, pid: Badge, tid: u64, block_num: u64, data: &[u8])
+    fn log_block(&mut self, pid: Badge, tid: usize, block_num: usize, data: &[u8])
     -> Result<(), Error>;
 }

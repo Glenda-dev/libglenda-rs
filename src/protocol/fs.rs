@@ -71,25 +71,25 @@ pub mod seek {
 #[repr(C)]
 #[derive(Debug, Default, Clone, Copy)]
 pub struct Stat {
-    pub dev: u64,
-    pub ino: u64,
+    pub dev: usize,
+    pub ino: usize,
     pub mode: u32,
     pub nlink: u32,
     pub uid: u32,
     pub gid: u32,
-    pub rdev: u64,
-    pub size: u64,
+    pub rdev: usize,
+    pub size: usize,
     pub blksize: u32,
-    pub blocks: u64,
-    pub atime: u64,
-    pub mtime: u64,
-    pub ctime: u64,
+    pub blocks: usize,
+    pub atime: usize,
+    pub mtime: usize,
+    pub ctime: usize,
 }
 
 #[repr(C)]
 #[derive(Debug, Clone, Copy)]
 pub struct DEntry {
-    pub d_ino: u64,
+    pub d_ino: usize,
     pub d_off: i64,
     pub d_reclen: u16,
     pub d_type: u8,

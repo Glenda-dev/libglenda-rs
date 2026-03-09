@@ -14,19 +14,19 @@ pub const LIST_PARTITIONS: usize = 0x22;
 #[derive(Debug, Clone, Default)]
 #[repr(C)]
 pub struct VolumeInfo {
-    pub size: u64,
+    pub size: usize,
     pub block_size: u32,
     pub fs_type: [u8; 16],
 }
 
-pub fn sqe_read(offset: u64, addr: u64, len: u32, user_data: u64) -> IoUringSqe {
+pub fn sqe_read(offset: usize, addr: usize, len: u32, user_data: usize) -> IoUringSqe {
     IoUringSqe { opcode: IOURING_OP_READ, off: offset, addr, len, user_data, ..Default::default() }
 }
 
-pub fn sqe_write(offset: u64, addr: u64, len: u32, user_data: u64) -> IoUringSqe {
+pub fn sqe_write(offset: usize, addr: usize, len: u32, user_data: usize) -> IoUringSqe {
     IoUringSqe { opcode: IOURING_OP_WRITE, off: offset, addr, len, user_data, ..Default::default() }
 }
 
-pub fn sqe_sync(user_data: u64) -> IoUringSqe {
+pub fn sqe_sync(user_data: usize) -> IoUringSqe {
     IoUringSqe { opcode: IOURING_OP_SYNC, user_data, ..Default::default() }
 }

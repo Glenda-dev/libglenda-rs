@@ -44,7 +44,7 @@ pub trait DeviceService {
 
     /// Get description of a logical device by name. Returns (id, desc)
     fn get_logic_desc(&mut self, badge: Badge, name: &str)
-    -> Result<(u64, LogicDeviceDesc), Error>;
+    -> Result<(usize, LogicDeviceDesc), Error>;
 
     fn hook(
         &mut self,

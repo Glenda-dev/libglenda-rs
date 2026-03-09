@@ -1,5 +1,12 @@
 pub mod api;
 
+#[cfg(target_arch = "riscv32")]
+#[cfg(not(feature = "hosted"))]
+pub mod riscv32;
+#[cfg(target_arch = "riscv32")]
+#[cfg(not(feature = "hosted"))]
+pub use riscv32::*;
+
 #[cfg(target_arch = "riscv64")]
 #[cfg(not(feature = "hosted"))]
 pub mod riscv64;

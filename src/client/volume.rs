@@ -11,7 +11,7 @@ use crate::mem::shm::{SharedMemory, ShmParams};
 use crate::protocol::volume;
 use crate::utils::align::align_up;
 use alloc::sync::Arc;
-use core::sync::atomic::{AtomicU64, Ordering};
+use core::sync::atomic::{AtomicUsize, Ordering};
 
 #[derive(Clone)]
 pub struct VolumeClient {
@@ -20,8 +20,8 @@ pub struct VolumeClient {
     ring: Option<IoUringClient>,
     shm: Option<SharedMemory>,
     block_size: u32,
-    total_sectors: u64,
-    next_id: Arc<AtomicU64>,
+    total_sectors: usize,
+    next_id: Arc<AtomicUsize>,
     ring_params: RingParams,
     shm_params: ShmParams,
     res_client: ResourceClient,
@@ -43,7 +43,7 @@ impl VolumeClient {
         }
 
         self.block_size = u.get_mr(0) as u32;
-        self.total_sectors = u.get_mr(1) as u64;
+        self.total_sectors = u.get_mr(1) as usize;
 
         self.setup_ring_internal(vm, cm)?;
         self.setup_shm_internal(vm, cm)?;
@@ -68,7 +68,7 @@ impl VolumeClient {
             shm: None,
             block_size: 0,
             total_sectors: 0,
-            next_id: Arc::new(AtomicU64::new(0x1000)),
+            next_id: Arc::new(AtomicUsize::new(0x1000)),
             ring_params,
             shm_params,
             res_client: res_client.clone(),
@@ -83,7 +83,7 @@ impl VolumeClient {
             shm: None,
             block_size: 0,
             total_sectors: 0,
-            next_id: Arc::new(AtomicU64::new(0x1000)),
+            next_id: Arc::new(AtomicUsize::new(0x1000)),
             ring_params: RingParams {
                 sq_entries: 0,
                 cq_entries: 0,
@@ -135,13 +135,13 @@ impl VolumeClient {
         Ok(Endpoint::from(recv))
     }
 
-    fn next_user_data(&self) -> u64 {
-        self.next_id.fetch_add(1, Ordering::SeqCst)
+    fn next_user_data(&self) -> usize {
+        self.next_id.fetch_add(1, Ordering::SeqCst) as usize
     }
 
     /// Read data from disk directly to a shared memory address.
     /// This assumes shm_vaddr is within the shm region provided to set_shm.
-    pub fn read_shm(&self, sector: u64, len: u32, shm_vaddr: usize) -> Result<(), Error> {
+    pub fn read_shm(&self, sector: usize, len: u32, shm_vaddr: usize) -> Result<(), Error> {
         let ring = self.ring.as_ref().ok_or(Error::NotInitialized)?;
         let _shm = self.shm.as_ref().ok_or(Error::NotInitialized)?;
 
@@ -152,7 +152,7 @@ impl VolumeClient {
 
         let id = self.next_user_data();
 
-        let sqe = volume::sqe_read(sector, shm_vaddr as u64, len, id);
+        let sqe = volume::sqe_read(sector, shm_vaddr as usize, len, id);
         ring.submit(sqe)?;
 
         // Block until completion
@@ -171,7 +171,7 @@ impl VolumeClient {
     }
 
     /// Read data at sector offset and count.
-    pub fn read_at(&self, sector: u64, len: u32, buf: &mut [u8]) -> Result<(), Error> {
+    pub fn read_at(&self, sector: usize, len: u32, buf: &mut [u8]) -> Result<(), Error> {
         let ring = self.ring.as_ref().ok_or(Error::NotInitialized)?;
         let shm = self.shm.as_ref().ok_or(Error::NotInitialized)?;
 
@@ -188,7 +188,7 @@ impl VolumeClient {
 
         // Use the beginning of SHM for synchronous operations
         // We use client_vaddr because that's what the server expects.
-        let src_addr = shm.client_vaddr() as u64;
+        let src_addr = shm.client_vaddr() as usize;
 
         let sqe = volume::sqe_read(sector, src_addr, len, id);
         ring.submit(sqe)?;
@@ -215,7 +215,7 @@ impl VolumeClient {
     }
 
     /// Write data at sector offset and count.
-    pub fn write_at(&self, sector: u64, len: u32, buf: &[u8]) -> Result<(), Error> {
+    pub fn write_at(&self, sector: usize, len: u32, buf: &[u8]) -> Result<(), Error> {
         let ring = self.ring.as_ref().ok_or(Error::NotInitialized)?;
         let shm = self.shm.as_ref().ok_or(Error::NotInitialized)?;
 
@@ -238,7 +238,7 @@ impl VolumeClient {
 
         // Use the beginning of SHM for synchronous operations
         // We use client_vaddr because that's what the server expects.
-        let dst_addr = shm.client_vaddr() as u64;
+        let dst_addr = shm.client_vaddr() as usize;
 
         let sqe = volume::sqe_write(sector, dst_addr, len, id);
         ring.submit(sqe)?;
@@ -258,12 +258,12 @@ impl VolumeClient {
     }
 
     /// Synchronous read using io_uring (compat).
-    pub fn read_blocks(&self, sector: u64, count: u32, buf: &mut [u8]) -> Result<(), Error> {
+    pub fn read_blocks(&self, sector: usize, count: u32, buf: &mut [u8]) -> Result<(), Error> {
         self.read_at(sector, count * self.block_size, buf)
     }
 
     /// Synchronous write using io_uring (compat).
-    pub fn write_blocks(&self, sector: u64, count: u32, buf: &[u8]) -> Result<(), Error> {
+    pub fn write_blocks(&self, sector: usize, count: u32, buf: &[u8]) -> Result<(), Error> {
         self.write_at(sector, count * self.block_size, buf)
     }
 
@@ -369,7 +369,8 @@ impl VolumeClient {
         Ok(())
     }
 
-    pub fn capacity(&self) -> u64 {
+    pub fn capacity(&self) -> usize {
+        #[allow(clippy::useless_conversion)]
         self.total_sectors
     }
 

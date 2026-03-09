@@ -31,7 +31,7 @@ pub struct InputEvent {
     pub type_: u16,
     pub code: u16,
     pub value: i32,
-    pub time_ms: u64,
+    pub time_ms: usize,
 }
 
 // Common codes

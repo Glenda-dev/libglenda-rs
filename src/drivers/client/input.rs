@@ -13,7 +13,7 @@ use crate::mem::Perms;
 use crate::mem::shm::SharedMemory;
 use crate::utils::align::align_up;
 use alloc::sync::Arc;
-use core::sync::atomic::{AtomicU64, Ordering};
+use core::sync::atomic::{AtomicUsize, Ordering};
 
 #[derive(Clone)]
 pub struct InputClient {
@@ -21,7 +21,7 @@ pub struct InputClient {
     notify_ep: Option<Endpoint>,
     ring: Option<IoUringClient>,
     shm: Option<SharedMemory>,
-    next_id: Arc<AtomicU64>,
+    next_id: Arc<AtomicUsize>,
     ring_params: RingParams,
     shm_params: ShmParams,
     res_client: ResourceClient,
@@ -56,7 +56,7 @@ impl InputClient {
             notify_ep: None,
             ring: None,
             shm: None,
-            next_id: Arc::new(AtomicU64::new(0x1000)),
+            next_id: Arc::new(AtomicUsize::new(0x1000)),
             ring_params,
             shm_params,
             res_client: res_client.clone(),
@@ -76,7 +76,8 @@ impl InputClient {
         self.ring = Some(ring);
     }
 
-    fn next_user_data(&self) -> u64 {
+    fn next_user_data(&self) -> usize {
+        #[allow(clippy::useless_conversion)]
         self.next_id.fetch_add(1, Ordering::SeqCst)
     }
 

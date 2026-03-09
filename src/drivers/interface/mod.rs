@@ -28,8 +28,8 @@ pub trait DriverClient {
 }
 
 pub trait BlockDriver {
-    fn read_blocks(&self, sector: u64, count: u32, buf: &mut [u8]) -> Result<(), Error>;
-    fn write_blocks(&self, sector: u64, count: u32, buf: &[u8]) -> Result<(), Error>;
+    fn read_blocks(&self, sector: usize, count: u32, buf: &mut [u8]) -> Result<(), Error>;
+    fn write_blocks(&self, sector: usize, count: u32, buf: &[u8]) -> Result<(), Error>;
     fn block_size(&self) -> u32;
     fn capacity(&self) -> u64;
 }
@@ -182,7 +182,7 @@ pub trait BatteryDriver {
 /// AcpiDriver provides ACPI-specific services like method evaluation.
 pub trait AcpiDriver {
     /// Evaluate an ACPI method (e.g. \_OSC, \_OSI).
-    fn evaluate_method(&mut self, path: &str, args: &[u64]) -> Result<Vec<u64>, Error>;
+    fn evaluate_method(&mut self, path: &str, args: &[usize]) -> Result<Vec<usize>, Error>;
 }
 
 pub trait BusDriver {

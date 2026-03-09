@@ -1,7 +1,10 @@
 // 页大小
 pub const PGSIZE: usize = 4096;
 // 虚拟地址最高处
+#[cfg(target_pointer_width = "64")]
 pub const VA_MAX: usize = 1 << 63;
+#[cfg(target_pointer_width = "32")]
+pub const VA_MAX: usize = usize::MAX;
 // 空地址
 pub const EMPTY_VA: usize = 0x0;
 pub const VPN_MASK: usize = 0x0;

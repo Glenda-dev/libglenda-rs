@@ -23,22 +23,22 @@ pub const NOTIFY_IO: usize = 0x20;
 
 use crate::io::uring::{IOURING_OP_READ, IOURING_OP_SYNC, IOURING_OP_WRITE, IoUringSqe};
 
-pub fn sqe_read(sector: u64, addr: u64, len: u32, user_data: u64) -> IoUringSqe {
+pub fn sqe_read(sector: usize, addr: usize, len: u32, user_data: usize) -> IoUringSqe {
     IoUringSqe { opcode: IOURING_OP_READ, off: sector, addr, len, user_data, ..Default::default() }
 }
 
-pub fn sqe_write(sector: u64, addr: u64, len: u32, user_data: u64) -> IoUringSqe {
+pub fn sqe_write(sector: usize, addr: usize, len: u32, user_data: usize) -> IoUringSqe {
     IoUringSqe { opcode: IOURING_OP_WRITE, off: sector, addr, len, user_data, ..Default::default() }
 }
 
-pub fn sqe_sync(user_data: u64) -> IoUringSqe {
+pub fn sqe_sync(user_data: usize) -> IoUringSqe {
     IoUringSqe { opcode: IOURING_OP_SYNC, user_data, ..Default::default() }
 }
 
 #[repr(C)]
 #[derive(Debug, Clone, Copy, Default)]
 pub struct BlockRequest {
-    pub sector: u64,
+    pub sector: usize,
     pub count: u32,
     pub flags: u32,
 }

@@ -24,11 +24,11 @@ pub const NOTIFY_IO: usize = 0x20;
 
 use crate::io::uring::{IOURING_OP_READ, IOURING_OP_WRITE, IoUringSqe};
 
-pub fn sqe_read(addr: u64, len: u32, user_data: u64) -> IoUringSqe {
+pub fn sqe_read(addr: usize, len: u32, user_data: usize) -> IoUringSqe {
     IoUringSqe { opcode: IOURING_OP_READ, addr, len, user_data, ..Default::default() }
 }
 
-pub fn sqe_write(addr: u64, len: u32, user_data: u64) -> IoUringSqe {
+pub fn sqe_write(addr: usize, len: u32, user_data: usize) -> IoUringSqe {
     IoUringSqe { opcode: IOURING_OP_WRITE, addr, len, user_data, ..Default::default() }
 }
 

@@ -12,7 +12,7 @@ use crate::ipc::{MsgFlags, MsgTag, UTCB};
 use crate::mem::Perms;
 use crate::mem::shm::SharedMemory;
 use crate::utils::align::align_up;
-use core::sync::atomic::{AtomicU64, Ordering};
+use core::sync::atomic::{AtomicUsize, Ordering};
 
 use alloc::sync::Arc;
 
@@ -22,7 +22,7 @@ pub struct NetClient {
     notify_ep: Option<Endpoint>,
     ring: Option<IoUringClient>,
     shm: Option<SharedMemory>,
-    next_id: Arc<AtomicU64>,
+    next_id: Arc<AtomicUsize>,
     mac: Option<MacAddress>,
     ring_params: RingParams,
     shm_params: ShmParams,
@@ -61,7 +61,7 @@ impl NetClient {
             notify_ep: None,
             ring: None,
             shm: None,
-            next_id: Arc::new(AtomicU64::new(0x1000)),
+            next_id: Arc::new(AtomicUsize::new(0x1000)),
             mac: None,
             ring_params,
             shm_params,
@@ -90,7 +90,8 @@ impl NetClient {
         self.ring.as_ref()
     }
 
-    fn next_user_data(&self) -> u64 {
+    fn next_user_data(&self) -> usize {
+        #[allow(clippy::useless_conversion)]
         self.next_id.fetch_add(1, Ordering::SeqCst)
     }
 
@@ -101,12 +102,12 @@ impl NetClient {
         // Use SHM address if buffer is within SHM
         let addr = if let Some(shm) = &self.shm {
             if shm.contains_ptr(buf.as_ptr()) {
-                shm.client_vaddr_at(buf.as_ptr()) as u64
+                shm.client_vaddr_at(buf.as_ptr()) as usize
             } else {
-                buf.as_ptr() as u64
+                buf.as_ptr() as usize
             }
         } else {
-            buf.as_ptr() as u64
+            buf.as_ptr() as usize
         };
 
         let sqe = net::sqe_send(addr, buf.len() as u32, id);
@@ -127,16 +128,16 @@ impl NetClient {
         }
     }
 
-    pub fn submit_recv(&self, buf: &mut [u8], id: u64) -> Result<(), Error> {
+    pub fn submit_recv(&self, buf: &mut [u8], id: usize) -> Result<(), Error> {
         let ring = self.ring.as_ref().ok_or(Error::NotInitialized)?;
         let addr = if let Some(shm) = &self.shm {
             if shm.contains_ptr(buf.as_ptr()) {
-                shm.client_vaddr_at(buf.as_ptr()) as u64
+                shm.client_vaddr_at(buf.as_ptr()) as usize
             } else {
-                buf.as_ptr() as u64
+                buf.as_ptr() as usize
             }
         } else {
-            buf.as_ptr() as u64
+            buf.as_ptr() as usize
         };
 
         let sqe = net::sqe_recv(addr, buf.len() as u32, id);

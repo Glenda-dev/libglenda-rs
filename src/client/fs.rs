@@ -110,7 +110,7 @@ impl VirtualFileSystemService for FsClient {
 }
 
 impl FileHandleService for FsClient {
-    fn read(&mut self, _pid: Badge, offset: u64, buf: &mut [u8]) -> Result<usize, Error> {
+    fn read(&mut self, _pid: Badge, offset: usize, buf: &mut [u8]) -> Result<usize, Error> {
         let tag = MsgTag::new(FS_PROTO, fs::READ_SYNC, MsgFlags::NONE);
         let utcb = unsafe { UTCB::new() };
         utcb.clear();
@@ -139,7 +139,7 @@ impl FileHandleService for FsClient {
         Ok(len)
     }
 
-    fn write(&mut self, _pid: Badge, offset: u64, buf: &[u8]) -> Result<usize, Error> {
+    fn write(&mut self, _pid: Badge, offset: usize, buf: &[u8]) -> Result<usize, Error> {
         let tag = MsgTag::new(FS_PROTO, fs::WRITE_SYNC, MsgFlags::HAS_BUFFER);
         let utcb = unsafe { UTCB::new() };
         utcb.clear();
@@ -182,7 +182,7 @@ impl FileHandleService for FsClient {
         unsafe { utcb.read_vec::<fs::DEntry>() }
     }
 
-    fn seek(&mut self, _pid: Badge, offset: i64, whence: usize) -> Result<u64, Error> {
+    fn seek(&mut self, _pid: Badge, offset: i64, whence: usize) -> Result<usize, Error> {
         let tag = MsgTag::new(FS_PROTO, fs::SEEK, MsgFlags::NONE);
         let utcb = unsafe { UTCB::new() };
         utcb.clear();
@@ -190,7 +190,7 @@ impl FileHandleService for FsClient {
         utcb.set_mr(2, whence);
         utcb.set_msg_tag(tag);
         self.endpoint.call(utcb)?;
-        Ok(utcb.get_mr(0) as u64)
+        Ok(utcb.get_mr(0) as usize)
     }
 
     fn sync(&mut self, _pid: Badge) -> Result<(), Error> {
@@ -202,7 +202,7 @@ impl FileHandleService for FsClient {
         Ok(())
     }
 
-    fn truncate(&mut self, _pid: Badge, size: u64) -> Result<(), Error> {
+    fn truncate(&mut self, _pid: Badge, size: usize) -> Result<(), Error> {
         let tag = MsgTag::new(FS_PROTO, fs::TRUNCATE, MsgFlags::NONE);
         let utcb = unsafe { UTCB::new() };
         utcb.clear();

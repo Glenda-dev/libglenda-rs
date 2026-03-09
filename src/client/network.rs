@@ -20,7 +20,7 @@ impl NetworkClient {
         self.uring = Some(uring);
     }
 
-    pub fn read_uring(&self, addr: u64, len: u32, user_data: u64) -> Result<(), Error> {
+    pub fn read_uring(&self, addr: usize, len: u32, user_data: usize) -> Result<(), Error> {
         let Some(uring) = &self.uring else {
             return Err(Error::InvalidArgs);
         };
@@ -29,7 +29,7 @@ impl NetworkClient {
         uring.submit(sqe)
     }
 
-    pub fn write_uring(&self, addr: u64, len: u32, user_data: u64) -> Result<(), Error> {
+    pub fn write_uring(&self, addr: usize, len: u32, user_data: usize) -> Result<(), Error> {
         let Some(uring) = &self.uring else {
             return Err(Error::InvalidArgs);
         };
