@@ -79,6 +79,11 @@ pub trait FileSystemJournalService {
     fn transaction_abort(&mut self, pid: Badge, tid: usize) -> Result<(), Error>;
 
     /// Log a block write operation within a transaction.
-    fn log_block(&mut self, pid: Badge, tid: usize, block_num: usize, data: &[u8])
-    -> Result<(), Error>;
+    fn log_block(
+        &mut self,
+        pid: Badge,
+        tid: usize,
+        block_num: usize,
+        data: &[u8],
+    ) -> Result<(), Error>;
 }

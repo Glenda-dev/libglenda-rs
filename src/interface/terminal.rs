@@ -16,10 +16,10 @@ pub trait VirtualTerminalService {
         badge: Badge,
         name: &str,
         recv: crate::cap::CapPtr,
-    ) -> Result<(u32, Endpoint), Error>;
+    ) -> Result<(usize, Endpoint), Error>;
 
     /// Release an existing Virtual Terminal.
-    fn destroy_vt(&mut self, badge: Badge, vt_id: u32) -> Result<(), Error>;
+    fn destroy_vt(&mut self, badge: Badge, vt_id: usize) -> Result<(), Error>;
 
     /// List all currently available Virtual Terminals.
     fn list_vts(&mut self, badge: Badge) -> Result<Vec<VTDesc>, Error>;
@@ -29,17 +29,17 @@ pub trait VirtualTerminalService {
 
     /// Switch a designated Seat to focus on a particular Virtual Terminal.
     /// This performs context switching and routes input to the newly active VT.
-    fn switch_vt(&mut self, badge: Badge, seat_id: u32, vt_id: u32) -> Result<(), Error>;
+    fn switch_vt(&mut self, badge: Badge, seat_id: usize, vt_id: usize) -> Result<(), Error>;
 
     /// Bind a Seat to a specific Virtual Terminal, establishing an affinity.
     /// This is used for multiseat configuration where multiple seats can have their own sets of VTs.
-    fn bind_seat(&mut self, badge: Badge, seat_id: u32, vt_id: u32) -> Result<(), Error>;
+    fn bind_seat(&mut self, badge: Badge, seat_id: usize, vt_id: usize) -> Result<(), Error>;
 
     /// Add a hardware peripheral (input/output) to a specific seat.
     fn assign_device_to_seat(
         &mut self,
         badge: Badge,
-        seat_id: u32,
+        seat_id: usize,
         device_name: &str,
     ) -> Result<(), Error>;
 
@@ -47,7 +47,7 @@ pub trait VirtualTerminalService {
     fn revoke_device_from_seat(
         &mut self,
         badge: Badge,
-        seat_id: u32,
+        seat_id: usize,
         device_name: &str,
     ) -> Result<(), Error>;
 }

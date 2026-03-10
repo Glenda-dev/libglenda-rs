@@ -8,7 +8,7 @@ use crate::error::Error;
 use crate::interface::{CSpaceService, VSpaceService};
 use crate::io::uring::{IoUringBuffer, IoUringClient, IoUringCqe};
 use crate::ipc::IPC_BUFFER_SIZE;
-use crate::ipc::{MsgFlags, MsgTag, UTCB};
+use crate::ipc::{Badge, MsgFlags, MsgTag, UTCB};
 use crate::mem::Perms;
 use crate::mem::shm::SharedMemory;
 use crate::utils::align::align_up;
@@ -77,7 +77,7 @@ impl UartClient {
     }
 
     fn next_user_data(&self) -> usize {
-    #[allow(clippy::useless_conversion)]
+        #[allow(clippy::useless_conversion)]
         self.next_id.fetch_add(1, Ordering::SeqCst)
     }
 
@@ -153,34 +153,25 @@ impl UartClient {
     pub fn read_async(&self, addr: usize, len: u32, user_data: usize) -> Result<(), Error> {
         let ring = self.ring.as_ref().ok_or(Error::NotInitialized)?;
         let sqe = uart::sqe_read(addr, len, user_data);
-        ring.submit(sqe)
+        ring.submit(sqe)?;
+        // Notify the server about the new SQE - ensures driver checks buffer immediately
+        self.notify_ep
+            .as_ref()
+            .unwrap_or(&self.endpoint)
+            .notify(Badge::new(crate::io::uring::NOTIFY_IO_URING_SQ))?;
+        Ok(())
     }
 
     pub fn write_async(&self, addr: usize, len: u32, user_data: usize) -> Result<(), Error> {
         let ring = self.ring.as_ref().ok_or(Error::NotInitialized)?;
         let sqe = uart::sqe_write(addr, len, user_data);
-        ring.submit(sqe)
-    }
-
-    pub fn write(&mut self, bytes: &[u8]) -> Result<usize, Error> {
-        self.write_internal(bytes)
-    }
-
-    fn write_internal(&mut self, bytes: &[u8]) -> Result<usize, Error> {
-        let mut total = 0;
-        for chunk in bytes.chunks(IPC_BUFFER_SIZE) {
-            let mut utcb = unsafe { UTCB::new() };
-            utcb.clear();
-            let buf = &mut utcb.ipc_buffer();
-            buf[..chunk.len()].copy_from_slice(chunk);
-            let tag = MsgTag::new(UART_PROTO, uart::WRITE, MsgFlags::NONE);
-            utcb.set_msg_tag(tag);
-            utcb.set_size(chunk.len());
-
-            self.endpoint.call(&mut utcb)?;
-            total += chunk.len();
-        }
-        Ok(total)
+        ring.submit(sqe)?;
+        // Notify the server about the new SQE
+        self.notify_ep
+            .as_ref()
+            .unwrap_or(&self.endpoint)
+            .notify(Badge::new(crate::io::uring::NOTIFY_IO_URING_SQ))?;
+        Ok(())
     }
 
     pub fn peek_cqe(&self) -> Option<IoUringCqe> {
@@ -224,8 +215,21 @@ impl UartClient {
 }
 
 impl UartDriver for UartClient {
-    fn write(&mut self, buf: &[u8]) -> Result<usize, Error> {
-        self.write_internal(buf)
+    fn write(&mut self, bytes: &[u8]) -> Result<usize, Error> {
+        let mut total = 0;
+        for chunk in bytes.chunks(IPC_BUFFER_SIZE) {
+            let mut utcb = unsafe { UTCB::new() };
+            utcb.clear();
+            let buf = &mut utcb.ipc_buffer();
+            buf[..chunk.len()].copy_from_slice(chunk);
+            let tag = MsgTag::new(UART_PROTO, uart::WRITE, MsgFlags::NONE);
+            utcb.set_msg_tag(tag);
+            utcb.set_size(chunk.len());
+
+            self.endpoint.call(&mut utcb)?;
+            total += chunk.len();
+        }
+        Ok(total)
     }
 
     fn read(&mut self, buf: &mut [u8]) -> Result<usize, Error> {

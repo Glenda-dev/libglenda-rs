@@ -43,8 +43,11 @@ pub trait DeviceService {
     fn get_desc(&mut self, badge: Badge, name: &str) -> Result<DeviceDesc, Error>;
 
     /// Get description of a logical device by name. Returns (id, desc)
-    fn get_logic_desc(&mut self, badge: Badge, name: &str)
-    -> Result<(usize, LogicDeviceDesc), Error>;
+    fn get_logic_desc(
+        &mut self,
+        badge: Badge,
+        name: &str,
+    ) -> Result<(usize, LogicDeviceDesc), Error>;
 
     fn hook(
         &mut self,

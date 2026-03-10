@@ -25,18 +25,18 @@ pub struct WindowSize {
 /// Information about a Virtual Terminal
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct VTDesc {
-    pub id: u32,
+    pub id: usize,
     pub name: String,
     pub mode: TerminalDisplayMode,
-    pub seat_ids: Vec<u32>,
+    pub seat_ids: Vec<usize>,
 }
 
 /// Information about a Seat (Input/Display binding)
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SeatDesc {
-    pub id: u32,
+    pub id: usize,
     pub name: String,
-    pub active_vt: Option<u32>,
+    pub active_vt: Option<usize>,
     pub input_devices: Vec<String>,
     pub output_devices: Vec<String>,
 }
@@ -82,6 +82,7 @@ pub const VTS_LIST_VTS: usize = 0x23;
 pub const VTS_LIST_SEATS: usize = 0x24;
 pub const VTS_SWITCH_VT: usize = 0x25;
 pub const VTS_BIND_SEAT: usize = 0x26;
+pub const VTS_SET_EXCLUSIVE: usize = 0x27;
 
 // Terminal Service Methods (Individual VT session)
 pub const TERM_GET_URING: usize = 0x10;

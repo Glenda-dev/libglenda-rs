@@ -679,3 +679,25 @@ impl VSpaceManager {
         true
     }
 }
+
+// applications run in user mode; they generally use the same virtual memory
+// layout as services so reuse the service policy.  Having a separate
+// implementation keeps the configuration explicit and avoids conditional
+// compilation in the earlier `map_*` helpers.
+#[cfg(feature = "rt-app")]
+impl VSpaceManager {
+    fn check_addr(addr: usize) -> bool {
+        if addr >= MAP_START && addr < MAP_END {
+            return true;
+        }
+        crate::println!(
+            "{}VSpaceManager: Address {:#x} out of allowed range [{:#x}, {:#x}){}",
+            crate::console::ANSI_RED,
+            addr,
+            MAP_START,
+            MAP_END,
+            crate::console::ANSI_RESET
+        );
+        false
+    }
+}

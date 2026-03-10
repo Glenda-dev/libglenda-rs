@@ -13,7 +13,6 @@ impl IpcReturn for () {
     fn to_mrs(&self, _utcb: &mut UTCB) {}
 }
 
-
 impl IpcReturn for isize {
     fn to_mrs(&self, utcb: &mut UTCB) {
         set_mrs!(utcb, *self as usize);
@@ -134,4 +133,3 @@ impl IpcReturn for u64 {
         set_mrs!(utcb, *self as usize);
     }
 }
-

@@ -1,8 +1,12 @@
 #[cfg(feature = "kernel-console")]
 mod kconsole;
+#[cfg(feature = "user-console")]
+mod vt;
 
 #[cfg(feature = "kernel-console")]
 pub use kconsole::*;
+#[cfg(feature = "user-console")]
+pub use vt::*;
 
 pub const ANSI_RESET: &str = "\x1b[0m";
 pub const ANSI_RED: &str = "\x1b[31m";

@@ -9,6 +9,7 @@ use crate::protocol::terminal::{
 };
 
 /// TerminalClient represents a connection to a specific virtual terminal.
+#[derive(Clone, Copy)]
 pub struct TerminalClient {
     endpoint: Endpoint,
     config: Option<TerminalUringConfig>,
@@ -173,7 +174,7 @@ impl VirtualTerminalService for VirtualTerminalClient {
         _badge: Badge,
         name: &str,
         recv: CapPtr,
-    ) -> Result<(u32, Endpoint), Error> {
+    ) -> Result<(usize, Endpoint), Error> {
         let mut utcb = unsafe { UTCB::new() };
         let tag = MsgTag::new(
             protocol::TERMINAL_PROTO,
@@ -187,15 +188,15 @@ impl VirtualTerminalService for VirtualTerminalClient {
         utcb.set_msg_tag(tag);
         self.endpoint.call(&mut utcb)?;
 
-        let vt_id = utcb.get_mr(0) as u32;
+        let vt_id = utcb.get_mr(0);
         Ok((vt_id, Endpoint::from(recv)))
     }
 
-    fn destroy_vt(&mut self, _badge: Badge, vt_id: u32) -> Result<(), Error> {
+    fn destroy_vt(&mut self, _badge: Badge, vt_id: usize) -> Result<(), Error> {
         let mut utcb = unsafe { UTCB::new() };
         let tag =
             MsgTag::new(protocol::TERMINAL_PROTO, protocol::terminal::VTS_FREE_VT, MsgFlags::NONE);
-        utcb.set_mr(0, vt_id as usize);
+        utcb.set_mr(0, vt_id);
         utcb.set_msg_tag(tag);
         self.endpoint.call(&mut utcb)
     }
@@ -221,28 +222,28 @@ impl VirtualTerminalService for VirtualTerminalClient {
         unsafe { utcb.read_postcard() }
     }
 
-    fn switch_vt(&mut self, _badge: Badge, seat_id: u32, vt_id: u32) -> Result<(), Error> {
+    fn switch_vt(&mut self, _badge: Badge, seat_id: usize, vt_id: usize) -> Result<(), Error> {
         let mut utcb = unsafe { UTCB::new() };
         let tag = MsgTag::new(
             protocol::TERMINAL_PROTO,
             protocol::terminal::VTS_SWITCH_VT,
             MsgFlags::NONE,
         );
-        utcb.set_mr(0, seat_id as usize);
-        utcb.set_mr(1, vt_id as usize);
+        utcb.set_mr(0, seat_id);
+        utcb.set_mr(1, vt_id);
         utcb.set_msg_tag(tag);
         self.endpoint.call(&mut utcb)
     }
 
-    fn bind_seat(&mut self, _badge: Badge, seat_id: u32, vt_id: u32) -> Result<(), Error> {
+    fn bind_seat(&mut self, _badge: Badge, seat_id: usize, vt_id: usize) -> Result<(), Error> {
         let mut utcb = unsafe { UTCB::new() };
         let tag = MsgTag::new(
             protocol::TERMINAL_PROTO,
             protocol::terminal::VTS_BIND_SEAT,
             MsgFlags::NONE,
         );
-        utcb.set_mr(0, seat_id as usize);
-        utcb.set_mr(1, vt_id as usize);
+        utcb.set_mr(0, seat_id);
+        utcb.set_mr(1, vt_id);
         utcb.set_msg_tag(tag);
         self.endpoint.call(&mut utcb)
     }
@@ -250,7 +251,7 @@ impl VirtualTerminalService for VirtualTerminalClient {
     fn assign_device_to_seat(
         &mut self,
         _badge: Badge,
-        _seat_id: u32,
+        _seat_id: usize,
         _device_name: &str,
     ) -> Result<(), Error> {
         // Implementation for assigning devices
@@ -260,7 +261,7 @@ impl VirtualTerminalService for VirtualTerminalClient {
     fn revoke_device_from_seat(
         &mut self,
         _badge: Badge,
-        _seat_id: u32,
+        _seat_id: usize,
         _device_name: &str,
     ) -> Result<(), Error> {
         // Implementation for revoking devices

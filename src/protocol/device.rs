@@ -19,7 +19,6 @@ use alloc::vec::Vec;
 use num_enum::FromPrimitive;
 use serde::{Deserialize, Serialize};
 
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum HookTarget {
     Endpoint(usize),
@@ -92,5 +91,7 @@ pub struct AllocLogicRequest {
     pub dev_type: LogicDeviceType,
     pub criteria: String,
 }
-#[cfg(target_pointer_width = "64")] pub const NOTIFY_HOOK: usize = 1 << 35;
-#[cfg(target_pointer_width = "32")] pub const NOTIFY_HOOK: usize = 1 << 30;
+#[cfg(target_pointer_width = "64")]
+pub const NOTIFY_HOOK: usize = 1 << 35;
+#[cfg(target_pointer_width = "32")]
+pub const NOTIFY_HOOK: usize = 1 << 30;

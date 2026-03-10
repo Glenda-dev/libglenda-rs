@@ -150,12 +150,13 @@ impl IoUringBuffer {
         let head = header.sq_head.load(Ordering::Acquire);
         let tail = header.sq_tail.load(Ordering::Acquire);
 
+
         if head == tail {
             return None;
         }
 
         let index = head & header.sq_mask;
-        let sqe = unsafe { *self.sqes_mut().add(index as usize) };
+        let sqe = unsafe { core::ptr::read_volatile(self.sqes_mut().add(index as usize)) };
 
         header.sq_head.store(head.wrapping_add(1), Ordering::Release);
         Some(sqe)
@@ -311,7 +312,11 @@ impl IoUringClient {
         Ok(())
     }
 }
-#[cfg(target_pointer_width = "64")] pub const NOTIFY_IO_URING_SQ: usize = 1 << 33;
-#[cfg(target_pointer_width = "32")] pub const NOTIFY_IO_URING_SQ: usize = 1 << 29;
-#[cfg(target_pointer_width = "64")] pub const NOTIFY_IO_URING_CQ: usize = 1 << 34;
-#[cfg(target_pointer_width = "32")] pub const NOTIFY_IO_URING_CQ: usize = 1 << 30;
+#[cfg(target_pointer_width = "64")]
+pub const NOTIFY_IO_URING_SQ: usize = 1 << 33;
+#[cfg(target_pointer_width = "32")]
+pub const NOTIFY_IO_URING_SQ: usize = 1 << 29;
+#[cfg(target_pointer_width = "64")]
+pub const NOTIFY_IO_URING_CQ: usize = 1 << 34;
+#[cfg(target_pointer_width = "32")]
+pub const NOTIFY_IO_URING_CQ: usize = 1 << 30;

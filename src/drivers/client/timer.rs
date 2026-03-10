@@ -38,14 +38,14 @@ impl TimerClient {
     }
 
     pub fn freq(&self) -> u64 {
-    #[allow(clippy::useless_conversion)]
+        #[allow(clippy::useless_conversion)]
         self.freq
     }
 }
 
 impl TimerDriver for TimerClient {
     fn get_time(&self) -> u64 {
-    #[allow(clippy::useless_conversion)]
+        #[allow(clippy::useless_conversion)]
         let mut utcb = unsafe { UTCB::new() };
         utcb.clear();
         let tag = MsgTag::new(TIMER_PROTO, timer::GET_TIME, MsgFlags::NONE);

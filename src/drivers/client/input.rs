@@ -154,6 +154,10 @@ impl InputClient {
         self.ring.as_ref()?.pop_completion()
     }
 
+    pub fn peek_cqe(&self) -> Option<IoUringCqe> {
+        self.ring.as_ref()?.peek_completion()
+    }
+
     pub fn wait_for_completions(&self) -> Result<(), Error> {
         let ring = self.ring.as_ref().ok_or(Error::NotInitialized)?;
         let ep = self.notify_ep.as_ref().unwrap_or(&self.endpoint);

@@ -72,7 +72,8 @@ pub trait InputDriver {
 /// FrameBufferDriver provides display management.
 pub trait FrameBufferDriver {
     fn get_info(&self) -> FbInfo;
-    fn flush(&mut self, x: u32, y: u32, w: u32, h: u32) -> Result<(), Error>;
+    fn flush(&mut self, x: usize, y: usize, w: usize, h: usize) -> Result<(), Error>;
+    fn set_scanout(&mut self, paddr: usize) -> Result<(), Error>;
 }
 
 /// UsbHostDriver provides USB bus management.
