@@ -22,10 +22,21 @@ pub const NOTIFY_SQ: usize = 0x12;
 /// Async notification for IO completion
 pub const NOTIFY_IO: usize = 0x20;
 
-use crate::io::uring::{IOURING_OP_READ, IOURING_OP_WRITE, IoUringSqe};
+use crate::io::uring::{IOSQE_MULTISHOT, IOURING_OP_READ, IOURING_OP_WRITE, IoUringSqe};
 
 pub fn sqe_read(addr: usize, len: u32, user_data: usize) -> IoUringSqe {
     IoUringSqe { opcode: IOURING_OP_READ, addr, len, user_data, ..Default::default() }
+}
+
+pub fn sqe_read_multishot(addr: usize, len: u32, user_data: usize) -> IoUringSqe {
+    IoUringSqe {
+        opcode: IOURING_OP_READ,
+        flags: IOSQE_MULTISHOT,
+        addr,
+        len,
+        user_data,
+        ..Default::default()
+    }
 }
 
 pub fn sqe_write(addr: usize, len: u32, user_data: usize) -> IoUringSqe {

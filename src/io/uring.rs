@@ -6,6 +6,21 @@ pub const IOURING_OP_NOP: u8 = 0;
 pub const IOURING_OP_READ: u8 = 1;
 pub const IOURING_OP_WRITE: u8 = 2;
 pub const IOURING_OP_SYNC: u8 = 3;
+pub const IOURING_OP_READV: u8 = 4;
+pub const IOURING_OP_WRITEV: u8 = 5;
+pub const IOURING_OP_MSG_RING: u8 = 40; // Glenda: Used for SHM Ring Buffer notification
+
+// SQE Flags
+pub const IOSQE_FIXED_FILE: u8 = 1 << 0;
+pub const IOSQE_IO_DRAIN: u8 = 1 << 1;
+pub const IOSQE_IO_LINK: u8 = 1 << 2;
+pub const IOSQE_IO_HARDLINK: u8 = 1 << 3;
+pub const IOSQE_ASYNC: u8 = 1 << 4;
+pub const IOSQE_BUFFER_SELECT: u8 = 1 << 5;
+pub const IOSQE_MULTISHOT: u8 = 1 << 6; // Glenda Extension for Multi-shot read
+
+// CQE Flags
+pub const IORING_CQE_F_MORE: u32 = 1 << 0; // More CQEs follow for this SQE
 
 #[repr(C)]
 #[derive(Debug, Clone, Copy, Default)]
@@ -150,7 +165,6 @@ impl IoUringBuffer {
         let head = header.sq_head.load(Ordering::Acquire);
         let tail = header.sq_tail.load(Ordering::Acquire);
 
-
         if head == tail {
             return None;
         }
@@ -178,6 +192,8 @@ impl IoUringBuffer {
         }
 
         header.cq_tail.store(tail.wrapping_add(1), Ordering::Release);
+
+        // Glenda: Trigger notification after push if possible
         Ok(())
     }
 
