@@ -66,3 +66,5 @@ pub unsafe fn panic_break() {
 pub fn backtrace() {
     println!("--- HOSTED BACKTRACE (Use GDB/LLDB to debug) ---");
 }
+
+pub const ARCH: &str = std::env::consts::ARCH;

@@ -1,6 +1,7 @@
 use crate::println;
 use core::arch::{asm, global_asm};
 
+#[cfg(not(feature = "no-start"))]
 global_asm!(
     r#"
     .section .text.entry

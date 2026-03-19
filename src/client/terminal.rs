@@ -9,7 +9,7 @@ use crate::protocol::terminal::{
 };
 
 /// TerminalClient represents a connection to a specific virtual terminal.
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub struct TerminalClient {
     endpoint: Endpoint,
     config: Option<TerminalUringConfig>,
@@ -20,6 +20,10 @@ impl TerminalClient {
     /// Create a new terminal client wrapper around an endpoint.
     pub const fn new(endpoint: Endpoint) -> Self {
         Self { endpoint, config: None, frame: None }
+    }
+
+    pub fn endpoint(&self) -> Endpoint {
+        self.endpoint
     }
 
     /// Connect to the terminal service and initialize the high-performance channel.

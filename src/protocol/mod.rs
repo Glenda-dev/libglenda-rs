@@ -7,7 +7,6 @@ pub mod hosted;
 pub mod init;
 pub mod input;
 pub mod kernel;
-pub mod linux;
 pub mod network;
 pub mod process;
 pub mod resource;

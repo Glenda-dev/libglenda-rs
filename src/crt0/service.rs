@@ -70,7 +70,6 @@ fn panic(info: &core::panic::PanicInfo) -> ! {
 
 pub fn init_heap() {
     HEAP_ALLOCATOR.init();
-    HEAP_ALLOCATOR.add_free_region(HEAP_VA, PGSIZE);
 }
 
 pub fn init_console() {

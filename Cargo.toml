@@ -23,12 +23,13 @@ num_enum = { version = "0.7.5", default-features = false }
 libc = { version = "0.2", optional = true }
 
 [features]
+no-start = []
 default = []
 rt-bare = ["kernel-console", "linked-list-allocator"]
 rt-service = ["kernel-console", "slab-allocator"]
 rt-app = ["user-console", "talc-allocator"]
 rt-hosted = ["hosted"]
-rt-none = ["hosted"]
+rt-none = ["no-start"]
 hosted = ["std", "libc", "bincode", "lazy_static"]
 std = ["serde/std", "serde_json/std"]
 kernel-console = []

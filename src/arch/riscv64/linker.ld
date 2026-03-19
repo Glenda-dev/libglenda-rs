@@ -12,6 +12,7 @@ SECTIONS
     . = ALIGN(0x1000); /* 强制 4KB 对齐，确保下一个段进入新页面 */
     .rodata : {
         *(.rodata .rodata.*)
+        *(.srodata .srodata.*)
     }
     . = ALIGN(0x1000); /* 强制 4KB 对齐，确保下一个段进入新页面 */
 
@@ -25,6 +26,7 @@ SECTIONS
 
     .bss : {
         *(.bss .bss.*)
+        *(.sbss .sbss.*)
         *(COMMON)
     }
 }

@@ -17,26 +17,18 @@ impl ProcessClient {
 }
 
 impl ProcessService for ProcessClient {
-    fn get_pid(&mut self, _pid: Badge) -> Result<usize, Error> {
-        let tag = MsgTag::new(PROCESS_PROTO, process::GET_PID, MsgFlags::NONE);
-        let mut utcb = unsafe { UTCB::new() };
-        utcb.clear();
-        utcb.set_msg_tag(tag);
-        self.endpoint.call(&mut utcb)?;
-        Ok(utcb.get_mr(0))
-    }
-
-    fn get_ppid(&mut self, _pid: Badge) -> Result<usize, Error> {
-        let tag = MsgTag::new(PROCESS_PROTO, process::GET_PPID, MsgFlags::NONE);
-        let mut utcb = unsafe { UTCB::new() };
-        utcb.clear();
-        utcb.set_msg_tag(tag);
-        self.endpoint.call(&mut utcb)?;
-        Ok(utcb.get_mr(0))
-    }
-
     fn spawn(&mut self, _pid: Badge, name: &str) -> Result<usize, Error> {
         let tag = MsgTag::new(PROCESS_PROTO, process::SPAWN, MsgFlags::HAS_BUFFER);
+        let mut utcb = unsafe { UTCB::new() };
+        utcb.clear();
+        unsafe { utcb.write_str(name)? };
+        utcb.set_msg_tag(tag);
+        self.endpoint.call(&mut utcb)?;
+        Ok(utcb.get_mr(0))
+    }
+
+    fn create(&mut self, _pid: Badge, name: &str) -> Result<usize, Error> {
+        let tag = MsgTag::new(PROCESS_PROTO, process::CREATE, MsgFlags::HAS_BUFFER);
         let mut utcb = unsafe { UTCB::new() };
         utcb.clear();
         unsafe { utcb.write_str(name)? };
@@ -64,12 +56,12 @@ impl ProcessService for ProcessClient {
         Ok(())
     }
 
-    fn get_cnode(&mut self, _pid: Badge, target: Badge, recv: CapPtr) -> Result<CNode, Error> {
+    fn get_cnode(&mut self, _pid: Badge, target: usize, recv: CapPtr) -> Result<CNode, Error> {
         let tag = MsgTag::new(PROCESS_PROTO, process::GET_CNODE, MsgFlags::NONE);
         let mut utcb = unsafe { UTCB::new() };
         utcb.clear();
         utcb.set_msg_tag(tag);
-        utcb.set_mr(0, target.bits());
+        utcb.set_mr(0, target);
         utcb.set_recv_window(recv);
         self.endpoint.call(&mut utcb)?;
         Ok(CNode::from(recv))
@@ -90,10 +82,6 @@ impl ThreadService for ProcessClient {
         utcb.clear();
         set_mrs!(utcb, entry, arg, stack_top, tls);
         utcb.set_msg_tag(tag);
-        // Note: Currently thread creation still uses the Process endpoint, which is fine
-        // as the server likely handles both on the same capability or separate ones.
-        // Assuming ProcessClient uses an endpoint that maps to the ProcessManager logic
-        // which implements both services.
         self.endpoint.call(&mut utcb)?;
         Ok(utcb.get_mr(0))
     }
