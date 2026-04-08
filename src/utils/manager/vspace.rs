@@ -38,19 +38,6 @@ pub struct VSpaceManager {
 }
 
 impl VSpaceManager {
-    #[cfg(feature = "rt-bare")]
-    pub fn new(root: VSpace, scratch_start: usize, scratch_len: usize) -> Self {
-        Self {
-            root,
-            shadow: BTreeMap::new(),
-            scratch_start,
-            scratch_len,
-            scratch_ptr: 0,
-            pages_cache: Vec::new(),
-        }
-    }
-
-    #[cfg(feature = "rt-service")]
     pub fn new(root: VSpace, scratch_start: usize, scratch_len: usize) -> Self {
         let mut slf = Self {
             root,
@@ -65,7 +52,9 @@ impl VSpaceManager {
         slf
     }
 
-    #[cfg(feature = "rt-service")]
+    #[cfg(feature = "vspacemgr_check_bypass")]
+    fn init(&mut self) {}
+    #[cfg(not(feature = "vspacemgr_check_bypass"))]
     fn init(&mut self) {
         {
             use crate::mem::{
@@ -630,74 +619,25 @@ fn index(vaddr: usize, level: usize) -> usize {
     (vaddr >> SHIFTS[level]) & VPN_MASK
 }
 
-#[cfg(feature = "rt-bare")]
-impl VSpaceManager {
-    fn check_addr(addr: usize) -> bool {
-        use crate::arch::mem::VA_MAX;
-        if addr <= VA_MAX {
-            return true;
-        }
-        crate::println!(
-            "{}VSpaceManager: Address {:#x} out of allowed range [0, {:#x}]{}",
-            crate::console::ANSI_RED,
-            addr,
-            VA_MAX,
-            crate::console::ANSI_RESET
-        );
-        false
-    }
-}
-
-#[cfg(feature = "rt-service")]
+#[cfg(not(feature = "vspacemgr_check_bypass"))]
 impl VSpaceManager {
     fn check_addr(addr: usize) -> bool {
         if addr >= MAP_START && addr < MAP_END {
             return true;
         }
-        crate::println!(
-            "{}VSpaceManager: Address {:#x} out of allowed range [{:#x}, {:#x}){}",
-            crate::console::ANSI_RED,
+        crate::error!(
+            "VSpaceManager: Address {:#x} out of allowed range [{:#x}, {:#x})",
             addr,
             MAP_START,
             MAP_END,
-            crate::console::ANSI_RESET
         );
         false
     }
 }
 
-#[cfg(feature = "rt-none")]
+#[cfg(feature = "vspacemgr_check_bypass")]
 impl VSpaceManager {
     fn check_addr(addr: usize) -> bool {
         true
-    }
-}
-
-#[cfg(feature = "rt-hosted")]
-impl VSpaceManager {
-    fn check_addr(addr: usize) -> bool {
-        true
-    }
-}
-
-// applications run in user mode; they generally use the same virtual memory
-// layout as services so reuse the service policy.  Having a separate
-// implementation keeps the configuration explicit and avoids conditional
-// compilation in the earlier `map_*` helpers.
-#[cfg(feature = "rt-app")]
-impl VSpaceManager {
-    fn check_addr(addr: usize) -> bool {
-        if addr >= MAP_START && addr < MAP_END {
-            return true;
-        }
-        crate::println!(
-            "{}VSpaceManager: Address {:#x} out of allowed range [{:#x}, {:#x}){}",
-            crate::console::ANSI_RED,
-            addr,
-            MAP_START,
-            MAP_END,
-            crate::console::ANSI_RESET
-        );
-        false
     }
 }

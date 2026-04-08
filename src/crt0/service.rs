@@ -43,7 +43,7 @@ unsafe extern "C" fn glenda_start(_arg: usize, tid: usize) -> ! {
     exit(ret);
 }
 
-unsafe fn init_tcb(tid: usize) {
+pub unsafe fn init_tcb(tid: usize) {
     let tp = crate::arch::thread::get_thread_pointer();
     unsafe {
         if tp == 0 {

@@ -8,5 +8,4 @@ pub const KSTACK_PAGES: usize = 4;
 pub const PT_LEVELS: usize = 1;
 
 pub const UTCB_VA: usize = 0x100000;
-pub const HEAP_VA: usize = 0x10000000;
 pub const SHM_VA: usize = 0x20000000;

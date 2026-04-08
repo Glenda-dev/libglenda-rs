@@ -20,6 +20,10 @@ impl Console {
     }
 
     pub fn put_str(&self, s: &str) -> Result<(), Error> {
+        if self.0.is_null() {
+            return Ok(());
+        }
+
         let utcb = unsafe { UTCB::new() };
 
         // Backup current UTCB state to prevent corruption of nested/interrupted IPC
