@@ -4,9 +4,9 @@ use crate::ipc::UTCB;
 
 #[repr(transparent)]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct Vcpu(CapPtr);
+pub struct VCPU(CapPtr);
 
-impl Vcpu {
+impl VCPU {
     pub const fn from(cap: CapPtr) -> Self {
         Self(cap)
     }
@@ -23,7 +23,7 @@ impl Vcpu {
         self.0.invoke(vcpumethod::BIND_TCB, &mut utcb)
     }
 
-    pub fn bind_tcb_with_vmspace(&self, tcb: TCB, vmspace: Vmspace) -> Result<(), Error> {
+    pub fn bind_tcb_with_vmspace(&self, tcb: TCB, vmspace: VMSpace) -> Result<(), Error> {
         let mut utcb = unsafe { UTCB::new() };
         utcb.clear();
         utcb.set_mr(0, tcb.cap().bits());
@@ -69,9 +69,9 @@ impl Vcpu {
 
 #[repr(transparent)]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct Vmspace(CapPtr);
+pub struct VMSpace(CapPtr);
 
-impl Vmspace {
+impl VMSpace {
     pub const fn from(cap: CapPtr) -> Self {
         Self(cap)
     }

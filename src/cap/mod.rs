@@ -4,12 +4,12 @@ mod endpoint;
 mod frame;
 mod irq;
 mod kernel;
-mod virt;
 mod method;
 mod pagetable;
 mod reply;
 mod tcb;
 mod untyped;
+mod virt;
 mod vspace;
 
 pub use cnode::CNode;
@@ -18,12 +18,12 @@ pub use endpoint::Endpoint;
 pub use frame::Frame;
 pub use irq::IrqHandler;
 pub use kernel::Kernel;
-pub use virt::{Vcpu, Vmspace};
 pub use method::*;
 pub use pagetable::PageTable;
 pub use reply::Reply;
 pub use tcb::TCB;
 pub use untyped::Untyped;
+pub use virt::{VCPU, VMSpace};
 pub use vspace::VSpace;
 
 use crate::arch::mem::PGSIZE;
@@ -165,8 +165,8 @@ pub enum CapType {
     Kernel = 9,
     VSpace = 10,
     Console = 11,
-    Vcpu = 12,
-    Vmspace = 13,
+    VCPU = 12,
+    VMSpace = 13,
     #[num_enum(default)]
     Unknown = 255,
 }
@@ -188,8 +188,8 @@ impl CapType {
             CapType::PageTable => 1,
             CapType::CNode => CNODE_PAGES,
             CapType::VSpace => 1,
-            CapType::Vcpu => 1,
-            CapType::Vmspace => 1,
+            CapType::VCPU => 1,
+            CapType::VMSpace => 1,
             _ => 0,
         };
         if pages == 0 { Err(Error::InvalidArgs) } else { Ok(pages) }
