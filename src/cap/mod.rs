@@ -4,6 +4,7 @@ mod endpoint;
 mod frame;
 mod irq;
 mod kernel;
+mod virt;
 mod method;
 mod pagetable;
 mod reply;
@@ -17,6 +18,7 @@ pub use endpoint::Endpoint;
 pub use frame::Frame;
 pub use irq::IrqHandler;
 pub use kernel::Kernel;
+pub use virt::{Vcpu, Vmspace};
 pub use method::*;
 pub use pagetable::PageTable;
 pub use reply::Reply;
@@ -163,6 +165,8 @@ pub enum CapType {
     Kernel = 9,
     VSpace = 10,
     Console = 11,
+    Vcpu = 12,
+    Vmspace = 13,
     #[num_enum(default)]
     Unknown = 255,
 }
@@ -184,6 +188,8 @@ impl CapType {
             CapType::PageTable => 1,
             CapType::CNode => CNODE_PAGES,
             CapType::VSpace => 1,
+            CapType::Vcpu => 1,
+            CapType::Vmspace => 1,
             _ => 0,
         };
         if pages == 0 { Err(Error::InvalidArgs) } else { Ok(pages) }

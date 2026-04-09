@@ -41,3 +41,8 @@ pub const UNKNOWN_FAULT: usize = 0x07;
 /// 触发条件：ipc::notify
 /// 消息内容：通常为空，通过 Badge 传递事件位
 pub const NOTIFY: usize = 0x08;
+
+/// 虚拟化退出 (Virtualization Exit)
+/// 触发条件：VCPU 运行返回到 VMM
+/// 消息内容：[reason, detail0, detail1, detail2]
+pub const VIRT_EXIT: usize = 0x09;

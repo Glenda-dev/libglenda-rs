@@ -43,5 +43,13 @@ pub trait FaultService {
     fn breakpoint(&mut self, badge: Badge, pc: usize) -> Result<(), Error>;
     fn access_fault(&mut self, badge: Badge, addr: usize, pc: usize) -> Result<(), Error>;
     fn access_misaligned(&mut self, badge: Badge, addr: usize, pc: usize) -> Result<(), Error>;
+    fn virt_exit(
+        &mut self,
+        badge: Badge,
+        reason: usize,
+        detail0: usize,
+        detail1: usize,
+        detail2: usize,
+    ) -> Result<(), Error>;
     fn handle_syscall(&mut self, badge: usize, args: MsgArgs) -> Result<(), Error>;
 }
