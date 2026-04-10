@@ -12,6 +12,20 @@ pub const SBRK: usize = 0x22;
 pub const GET_CAP: usize = 0x30;
 pub const REGISTER_CAP: usize = 0x31;
 pub const GET_CONFIG: usize = 0x32;
+pub const GET_STATUS: usize = 0x33;
+
+#[repr(C)]
+#[derive(Debug, Clone, Copy, Default)]
+pub struct MemoryStatus {
+    pub available_bytes: usize,
+    pub total_bytes: usize,
+}
+
+#[repr(C)]
+#[derive(Debug, Clone, Copy, Default)]
+pub struct WarrenStatus {
+    pub memory: MemoryStatus,
+}
 
 use num_enum::FromPrimitive;
 #[repr(usize)]

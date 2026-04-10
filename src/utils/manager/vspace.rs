@@ -104,13 +104,10 @@ impl VSpaceManager {
                     let _ = slots.free(*cap);
                 }
             }
-            ShadowNode::Frame { cap, .. } => {
-                // Frame 的回收通常由 UntypedManager 处理，但如果 VSpaceManager 拥有这个 Capability 的所有权，
-                // 则需要在这里 free slot。
-                // 注意：在 Glenda 中，Frame 的物理内存由 Untyped 分配，这里只 free CSpace 中的 slot。
-                if !cap.is_null() {
-                    let _ = slots.free(*cap);
-                }
+            ShadowNode::Frame { .. } => {
+                // Frame capabilities are owned by upper-level process/resource managers.
+                // Do not recycle slot indices here, otherwise a still-live cap may be reallocated
+                // and cause "target slot not empty" failures.
             }
         }
     }

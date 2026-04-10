@@ -60,9 +60,8 @@ impl ResourceService for ResourceClient {
         // Use CALL to wait for response
         let mut utcb = unsafe { UTCB::new() };
         utcb.clear();
-        set_mrs!(utcb, obj_type, flags);
+        set_mrs!(utcb, obj_type, flags, recv.bits());
         utcb.set_msg_tag(tag);
-        utcb.set_recv_window(recv);
 
         self.endpoint.call(&mut utcb)?;
 
@@ -80,9 +79,8 @@ impl ResourceService for ResourceClient {
         // Use CALL to wait for response
         let mut utcb = unsafe { UTCB::new() };
         utcb.clear();
-        set_mrs!(utcb, pages);
+        set_mrs!(utcb, pages, recv.bits());
         utcb.set_msg_tag(tag);
-        utcb.set_recv_window(recv);
 
         self.endpoint.call(&mut utcb)?;
 
@@ -113,11 +111,10 @@ impl ResourceService for ResourceClient {
         let tag = MsgTag::new(RESOURCE_PROTO, resource::GET_CAP, MsgFlags::NONE);
         let mut utcb = unsafe { UTCB::new() };
         utcb.clear();
-        set_mrs!(utcb, cap as usize, id);
-        utcb.set_recv_window(recv);
+        set_mrs!(utcb, cap as usize, id, recv.bits());
         utcb.set_msg_tag(tag);
         self.endpoint.call(&mut utcb)?;
-        Ok(utcb.get_recv_window())
+        Ok(CapPtr::from(utcb.get_mr(0)))
     }
 
     fn register_cap(
@@ -150,15 +147,31 @@ impl ResourceService for ResourceClient {
         unsafe {
             utcb.write_str(name)?;
         }
+        set_mrs!(utcb, recv.bits());
 
         // Set tag with HAS_BUFFER to enable kernel copy
         let tag = MsgTag::new(RESOURCE_PROTO, resource::GET_CONFIG, MsgFlags::HAS_BUFFER);
-        utcb.set_recv_window(recv);
         utcb.set_msg_tag(tag);
 
         self.endpoint.call(&mut utcb)?;
         let frame = Frame::from(recv);
         let size = utcb.get_mr(0);
         Ok((frame, size))
+    }
+
+    fn status(&mut self, _pid: Badge) -> Result<resource::WarrenStatus, Error> {
+        let tag = MsgTag::new(RESOURCE_PROTO, resource::GET_STATUS, MsgFlags::NONE);
+        let mut utcb = unsafe { UTCB::new() };
+        utcb.clear();
+        utcb.set_msg_tag(tag);
+
+        self.endpoint.call(&mut utcb)?;
+
+        Ok(resource::WarrenStatus {
+            memory: resource::MemoryStatus {
+                available_bytes: utcb.get_mr(0),
+                total_bytes: utcb.get_mr(1),
+            },
+        })
     }
 }

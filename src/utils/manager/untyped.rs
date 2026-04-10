@@ -1,5 +1,5 @@
 use crate::arch::mem::PGSIZE;
-use crate::cap::{CNode, CapPtr, CapType, Untyped};
+use crate::cap::{CNode, CSPACE_CAP, CapPtr, CapType, Untyped};
 use crate::error::Error;
 use crate::interface::{CSpaceProvider, UntypedService, VSpaceProvider};
 use crate::utils::BootInfo;
@@ -71,13 +71,17 @@ impl UntypedService for UntypedManager {
                 let obj_paddr = paddr + watermark * PGSIZE;
                 // Try to retype
                 let ret = match obj_type {
-                    CapType::Untyped => block.cap.retype_untyped(flags, dest),
-                    CapType::TCB => block.cap.retype_tcb(dest),
-                    CapType::PageTable => block.cap.retype_pagetable(flags, dest),
-                    CapType::CNode => block.cap.retype_cnode(dest),
-                    CapType::Frame => block.cap.retype_frame(flags, dest),
-                    CapType::VSpace => block.cap.retype_vspace(dest),
-                    CapType::Endpoint => block.cap.retype_endpoint(dest),
+                    CapType::Untyped => {
+                        block.cap.retype_untyped(flags, CSPACE_CAP.cap(), dest)
+                    }
+                    CapType::TCB => block.cap.retype_tcb(CSPACE_CAP.cap(), dest),
+                    CapType::PageTable => {
+                        block.cap.retype_pagetable(flags, CSPACE_CAP.cap(), dest)
+                    }
+                    CapType::CNode => block.cap.retype_cnode(CSPACE_CAP.cap(), dest),
+                    CapType::Frame => block.cap.retype_frame(flags, CSPACE_CAP.cap(), dest),
+                    CapType::VSpace => block.cap.retype_vspace(CSPACE_CAP.cap(), dest),
+                    CapType::Endpoint => block.cap.retype_endpoint(CSPACE_CAP.cap(), dest),
                     _ => return Err(Error::NotSupported),
                 };
 
@@ -102,15 +106,6 @@ impl UntypedService for UntypedManager {
 
     fn free(&mut self, cap: CapPtr) -> Result<(), Error> {
         self.root.revoke(cap)?;
-        match self.root.recycle(cap) {
-            Ok((addr, _)) => {
-                self.add_block(Untyped::from(cap), addr);
-                Ok(())
-            }
-            Err(e) => {
-                let _ = self.root.delete(cap);
-                Err(e)
-            }
-        }
+        self.root.delete(cap)
     }
 }

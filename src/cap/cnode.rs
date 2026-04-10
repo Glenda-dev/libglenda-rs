@@ -17,24 +17,61 @@ impl CNode {
         self.0
     }
 
+    #[inline(always)]
+    fn normalize_dest_cnode(&self, dest_cnode: CapPtr) -> CapPtr {
+        if dest_cnode == self.0 { CapPtr::null() } else { dest_cnode }
+    }
+
     pub fn mint(
         &self,
         src: CapPtr,
-        dest: CapPtr,
+        dest_cnode: CapPtr,
+        dest_slot: CapPtr,
         badge: Badge,
         rights: Rights,
     ) -> Result<(), Error> {
+        let dest_cnode = self.normalize_dest_cnode(dest_cnode);
         let mut utcb = unsafe { UTCB::new() };
         utcb.clear();
-        set_mrs!(utcb, src.bits(), dest.bits(), badge.bits(), rights.bits());
+        set_mrs!(
+            utcb,
+            src.bits(),
+            dest_cnode.bits(),
+            dest_slot.bits(),
+            badge.bits(),
+            rights.bits()
+        );
         self.0.invoke(cnodemethod::MINT, &mut utcb)
     }
 
-    pub fn copy(&self, src: CapPtr, dest: CapPtr, rights: Rights) -> Result<(), Error> {
+    #[inline(always)]
+    pub fn mint_self(
+        &self,
+        src: CapPtr,
+        dest_slot: CapPtr,
+        badge: Badge,
+        rights: Rights,
+    ) -> Result<(), Error> {
+        self.mint(src, CapPtr::null(), dest_slot, badge, rights)
+    }
+
+    pub fn copy(
+        &self,
+        src: CapPtr,
+        dest_cnode: CapPtr,
+        dest_slot: CapPtr,
+        rights: Rights,
+    ) -> Result<(), Error> {
+        let dest_cnode = self.normalize_dest_cnode(dest_cnode);
         let mut utcb = unsafe { UTCB::new() };
         utcb.clear();
-        set_mrs!(utcb, src.bits(), dest.bits(), rights.bits());
+        set_mrs!(utcb, src.bits(), dest_cnode.bits(), dest_slot.bits(), rights.bits());
         self.0.invoke(cnodemethod::COPY, &mut utcb)
+    }
+
+    #[inline(always)]
+    pub fn copy_self(&self, src: CapPtr, dest_slot: CapPtr, rights: Rights) -> Result<(), Error> {
+        self.copy(src, CapPtr::null(), dest_slot, rights)
     }
 
     pub fn delete(&self, cptr: CapPtr) -> Result<(), Error> {
@@ -51,24 +88,27 @@ impl CNode {
         self.0.invoke(cnodemethod::REVOKE, &mut utcb)
     }
 
-    pub fn move_cap(&self, src: CapPtr, dest: CapPtr) -> Result<(), Error> {
+    pub fn transfer(
+        &self,
+        src: CapPtr,
+        dest_cnode: CapPtr,
+        dest_slot: CapPtr,
+    ) -> Result<(), Error> {
+        let dest_cnode = self.normalize_dest_cnode(dest_cnode);
         let mut utcb = unsafe { UTCB::new() };
         utcb.clear();
-        set_mrs!(utcb, src.bits(), dest.bits());
-        self.0.invoke(cnodemethod::MOVE, &mut utcb)
+        set_mrs!(utcb, src.bits(), dest_cnode.bits(), dest_slot.bits());
+        self.0.invoke(cnodemethod::TRANSFER, &mut utcb)
+    }
+
+    #[inline(always)]
+    pub fn transfer_self(&self, src: CapPtr, dest_slot: CapPtr) -> Result<(), Error> {
+        self.transfer(src, CapPtr::null(), dest_slot)
     }
 
     pub fn debug_print(&self) -> Result<(), Error> {
         let mut utcb = unsafe { UTCB::new() };
         utcb.clear();
         self.0.invoke(cnodemethod::DEBUG_PRINT, &mut utcb)
-    }
-
-    pub fn recycle(&self, cptr: CapPtr) -> Result<(usize, usize), Error> {
-        let mut utcb = unsafe { UTCB::new() };
-        utcb.clear();
-        set_mrs!(utcb, cptr.bits());
-        self.0.invoke(cnodemethod::RECYCLE, &mut utcb)?;
-        Ok((utcb.get_mr(0), utcb.get_mr(1)))
     }
 }

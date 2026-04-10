@@ -1,7 +1,11 @@
 use crate::cap::{CNODE_SLOTS, CNode, CSPACE_CAP, CapPtr};
 use crate::error::Error;
 use crate::interface::{CSpaceProvider, CSpaceService};
-use alloc::vec::Vec;
+
+const BITS_PER_WORD: usize = usize::BITS as usize;
+const MAX_MANAGED_INDICES: usize = CNODE_SLOTS * (CNODE_SLOTS - 1);
+const MAX_BITMAP_WORDS: usize = MAX_MANAGED_INDICES.div_ceil(BITS_PER_WORD);
+const MAX_SUMMARY_WORDS: usize = MAX_BITMAP_WORDS.div_ceil(BITS_PER_WORD);
 
 /// CSpaceManager manages the allocation of capability slots in a process's CSpace.
 /// It uses a pure 2-level CNode hierarchy (Root CNode -> Level 1 CNodes).
@@ -12,7 +16,12 @@ pub struct CSpaceManager {
     l1_start_slot: usize,
     next_index: usize,
     l1_cnodes: [bool; CNODE_SLOTS],
-    free_list: Vec<usize>,
+    free_bitmap: [usize; MAX_BITMAP_WORDS],
+    free_summary: [usize; MAX_SUMMARY_WORDS],
+    free_words: usize,
+    free_summary_words: usize,
+    free_count: usize,
+    free_hint_word: usize,
 }
 
 impl CSpaceManager {
@@ -21,7 +30,78 @@ impl CSpaceManager {
         // next_index = 1 means l1_start_slot * 256 + 1.
         let next_index = 1;
         let l1_cnodes = [false; CNODE_SLOTS];
-        Self { root_cnode: root, l1_start_slot, next_index, l1_cnodes, free_list: Vec::new() }
+        let max_indices = if l1_start_slot < CNODE_SLOTS {
+            (CNODE_SLOTS - l1_start_slot) * (CNODE_SLOTS - 1)
+        } else {
+            0
+        };
+        let free_words = if max_indices == 0 { 0 } else { max_indices.div_ceil(BITS_PER_WORD) };
+        let free_summary_words =
+            if free_words == 0 { 0 } else { free_words.div_ceil(BITS_PER_WORD) };
+        Self {
+            root_cnode: root,
+            l1_start_slot,
+            next_index,
+            l1_cnodes,
+            free_bitmap: [0; MAX_BITMAP_WORDS],
+            free_summary: [0; MAX_SUMMARY_WORDS],
+            free_words,
+            free_summary_words,
+            free_count: 0,
+            free_hint_word: 0,
+        }
+    }
+
+    fn max_indices(&self) -> usize {
+        if self.l1_start_slot >= CNODE_SLOTS {
+            0
+        } else {
+            (CNODE_SLOTS - self.l1_start_slot) * (CNODE_SLOTS - 1)
+        }
+    }
+
+    fn bitmap_pos(&self, index: usize) -> Option<(usize, usize)> {
+        if index == 0 || index > self.max_indices() {
+            return None;
+        }
+        let bit = index - 1;
+        Some((bit / BITS_PER_WORD, bit % BITS_PER_WORD))
+    }
+
+    fn summary_pos(&self, word_idx: usize) -> Option<(usize, usize)> {
+        if word_idx >= self.free_words {
+            return None;
+        }
+        Some((word_idx / BITS_PER_WORD, word_idx % BITS_PER_WORD))
+    }
+
+    fn set_summary_present(&mut self, word_idx: usize) {
+        let Some((summary_word_idx, summary_bit_idx)) = self.summary_pos(word_idx) else {
+            return;
+        };
+        self.free_summary[summary_word_idx] |= 1usize << summary_bit_idx;
+    }
+
+    fn clear_summary_present(&mut self, word_idx: usize) {
+        let Some((summary_word_idx, summary_bit_idx)) = self.summary_pos(word_idx) else {
+            return;
+        };
+        self.free_summary[summary_word_idx] &= !(1usize << summary_bit_idx);
+    }
+
+    fn mark_free(&mut self, index: usize) {
+        let Some((word_idx, bit_idx)) = self.bitmap_pos(index) else {
+            return;
+        };
+        let mask = 1usize << bit_idx;
+        if (self.free_bitmap[word_idx] & mask) == 0 {
+            self.free_bitmap[word_idx] |= mask;
+            self.set_summary_present(word_idx);
+            self.free_count += 1;
+            if word_idx < self.free_hint_word {
+                self.free_hint_word = word_idx;
+            }
+        }
     }
 
     /// Mark a L1 CNode as already present. Used during initialization.
@@ -71,6 +151,11 @@ impl CSpaceManager {
         if rel_ptr.is_null() {
             return None;
         }
+        // CSpaceManager only manages exact 2-level descendants under its root.
+        // Reject deeper paths to avoid cross-manager free-list corruption.
+        if rel_ptr.len() != 2 {
+            return None;
+        }
         let l0 = rel_ptr.level_idx(0);
         let l1 = rel_ptr.level_idx(1);
 
@@ -81,6 +166,10 @@ impl CSpaceManager {
         let l1_offset = l0 - self.l1_start_slot;
         let slots_per_l1 = CNODE_SLOTS - 1;
         Some(l1_offset * slots_per_l1 + l1)
+    }
+
+    pub fn owns_slot(&self, slot: CapPtr) -> bool {
+        self.cptr_to_index(slot).is_some()
     }
 
     /// Proactively ensures that the L1 CNode for a future index is mapped.
@@ -115,15 +204,88 @@ impl CSpaceManager {
         Ok(())
     }
 
+    fn pop_reusable_index(&mut self) -> Option<usize> {
+        if self.free_count == 0 || self.free_words == 0 {
+            return None;
+        }
+
+        let mut word_idx = self.find_non_empty_word(self.free_hint_word.min(self.free_words - 1))?;
+        for _ in 0..self.free_words {
+            let word = self.free_bitmap[word_idx];
+            if word != 0 {
+                let bit_idx = word.trailing_zeros() as usize;
+                let mask = 1usize << bit_idx;
+                self.free_bitmap[word_idx] &= !mask;
+                if self.free_bitmap[word_idx] == 0 {
+                    self.clear_summary_present(word_idx);
+                }
+                self.free_count = self.free_count.saturating_sub(1);
+
+                let index = word_idx * BITS_PER_WORD + bit_idx + 1;
+                if index <= self.max_indices() {
+                    self.free_hint_word = word_idx;
+                    return Some(index);
+                }
+            }
+            let next_word = (word_idx + 1) % self.free_words;
+            if let Some(found) = self.find_non_empty_word(next_word) {
+                word_idx = found;
+            } else {
+                break;
+            }
+        }
+        self.free_hint_word = 0;
+        None
+    }
+
+    fn find_non_empty_word(&self, start_word: usize) -> Option<usize> {
+        if self.free_summary_words == 0 {
+            return None;
+        }
+
+        let start_summary_word = start_word / BITS_PER_WORD;
+        let start_summary_bit = start_word % BITS_PER_WORD;
+
+        // First pass: [start_summary_word, end)
+        for summary_word_idx in start_summary_word..self.free_summary_words {
+            let mut summary = self.free_summary[summary_word_idx];
+            if summary_word_idx == start_summary_word {
+                summary &= usize::MAX << start_summary_bit;
+            }
+            if summary == 0 {
+                continue;
+            }
+            let bit_idx = summary.trailing_zeros() as usize;
+            let word_idx = summary_word_idx * BITS_PER_WORD + bit_idx;
+            if word_idx < self.free_words {
+                return Some(word_idx);
+            }
+        }
+
+        // Second pass: [0, start_summary_word)
+        for summary_word_idx in 0..start_summary_word {
+            let summary = self.free_summary[summary_word_idx];
+            if summary == 0 {
+                continue;
+            }
+            let bit_idx = summary.trailing_zeros() as usize;
+            let word_idx = summary_word_idx * BITS_PER_WORD + bit_idx;
+            if word_idx < self.free_words {
+                return Some(word_idx);
+            }
+        }
+
+        None
+    }
+
     /// Allocate a slot directly without calling a provider.
     pub fn alloc_direct(&mut self) -> Result<CapPtr, Error> {
-        let index = if let Some(idx) = self.free_list.pop() {
-            idx
-        } else {
-            let res = self.next_index;
-            self.next_index += 1;
-            res
-        };
+        if let Some(index) = self.pop_reusable_index() {
+            return Ok(self.index_to_cptr(index));
+        }
+
+        let index = self.next_index;
+        self.next_index += 1;
 
         let slots_per_l1 = CNODE_SLOTS - 1;
         let l1_offset = (index - 1) / slots_per_l1;
@@ -131,7 +293,7 @@ impl CSpaceManager {
 
         if !self.l1_cnodes[l0_idx] {
             // Cannot allocate if L1 CNode is missing and no provider is available
-            self.free_list.push(index);
+            self.next_index = self.next_index.saturating_sub(1);
             crate::error!("CSpaceManager: L1 CNode for index {} not allocated", index);
             return Err(Error::CNodeFull);
         }
@@ -145,14 +307,17 @@ impl CSpaceService for CSpaceManager {
     fn alloc(&mut self, provider: &mut dyn CSpaceProvider) -> Result<CapPtr, Error> {
         self.ensure_margin(provider);
 
-        let index = if let Some(idx) = self.free_list.pop() {
-            idx
-        } else {
-            let res = self.next_index;
-            self.next_index += 1;
-            res
-        };
-        self.ensure_l1_cnode(provider, index)?;
+        if let Some(index) = self.pop_reusable_index() {
+            self.ensure_l1_cnode(provider, index)?;
+            return Ok(self.index_to_cptr(index));
+        }
+
+        let index = self.next_index;
+        self.next_index += 1;
+        if let Err(e) = self.ensure_l1_cnode(provider, index) {
+            self.next_index = self.next_index.saturating_sub(1);
+            return Err(e);
+        }
 
         let ptr = self.index_to_cptr(index);
         Ok(ptr)
@@ -185,7 +350,7 @@ impl CSpaceService for CSpaceManager {
             if index >= self.next_index {
                 return;
             }
-            self.free_list.push(index);
+            self.mark_free(index);
         }
     }
 }

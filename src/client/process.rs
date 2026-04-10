@@ -62,7 +62,7 @@ impl ProcessService for ProcessClient {
         utcb.clear();
         utcb.set_msg_tag(tag);
         utcb.set_mr(0, target);
-        utcb.set_recv_window(recv);
+        utcb.set_mr(1, recv.bits());
         self.endpoint.call(&mut utcb)?;
         Ok(CNode::from(recv))
     }

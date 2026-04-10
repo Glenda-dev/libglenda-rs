@@ -1,6 +1,6 @@
 use crate::arch::runtime::panic_break;
 use crate::arch::syscall::syscall;
-use crate::cap::{MONITOR_CAP, TCB_CAP};
+use crate::cap::MONITOR_CAP;
 use crate::console::{ANSI_RED, ANSI_RESET};
 use crate::error::Error;
 use crate::ipc::{MsgFlags, MsgTag, UTCB};
@@ -35,12 +35,16 @@ pub fn exit(code: usize) -> ! {
     set_mrs!(utcb, code);
     utcb.set_msg_tag(tag);
     if MONITOR_CAP.send(&mut utcb).is_err() {
-        crate::error!("Failed to exit with code {}", code);
+        crate::println!("Failed to exit with code {}", code);
     }
-    let _ = TCB_CAP.suspend();
-    crate::error!("Should not reach here");
+
+    // Do not invoke TCB::YIELD here.
+    // A yield syscall can leave a transient cloned TCB capability alive across
+    // context switch, which interferes with monitor-side teardown refcount checks.
+    // Spinning in user mode is sufficient: timer preemption will hand control
+    // back to the monitor to perform process cleanup.
     loop {
-        unsafe { panic_break() };
+        core::hint::spin_loop();
     }
 }
 
