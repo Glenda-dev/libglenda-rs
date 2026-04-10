@@ -76,8 +76,21 @@ impl VSpaceManager {
     pub fn drop(&mut self, provider: &mut dyn VSpaceProvider, slots: &mut dyn CSpaceService) {
         // 1. 清理缓存中的页表
         while let Some((cap, _, _)) = self.pages_cache.pop() {
-            let _ = provider.free_pagetable(cap);
-            let _ = slots.free(cap);
+            let released = match provider.free_pagetable(cap) {
+                Ok(()) => true,
+                Err(e) if e == Error::InvalidCapability || e == Error::InvalidSlot => true,
+                Err(e) => {
+                    crate::warn!(
+                        "vspace.drop: free_pagetable failed for {:?}, skip slot recycle: {:?}",
+                        cap,
+                        e
+                    );
+                    false
+                }
+            };
+            if released {
+                let _ = slots.free(cap);
+            }
         }
 
         // 2. 递归清理影子页表中的资源
@@ -100,8 +113,21 @@ impl VSpaceManager {
                 }
                 // 清理当前页表
                 if !cap.is_null() {
-                    let _ = provider.free_pagetable(*cap);
-                    let _ = slots.free(*cap);
+                    let released = match provider.free_pagetable(*cap) {
+                        Ok(()) => true,
+                        Err(e) if e == Error::InvalidCapability || e == Error::InvalidSlot => true,
+                        Err(e) => {
+                            crate::warn!(
+                                "vspace.drop_rec: free_pagetable failed for {:?}, skip slot recycle: {:?}",
+                                *cap,
+                                e
+                            );
+                            false
+                        }
+                    };
+                    if released {
+                        let _ = slots.free(*cap);
+                    }
                 }
             }
             ShadowNode::Frame { .. } => {
@@ -317,14 +343,40 @@ impl VSpaceManager {
                     // 缓存也为空，分配全新的
                     let slot = slots.alloc(provider)?;
                     if let Err(e) = provider.alloc_pagetable(slot) {
-                        let _ = slots.free(slot);
+                        if e != Error::AlreadyExists && e != Error::SlotNotEmpty {
+                            let _ = slots.free(slot);
+                        } else {
+                            crate::warn!(
+                                "vspace.ensure_path: alloc_pagetable hit occupied slot {:?}, skip slot recycle: {:?}",
+                                slot,
+                                e
+                            );
+                        }
                         return Err(e);
                     }
                     let pt = PageTable::from(slot);
 
                     if let Err(e) = pivot_root.map_table(pt, vaddr, level) {
-                        let _ = provider.free_pagetable(slot);
-                        let _ = slots.free(slot);
+                        let released = match provider.free_pagetable(slot) {
+                            Ok(()) => true,
+                            Err(free_err)
+                                if free_err == Error::InvalidCapability
+                                    || free_err == Error::InvalidSlot =>
+                            {
+                                true
+                            }
+                            Err(free_err) => {
+                                crate::warn!(
+                                    "vspace.ensure_path: rollback free_pagetable failed for {:?}, skip slot recycle: {:?}",
+                                    slot,
+                                    free_err
+                                );
+                                false
+                            }
+                        };
+                        if released {
+                            let _ = slots.free(slot);
+                        }
                         return Err(e);
                     }
                     slot

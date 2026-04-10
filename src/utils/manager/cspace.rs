@@ -209,7 +209,8 @@ impl CSpaceManager {
             return None;
         }
 
-        let mut word_idx = self.find_non_empty_word(self.free_hint_word.min(self.free_words - 1))?;
+        let mut word_idx =
+            self.find_non_empty_word(self.free_hint_word.min(self.free_words - 1))?;
         for _ in 0..self.free_words {
             let word = self.free_bitmap[word_idx];
             if word != 0 {
