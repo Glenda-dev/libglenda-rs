@@ -33,9 +33,9 @@ use crate::sys::sys_invoke;
 use core::fmt::{Debug, Display};
 use num_enum::FromPrimitive;
 
-const SLOT_SIZE: usize = 48; // 每个 Slot 占用 48 字节
+const SLOT_SIZE: usize = 64; // 每个 Slot 占用 64 字节（与内核 CNode 布局保持一致）
 pub const CNODE_BITS: usize = 8;
-pub const CNODE_SIZE: usize = SLOT_SIZE * (1 << CNODE_BITS) + 8;
+pub const CNODE_SIZE: usize = SLOT_SIZE * (1 << CNODE_BITS);
 pub const CNODE_PAGES: usize = (CNODE_SIZE + PGSIZE - 1) / PGSIZE;
 pub const CNODE_SLOTS: usize = 1 << CNODE_BITS;
 pub const CNODE_MASK: usize = CNODE_SLOTS - 1;
