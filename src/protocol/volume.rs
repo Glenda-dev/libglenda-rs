@@ -10,6 +10,7 @@ pub const REGISTER_SHM: usize = 0x12;
 pub const PROBE_DEVICE: usize = 0x20;
 pub const MOUNT_PARTITION: usize = 0x21;
 pub const LIST_PARTITIONS: usize = 0x22;
+pub const REPORT_STATE: usize = 0x23;
 
 #[derive(Debug, Clone, Default)]
 #[repr(C)]

@@ -2,12 +2,14 @@ use crate::arch::mem::PGSIZE;
 use crate::cap::{CapPtr, Endpoint, Frame};
 use crate::client::resource::ResourceClient;
 use crate::error::Error;
+use crate::interface::volume::VolumeService;
 use crate::interface::{CSpaceService, VSpaceService};
 use crate::io::uring::IoUringBuffer;
 use crate::io::uring::{IoUringClient, RingParams};
 use crate::ipc::{Badge, MsgFlags, MsgTag, UTCB};
 use crate::mem::Perms;
 use crate::mem::shm::{SharedMemory, ShmParams};
+use crate::protocol::init::ServiceState;
 use crate::protocol::volume;
 use crate::utils::align::align_up;
 use alloc::sync::Arc;
@@ -376,5 +378,67 @@ impl VolumeClient {
 
     pub fn block_size(&self) -> u32 {
         self.block_size
+    }
+}
+
+impl VolumeService for VolumeClient {
+    fn get_device(&mut self, pid: Badge, recv: CapPtr) -> Result<Endpoint, Error> {
+        VolumeClient::get_device(self, pid, recv)
+    }
+
+    fn probe_device(&mut self, _pid: Badge, device_name: &str) -> Result<(), Error> {
+        let mut utcb = unsafe { UTCB::new() };
+        utcb.clear();
+        unsafe { utcb.write_str(device_name)? };
+        let tag =
+            MsgTag::new(crate::protocol::VOLUME_PROTO, volume::PROBE_DEVICE, MsgFlags::HAS_BUFFER);
+        utcb.set_msg_tag(tag);
+        self.endpoint.call(&mut utcb)
+    }
+
+    fn report_state(
+        &mut self,
+        _pid: Badge,
+        state: ServiceState,
+        endpoint: Option<CapPtr>,
+    ) -> Result<(), Error> {
+        let mut utcb = unsafe { UTCB::new() };
+        utcb.clear();
+        utcb.set_mr(0, state as usize);
+
+        let mut flags = MsgFlags::NONE;
+        if let Some(ep) = endpoint {
+            utcb.set_cap_transfer(ep);
+            flags |= MsgFlags::HAS_CAP;
+        }
+
+        let tag = MsgTag::new(crate::protocol::VOLUME_PROTO, volume::REPORT_STATE, flags);
+        utcb.set_msg_tag(tag);
+        self.endpoint.call(&mut utcb)
+    }
+
+    fn mount_partition(
+        &mut self,
+        _pid: Badge,
+        partition_name: &str,
+        recv: CapPtr,
+    ) -> Result<Endpoint, Error> {
+        let mut utcb = unsafe { UTCB::new() };
+        utcb.clear();
+        unsafe { utcb.write_str(partition_name)? };
+        let tag = MsgTag::new(
+            crate::protocol::VOLUME_PROTO,
+            volume::MOUNT_PARTITION,
+            MsgFlags::HAS_BUFFER,
+        );
+        utcb.set_recv_window(recv);
+        utcb.set_msg_tag(tag);
+        self.endpoint.call(&mut utcb)?;
+
+        if !utcb.get_msg_tag().flags().contains(MsgFlags::HAS_CAP) {
+            return Err(Error::Generic);
+        }
+
+        Ok(Endpoint::from(recv))
     }
 }
