@@ -6,6 +6,7 @@ pub const REPORT: usize = 0x04;
 pub const UPDATE: usize = 0x05;
 pub const QUERY: usize = 0x06;
 pub const GET_DESC: usize = 0x07;
+pub const REPORT_STATE: usize = 0x08;
 
 pub const REGISTER_LOGIC: usize = 0x10;
 pub const ALLOC_LOGIC: usize = 0x11;

@@ -2,6 +2,7 @@ use crate::cap::{CapPtr, Endpoint, Frame, IrqHandler};
 use crate::error::Error;
 use crate::ipc::Badge;
 use crate::protocol::device::{DeviceDesc, DeviceDescNode, DeviceQuery, LogicDeviceDesc};
+use crate::protocol::init::ServiceState;
 use alloc::string::String;
 use alloc::vec::Vec;
 
@@ -16,6 +17,7 @@ pub trait DeviceService {
     ) -> Result<(Frame, usize, usize), Error>;
     fn get_irq(&mut self, badge: Badge, id: usize, recv: CapPtr) -> Result<IrqHandler, Error>;
     fn report(&mut self, badge: Badge, desc: Vec<DeviceDescNode>) -> Result<(), Error>;
+    fn report_state(&mut self, badge: Badge, status: ServiceState) -> Result<(), Error>;
     fn update(&mut self, badge: Badge, compatible: Vec<alloc::string::String>)
     -> Result<(), Error>;
 
