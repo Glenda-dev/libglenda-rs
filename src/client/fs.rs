@@ -1,4 +1,4 @@
-use crate::cap::Endpoint;
+use crate::cap::{Endpoint, Frame};
 use crate::error::Error;
 use crate::interface::{
     FileHandleService, FileSystemService, PipeService, VirtualFileSystemService,
@@ -10,6 +10,7 @@ use crate::protocol::fs::{OpenFlags, Stat};
 use crate::set_mrs;
 use alloc::vec::Vec;
 
+#[derive(Debug, Clone, Copy)]
 pub struct FsClient {
     endpoint: Endpoint,
 }
@@ -17,6 +18,10 @@ pub struct FsClient {
 impl FsClient {
     pub const fn new(endpoint: Endpoint) -> Self {
         Self { endpoint }
+    }
+
+    pub const fn endpoint(&self) -> Endpoint {
+        self.endpoint
     }
 }
 
@@ -207,6 +212,40 @@ impl FileHandleService for FsClient {
         let utcb = unsafe { UTCB::new() };
         utcb.clear();
         utcb.set_mr(1, size as usize);
+        utcb.set_msg_tag(tag);
+        self.endpoint.call(utcb)?;
+        Ok(())
+    }
+
+    fn setup_iouring(
+        &mut self,
+        _pid: Badge,
+        client_vaddr: usize,
+        size: usize,
+        frame: Option<Frame>,
+    ) -> Result<(), Error> {
+        let mut flags = MsgFlags::NONE;
+        if frame.is_some() {
+            flags |= MsgFlags::HAS_CAP;
+        }
+        let tag = MsgTag::new(FS_PROTO, fs::SETUP_IOURING, flags);
+        let utcb = unsafe { UTCB::new() };
+        utcb.clear();
+        // 兼容不同服务端实现：
+        // MR0: size(旧语义), MR1: client_vaddr, MR2: size(新语义)
+        set_mrs!(utcb, size, client_vaddr, size);
+        if let Some(f) = frame {
+            utcb.set_cap_transfer(f.cap());
+        }
+        utcb.set_msg_tag(tag);
+        self.endpoint.call(utcb)?;
+        Ok(())
+    }
+
+    fn process_iouring(&mut self) -> Result<(), Error> {
+        let tag = MsgTag::new(FS_PROTO, fs::PROCESS_IOURING, MsgFlags::NONE);
+        let utcb = unsafe { UTCB::new() };
+        utcb.clear();
         utcb.set_msg_tag(tag);
         self.endpoint.call(utcb)?;
         Ok(())
