@@ -34,15 +34,9 @@ pub fn exit(code: usize) -> ! {
     utcb.clear();
     set_mrs!(utcb, code);
     utcb.set_msg_tag(tag);
-    if MONITOR_CAP.send(&mut utcb).is_err() {
+    if MONITOR_CAP.call(&mut utcb).is_err() {
         crate::println!("Failed to exit with code {}", code);
     }
-
-    // Do not invoke TCB::YIELD here.
-    // A yield syscall can leave a transient cloned TCB capability alive across
-    // context switch, which interferes with monitor-side teardown refcount checks.
-    // Spinning in user mode is sufficient: timer preemption will hand control
-    // back to the monitor to perform process cleanup.
     loop {
         core::hint::spin_loop();
     }
