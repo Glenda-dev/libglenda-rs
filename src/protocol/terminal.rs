@@ -83,6 +83,9 @@ pub const VTS_LIST_SEATS: usize = 0x24;
 pub const VTS_SWITCH_VT: usize = 0x25;
 pub const VTS_BIND_SEAT: usize = 0x26;
 pub const VTS_SET_EXCLUSIVE: usize = 0x27;
+pub const VTS_OPEN_VT: usize = 0x28;
+pub const VTS_GET_PTY_LOCK: usize = 0x29;
+pub const VTS_SET_PTY_LOCK: usize = 0x2A;
 
 // Terminal Service Methods (Individual VT session)
 pub const TERM_GET_URING: usize = 0x10;
@@ -90,7 +93,10 @@ pub const TERM_SET_MODE: usize = 0x11;
 pub const TERM_GET_WINSIZE: usize = 0x12;
 pub const TERM_SET_WINSIZE: usize = 0x13;
 pub const TERM_SET_DISPLAY: usize = 0x14;
-pub const TERM_IOCTL: usize = 0x15;
+pub const TERM_GET_TERMIOS: usize = 0x16;
+pub const TERM_SET_TERMIOS: usize = 0x17;
+pub const TERM_GET_PGRP: usize = 0x18;
+pub const TERM_SET_PGRP: usize = 0x19;
 
 // UART IOCTL split
 pub const TERM_SET_BAUD: usize = 0x30;

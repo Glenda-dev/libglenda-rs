@@ -6,6 +6,8 @@ pub const MKDIR: usize = 0x2; // args: [mode], str: path -> res: Status
 pub const UNLINK: usize = 0x3; // args: [], str: path -> res: Status
 pub const STAT_PATH: usize = 0x4; // args: [], str: path -> buf: Stat
 pub const RENAME: usize = 0x5; // args: [], str: old|new -> res: Status
+pub const LSTAT_PATH: usize = 0x6; // args: [], str: path -> buf: Stat (no follow final symlink)
+pub const READLINK_PATH: usize = 0x7; // args: [], str: path -> str: symlink target
 
 // --- File Handle Operations (Synchronous) ---
 pub const CLOSE: usize = 0x10; // args: [] -> res: Status
@@ -58,6 +60,7 @@ bitflags! {
         const S_IFREG = 0o100000;
         const S_IFBLK = 0o060000;
         const S_IFCHR = 0o020000;
+        const S_IFLNK = 0o120000;
     }
 }
 

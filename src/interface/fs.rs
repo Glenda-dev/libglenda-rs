@@ -2,6 +2,7 @@ use crate::cap::{Endpoint, Frame};
 use crate::error::Error;
 use crate::ipc::Badge;
 use crate::protocol::fs::{DEntry, OpenFlags, Stat};
+use alloc::string::String;
 use alloc::vec::Vec;
 
 /// Filesystem Service Interface
@@ -22,6 +23,16 @@ pub trait FileSystemService: Send {
 
     /// Get file status by path.
     fn stat_path(&mut self, pid: Badge, path: &str) -> Result<Stat, Error>;
+
+    /// Get file status by path without following the final symlink.
+    fn lstat_path(&mut self, _pid: Badge, _path: &str) -> Result<Stat, Error> {
+        Err(Error::NotSupported)
+    }
+
+    /// Read symbolic link target by path.
+    fn readlink_path(&mut self, _pid: Badge, _path: &str) -> Result<String, Error> {
+        Err(Error::NotSupported)
+    }
 }
 
 /// File Handle Service Interface

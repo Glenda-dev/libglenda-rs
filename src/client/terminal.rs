@@ -131,17 +131,6 @@ impl TerminalService for TerminalClient {
         utcb.set_msg_tag(tag);
         self.endpoint.call(&mut utcb)
     }
-
-    fn ioctl(&mut self, _badge: Badge, request: usize, arg: usize) -> Result<usize, Error> {
-        let mut utcb = unsafe { UTCB::new() };
-        let tag =
-            MsgTag::new(protocol::TERMINAL_PROTO, protocol::terminal::TERM_IOCTL, MsgFlags::NONE);
-        utcb.set_mr(0, request);
-        utcb.set_mr(1, arg);
-        utcb.set_msg_tag(tag);
-        self.endpoint.call(&mut utcb)?;
-        Ok(utcb.get_mr(0))
-    }
 }
 
 impl core::fmt::Write for TerminalClient {
@@ -186,7 +175,9 @@ impl VirtualTerminalService for VirtualTerminalClient {
             MsgFlags::HAS_BUFFER,
         );
         utcb.set_recv_window(recv);
-        unsafe { utcb.write_str(name)?; }
+        unsafe {
+            utcb.write_str(name)?;
+        }
         utcb.set_msg_tag(tag);
         self.endpoint.call(&mut utcb)?;
 
@@ -246,6 +237,43 @@ impl VirtualTerminalService for VirtualTerminalClient {
         );
         utcb.set_mr(0, seat_id);
         utcb.set_mr(1, vt_id);
+        utcb.set_msg_tag(tag);
+        self.endpoint.call(&mut utcb)
+    }
+
+    fn open_vt(&mut self, _badge: Badge, vt_id: usize, recv: CapPtr) -> Result<Endpoint, Error> {
+        let mut utcb = unsafe { UTCB::new() };
+        let tag =
+            MsgTag::new(protocol::TERMINAL_PROTO, protocol::terminal::VTS_OPEN_VT, MsgFlags::NONE);
+        utcb.set_recv_window(recv);
+        utcb.set_mr(0, vt_id);
+        utcb.set_msg_tag(tag);
+        self.endpoint.call(&mut utcb)?;
+        Ok(Endpoint::from(recv))
+    }
+
+    fn get_pty_lock(&mut self, _badge: Badge, vt_id: usize) -> Result<bool, Error> {
+        let mut utcb = unsafe { UTCB::new() };
+        let tag = MsgTag::new(
+            protocol::TERMINAL_PROTO,
+            protocol::terminal::VTS_GET_PTY_LOCK,
+            MsgFlags::NONE,
+        );
+        utcb.set_mr(0, vt_id);
+        utcb.set_msg_tag(tag);
+        self.endpoint.call(&mut utcb)?;
+        Ok(utcb.get_mr(0) != 0)
+    }
+
+    fn set_pty_lock(&mut self, _badge: Badge, vt_id: usize, locked: bool) -> Result<(), Error> {
+        let mut utcb = unsafe { UTCB::new() };
+        let tag = MsgTag::new(
+            protocol::TERMINAL_PROTO,
+            protocol::terminal::VTS_SET_PTY_LOCK,
+            MsgFlags::NONE,
+        );
+        utcb.set_mr(0, vt_id);
+        utcb.set_mr(1, usize::from(locked));
         utcb.set_msg_tag(tag);
         self.endpoint.call(&mut utcb)
     }

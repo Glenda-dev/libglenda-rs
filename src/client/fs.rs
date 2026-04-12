@@ -8,6 +8,7 @@ use crate::protocol::FS_PROTO;
 use crate::protocol::fs;
 use crate::protocol::fs::{OpenFlags, Stat};
 use crate::set_mrs;
+use alloc::string::String;
 use alloc::vec::Vec;
 
 #[derive(Debug, Clone, Copy)]
@@ -88,6 +89,26 @@ impl FileSystemService for FsClient {
         utcb.set_msg_tag(tag);
         self.endpoint.call(utcb)?;
         unsafe { utcb.read_obj::<Stat>().map_err(|_| Error::Unknown) }
+    }
+
+    fn lstat_path(&mut self, _pid: Badge, path: &str) -> Result<Stat, Error> {
+        let tag = MsgTag::new(FS_PROTO, fs::LSTAT_PATH, MsgFlags::HAS_BUFFER);
+        let utcb = unsafe { UTCB::new() };
+        utcb.clear();
+        unsafe { utcb.write_str(&path)? };
+        utcb.set_msg_tag(tag);
+        self.endpoint.call(utcb)?;
+        unsafe { utcb.read_obj::<Stat>().map_err(|_| Error::Unknown) }
+    }
+
+    fn readlink_path(&mut self, _pid: Badge, path: &str) -> Result<String, Error> {
+        let tag = MsgTag::new(FS_PROTO, fs::READLINK_PATH, MsgFlags::HAS_BUFFER);
+        let utcb = unsafe { UTCB::new() };
+        utcb.clear();
+        unsafe { utcb.write_str(&path)? };
+        utcb.set_msg_tag(tag);
+        self.endpoint.call(utcb)?;
+        unsafe { utcb.read_str().map_err(|_| Error::Unknown) }
     }
 }
 

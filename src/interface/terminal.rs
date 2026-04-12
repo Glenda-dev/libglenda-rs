@@ -35,6 +35,20 @@ pub trait VirtualTerminalService {
     /// This is used for multiseat configuration where multiple seats can have their own sets of VTs.
     fn bind_seat(&mut self, badge: Badge, seat_id: usize, vt_id: usize) -> Result<(), Error>;
 
+    /// Open an existing VT endpoint by VT id.
+    fn open_vt(
+        &mut self,
+        badge: Badge,
+        vt_id: usize,
+        recv: crate::cap::CapPtr,
+    ) -> Result<Endpoint, Error>;
+
+    /// Query PTY lock state for a VT id. true means locked.
+    fn get_pty_lock(&mut self, badge: Badge, vt_id: usize) -> Result<bool, Error>;
+
+    /// Set PTY lock state for a VT id.
+    fn set_pty_lock(&mut self, badge: Badge, vt_id: usize, locked: bool) -> Result<(), Error>;
+
     /// Add a hardware peripheral (input/output) to a specific seat.
     fn assign_device_to_seat(
         &mut self,
@@ -76,7 +90,4 @@ pub trait TerminalService {
 
     /// Set new window size.
     fn set_winsize(&mut self, badge: Badge, size: WindowSize) -> Result<(), Error>;
-
-    /// Low-level IOCTL support for terminal-specific extensions.
-    fn ioctl(&mut self, badge: Badge, request: usize, arg: usize) -> Result<usize, Error>;
 }
