@@ -56,4 +56,11 @@ impl Kernel {
         self.0.invoke(kernelmethod::GET_FREQ, &mut utcb)?;
         Ok(utcb.get_mr(0))
     }
+
+    pub fn system_reset(&self, reset_type: usize) -> Result<(), Error> {
+        let mut utcb = unsafe { UTCB::new() };
+        utcb.clear();
+        utcb.set_mr(0, reset_type);
+        self.0.invoke(kernelmethod::SYSTEM_RESET, &mut utcb)
+    }
 }

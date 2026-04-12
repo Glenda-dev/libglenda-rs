@@ -1,4 +1,4 @@
-use crate::cap::{Endpoint, Frame};
+use crate::cap::{CapPtr, Endpoint, Frame};
 use crate::error::Error;
 use crate::ipc::Badge;
 use crate::protocol::fs::{DEntry, OpenFlags, Stat};
@@ -9,8 +9,14 @@ use alloc::vec::Vec;
 pub trait FileSystemService: Send {
     /// Open a file or directory.
     /// Returns a capability pointer (handle) to the open file.
-    fn open(&mut self, pid: Badge, path: &str, flags: OpenFlags, mode: u32)
-    -> Result<usize, Error>;
+    fn open(
+        &mut self,
+        pid: Badge,
+        path: &str,
+        flags: OpenFlags,
+        mode: u32,
+        recv_slot: CapPtr,
+    ) -> Result<usize, Error>;
 
     /// Create a directory.
     fn mkdir(&mut self, pid: Badge, path: &str, mode: u32) -> Result<(), Error>;

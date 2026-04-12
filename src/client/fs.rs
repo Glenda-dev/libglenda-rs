@@ -1,4 +1,4 @@
-use crate::cap::{Endpoint, Frame};
+use crate::cap::{CapPtr, Endpoint, Frame};
 use crate::error::Error;
 use crate::interface::{
     FileHandleService, FileSystemService, PipeService, VirtualFileSystemService,
@@ -39,12 +39,14 @@ impl FileSystemService for FsClient {
         path: &str,
         flags: OpenFlags,
         mode: u32,
+        recv_slot: CapPtr,
     ) -> Result<usize, Error> {
         let tag = MsgTag::new(FS_PROTO, fs::OPEN, MsgFlags::HAS_BUFFER);
         let utcb = unsafe { UTCB::new() };
         utcb.clear();
         unsafe { utcb.write_str(&path)? };
         set_mrs!(utcb, flags.bits(), mode);
+        utcb.set_recv_window(recv_slot);
         utcb.set_msg_tag(tag);
         self.endpoint.call(utcb)?;
         Ok(utcb.get_mr(0))
@@ -165,16 +167,7 @@ impl FileHandleService for FsClient {
         utcb.set_msg_tag(tag);
         self.endpoint.call(utcb)?;
 
-        // Return valid data length.
-        // In READ_SYNC, the kernel/service writes data to MRs or IPC Buffer.
-        // If data is in MRs (registers), we need to extract it.
-        // If data is in UTCB buffer, we copy it.
-        // Assuming simple buffer copy for now.
-        let val = utcb.get_mr(0); // If protocol returns length in MR0
-        // But READ_SYNC protocol says: args: [size, offset] -> bytes: data
-        // Implementation in Nexus: file.handle.read -> returns bytes
-        // We need to clarify where the bytes go.
-        // Usually IPC copies to UTCB.
+        let val = utcb.get_mr(0);
 
         let len = val;
         if len > buf.len() {
@@ -272,9 +265,7 @@ impl FileHandleService for FsClient {
         let tag = MsgTag::new(FS_PROTO, fs::SETUP_IOURING, flags);
         let utcb = unsafe { UTCB::new() };
         utcb.clear();
-        // 兼容不同服务端实现：
-        // MR0: size(旧语义), MR1: client_vaddr, MR2: size(新语义)
-        set_mrs!(utcb, size, client_vaddr, size);
+        set_mrs!(utcb, size, client_vaddr);
         if let Some(f) = frame {
             utcb.set_cap_transfer(f.cap());
         }
