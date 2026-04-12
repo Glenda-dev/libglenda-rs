@@ -186,9 +186,7 @@ impl VirtualTerminalService for VirtualTerminalClient {
             MsgFlags::HAS_BUFFER,
         );
         utcb.set_recv_window(recv);
-        unsafe {
-            utcb.write_postcard(&name)?;
-        }
+        unsafe { utcb.write_str(name)?; }
         utcb.set_msg_tag(tag);
         self.endpoint.call(&mut utcb)?;
 

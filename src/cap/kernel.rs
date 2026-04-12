@@ -56,11 +56,4 @@ impl Kernel {
         self.0.invoke(kernelmethod::GET_FREQ, &mut utcb)?;
         Ok(utcb.get_mr(0))
     }
-
-    pub fn set_console_endpoint(&self, ep_cptr: CapPtr) -> Result<(), Error> {
-        let mut utcb = unsafe { UTCB::new() };
-        utcb.clear();
-        utcb.set_mr(0, ep_cptr.bits());
-        self.0.invoke(kernelmethod::SET_CONSOLE_ENDPOINT, &mut utcb)
-    }
 }

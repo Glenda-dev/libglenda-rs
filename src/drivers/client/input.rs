@@ -169,22 +169,24 @@ impl InputDriver for InputClient {
     fn poll_event(&mut self) -> Option<InputEvent> {
         if let Some(ref ring) = self.ring {
             if let Some(cqe) = ring.pop_completion() {
-                if cqe.res >= 0 {
-                    // Assuming user_data or some other mechanism links to the event
-                    // For now, let's look at the fallback if it's not a read op.
+                let event_size = core::mem::size_of::<InputEvent>();
+                if cqe.res >= event_size as i32
+                    && let Some(shm) = self.shm.as_ref()
+                {
+                    let mut offset = cqe.user_data;
+                    if offset + event_size > shm.size() {
+                        offset = 0;
+                    }
+                    if offset + event_size <= shm.size() {
+                        let ptr = (shm.vaddr() + offset) as *const InputEvent;
+                        let event = unsafe { core::ptr::read_unaligned(ptr) };
+                        return Some(event);
+                    }
                 }
             }
-            None
-        } else {
-            let mut utcb = unsafe { UTCB::new() };
-            utcb.clear();
-            let tag = MsgTag::new(INPUT_PROTO, input::READ_EVENT, MsgFlags::NONE);
-            utcb.set_msg_tag(tag);
-            if self.endpoint.call(&mut utcb).is_ok() {
-                unsafe { utcb.read_obj::<InputEvent>().ok() }
-            } else {
-                None
-            }
+            return None;
         }
+
+        None
     }
 }
