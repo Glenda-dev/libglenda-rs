@@ -85,6 +85,16 @@ pub trait VirtualFileSystemService: FileSystemService {
 
     /// Unmount a filesystem from the specified path.
     fn unmount(&mut self, pid: Badge, path: &str) -> Result<(), Error>;
+
+    /// Create a new filesystem view cloned from caller's current view and set root path.
+    fn create_view(&mut self, _pid: Badge, _root: &str) -> Result<usize, Error> {
+        Err(Error::NotSupported)
+    }
+
+    /// Bind caller process to an existing view.
+    fn set_view(&mut self, _pid: Badge, _view_id: usize) -> Result<(), Error> {
+        Err(Error::NotSupported)
+    }
 }
 
 /// PipeService provides creating anonymous pipes.

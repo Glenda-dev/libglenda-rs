@@ -133,6 +133,26 @@ impl VirtualFileSystemService for FsClient {
         self.endpoint.call(utcb)?;
         Ok(())
     }
+
+    fn create_view(&mut self, _pid: Badge, root: &str) -> Result<usize, Error> {
+        let tag = MsgTag::new(FS_PROTO, fs::CREATE_VIEW, MsgFlags::HAS_BUFFER);
+        let utcb = unsafe { UTCB::new() };
+        utcb.clear();
+        unsafe { utcb.write_str(root)? };
+        utcb.set_msg_tag(tag);
+        self.endpoint.call(utcb)?;
+        Ok(utcb.get_mr(0))
+    }
+
+    fn set_view(&mut self, _pid: Badge, view_id: usize) -> Result<(), Error> {
+        let tag = MsgTag::new(FS_PROTO, fs::SET_VIEW, MsgFlags::NONE);
+        let utcb = unsafe { UTCB::new() };
+        utcb.clear();
+        set_mrs!(utcb, view_id);
+        utcb.set_msg_tag(tag);
+        self.endpoint.call(utcb)?;
+        Ok(())
+    }
 }
 
 impl FileHandleService for FsClient {

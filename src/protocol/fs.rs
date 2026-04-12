@@ -25,6 +25,8 @@ pub const LOOP_SETUP: usize = 0x30; // args: [], cap: FileHandle -> res: Endpoin
 
 pub const MOUNT: usize = 0x40; // args: [], str: path, cap: FS_ENDPOINT
 pub const UNMOUNT: usize = 0x41; // args: [], str: path
+pub const CREATE_VIEW: usize = 0x42; // args: [], str: root -> res: view_id
+pub const SET_VIEW: usize = 0x43; // args: [view_id] -> res: Status
 
 // --- Request types for IoUring Entries ---
 #[repr(u8)]
