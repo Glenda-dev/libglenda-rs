@@ -281,20 +281,40 @@ impl VirtualTerminalService for VirtualTerminalClient {
     fn assign_device_to_seat(
         &mut self,
         _badge: Badge,
-        _seat_id: usize,
-        _device_name: &str,
+        seat_id: usize,
+        device_name: &str,
     ) -> Result<(), Error> {
-        // Implementation for assigning devices
-        Ok(())
+        let mut utcb = unsafe { UTCB::new() };
+        let tag = MsgTag::new(
+            protocol::TERMINAL_PROTO,
+            protocol::terminal::SEAT_BIND_DEVICE,
+            MsgFlags::HAS_BUFFER,
+        );
+        utcb.set_mr(0, seat_id);
+        unsafe {
+            utcb.write_str(device_name)?;
+        }
+        utcb.set_msg_tag(tag);
+        self.endpoint.call(&mut utcb)
     }
 
     fn revoke_device_from_seat(
         &mut self,
         _badge: Badge,
-        _seat_id: usize,
-        _device_name: &str,
+        seat_id: usize,
+        device_name: &str,
     ) -> Result<(), Error> {
-        // Implementation for revoking devices
-        Ok(())
+        let mut utcb = unsafe { UTCB::new() };
+        let tag = MsgTag::new(
+            protocol::TERMINAL_PROTO,
+            protocol::terminal::SEAT_UNBIND_DEVICE,
+            MsgFlags::HAS_BUFFER,
+        );
+        utcb.set_mr(0, seat_id);
+        unsafe {
+            utcb.write_str(device_name)?;
+        }
+        utcb.set_msg_tag(tag);
+        self.endpoint.call(&mut utcb)
     }
 }

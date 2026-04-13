@@ -88,22 +88,25 @@ pub const VTS_OPEN_VT: usize = 0x28;
 pub const VTS_GET_PTY_LOCK: usize = 0x29;
 pub const VTS_SET_PTY_LOCK: usize = 0x2A;
 
+pub const SEAT_BIND_DEVICE: usize = 0x30;
+pub const SEAT_UNBIND_DEVICE: usize = 0x31;
+
 // Terminal Service Methods (Individual VT session)
-pub const TERM_GET_URING: usize = 0x10;
-pub const TERM_SET_MODE: usize = 0x11;
-pub const TERM_GET_WINSIZE: usize = 0x12;
-pub const TERM_SET_WINSIZE: usize = 0x13;
-pub const TERM_SET_DISPLAY: usize = 0x14;
+pub const TERM_GET_URING: usize = 0x11;
+pub const TERM_SET_MODE: usize = 0x12;
+pub const TERM_GET_WINSIZE: usize = 0x13;
+pub const TERM_SET_WINSIZE: usize = 0x14;
+pub const TERM_SET_DISPLAY: usize = 0x15;
 pub const TERM_GET_TERMIOS: usize = 0x16;
 pub const TERM_SET_TERMIOS: usize = 0x17;
 pub const TERM_GET_PGRP: usize = 0x18;
 pub const TERM_SET_PGRP: usize = 0x19;
 
 // UART IOCTL split
-pub const TERM_SET_BAUD: usize = 0x30;
-pub const TERM_SET_LCR: usize = 0x31;
-pub const TERM_SET_FCR: usize = 0x32;
-pub const TERM_GET_BAUD: usize = 0x33;
+pub const TERM_SET_BAUD: usize = 0x31;
+pub const TERM_SET_LCR: usize = 0x32;
+pub const TERM_SET_FCR: usize = 0x33;
+pub const TERM_GET_BAUD: usize = 0x34;
 
 /// Character stream constants
 pub const CTRL_C: u8 = 0x03;
