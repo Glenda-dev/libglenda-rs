@@ -74,6 +74,7 @@ pub const TERM_PUT_STR: usize = 0x01;
 pub const TERM_GET_STR: usize = 0x02;
 pub const TERM_GET_CHAR: usize = 0x03;
 pub const TERM_PUT_CHAR: usize = 0x04;
+pub const TERM_POLL_READ: usize = 0x05;
 
 // VTS (Virtual Terminal Service) Methods (Manager)
 pub const VTS_ALLOC_VT: usize = 0x21;
