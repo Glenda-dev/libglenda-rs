@@ -79,14 +79,7 @@ impl VSpaceManager {
             let released = match provider.free_pagetable(cap) {
                 Ok(()) => true,
                 Err(e) if e == Error::InvalidCapability || e == Error::InvalidSlot => true,
-                Err(e) => {
-                    crate::warn!(
-                        "vspace.drop: free_pagetable failed for {:?}, skip slot recycle: {:?}",
-                        cap,
-                        e
-                    );
-                    false
-                }
+                Err(e) => false,
             };
             if released {
                 let _ = slots.free(cap);

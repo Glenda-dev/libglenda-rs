@@ -1,10 +1,15 @@
-use crate::cap::{CapPtr, Endpoint, Frame, IrqHandler};
+use crate::arch::mem::PGSIZE;
+use crate::cap::{CapPtr, CapType, Endpoint, Frame, IrqHandler};
+use crate::client::ResourceClient;
 use crate::error::Error;
 use crate::interface::device::DeviceService;
+use crate::interface::{CSpaceService, ResourceService, VSpaceService};
 use crate::ipc::{Badge, MsgFlags, MsgTag, UTCB};
+use crate::mem::Perms;
 use crate::protocol;
 use crate::protocol::device::DeviceDescNode;
 use crate::protocol::init::ServiceState;
+use crate::utils::manager::{CSpaceManager, VSpaceManager};
 use alloc::string::String;
 use alloc::vec::Vec;
 
@@ -15,6 +20,66 @@ pub struct DeviceClient {
 impl DeviceClient {
     pub const fn new(endpoint: Endpoint) -> Self {
         Self { endpoint }
+    }
+
+    pub fn report_frame_cap(
+        &mut self,
+        _badge: Badge,
+        frame: CapPtr,
+        byte_len: usize,
+    ) -> Result<(), Error> {
+        let mut utcb = unsafe { UTCB::new() };
+        utcb.clear();
+        utcb.set_mr(0, byte_len);
+        utcb.set_cap_transfer(frame);
+        let tag = MsgTag::new(
+            protocol::DEVICE_PROTO,
+            protocol::device::REPORT_FRAME,
+            MsgFlags::HAS_CAP,
+        );
+        utcb.set_msg_tag(tag);
+        self.endpoint.call(&mut utcb)
+    }
+
+    pub fn report_via_frame(
+        &mut self,
+        _badge: Badge,
+        desc: Vec<DeviceDescNode>,
+        res_client: &mut ResourceClient,
+        vspace_mgr: &mut VSpaceManager,
+        cspace_mgr: &mut CSpaceManager,
+        map_vaddr: usize,
+    ) -> Result<(), Error> {
+        let bytes = postcard::to_allocvec(&desc).map_err(|_| Error::InvalidType)?;
+        let byte_len = bytes.len();
+        if byte_len == 0 {
+            return self.report(Badge::null(), desc);
+        }
+
+        let pages = (byte_len + PGSIZE - 1) / PGSIZE;
+        let frame_slot = cspace_mgr.alloc(res_client)?;
+        res_client.alloc(Badge::null(), CapType::Frame, pages, frame_slot)?;
+
+        vspace_mgr.map_frame(
+            Frame::from(frame_slot),
+            map_vaddr,
+            Perms::READ | Perms::WRITE,
+            pages,
+            res_client,
+            cspace_mgr,
+        )?;
+
+        unsafe {
+            core::ptr::copy_nonoverlapping(bytes.as_ptr(), map_vaddr as *mut u8, byte_len);
+        }
+
+        let call_res = self.report_frame(Badge::null(), frame_slot, byte_len);
+
+        let _ = vspace_mgr.unmap(map_vaddr, pages);
+        let _ = res_client.free(Badge::null(), frame_slot);
+        cspace_mgr.free(frame_slot);
+
+        call_res
     }
 }
 
@@ -53,6 +118,15 @@ impl DeviceService for DeviceClient {
         utcb.set_msg_tag(tag);
         self.endpoint.call(&mut utcb)?;
         Ok(IrqHandler::from(recv))
+    }
+
+    fn report_frame(
+        &mut self,
+        badge: Badge,
+        frame: CapPtr,
+        byte_len: usize,
+    ) -> Result<(), Error> {
+        self.report_frame_cap(badge, frame, byte_len)
     }
 
     fn report(&mut self, _badge: Badge, desc: Vec<DeviceDescNode>) -> Result<(), Error> {

@@ -7,6 +7,7 @@ pub const UPDATE: usize = 0x05;
 pub const QUERY: usize = 0x06;
 pub const GET_DESC: usize = 0x07;
 pub const REPORT_STATE: usize = 0x08;
+pub const REPORT_FRAME: usize = 0x09;
 
 pub const REGISTER_LOGIC: usize = 0x10;
 pub const ALLOC_LOGIC: usize = 0x11;
@@ -49,6 +50,16 @@ pub struct MMIORegion {
 pub struct DeviceDescNode {
     pub parent: usize,
     pub desc: DeviceDesc,
+    #[serde(default)]
+    pub meta: DeviceNodeMeta,
+}
+
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct DeviceNodeMeta {
+    pub bus: Option<String>,
+    pub unit_addr: Option<usize>,
+    pub tags: Vec<String>,
+    pub properties: Vec<(String, String)>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

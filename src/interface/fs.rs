@@ -87,9 +87,14 @@ pub trait FileHandleService {
 /// Virtual Filesystem Service Interface (for VFS/Nexus)
 pub trait VirtualFileSystemService: FileSystemService {
     /// Mount a filesystem at the specified path.
+    ///
+    /// Repeated mounts on the same path are layered in stack order.
+    /// The most recently mounted layer has the highest priority.
     fn mount(&mut self, pid: Badge, path: &str, target: Endpoint) -> Result<(), Error>;
 
     /// Unmount a filesystem from the specified path.
+    ///
+    /// If multiple layers exist on the same path, unmount removes only the top layer.
     fn unmount(&mut self, pid: Badge, path: &str) -> Result<(), Error>;
 
     /// Create a new filesystem view cloned from caller's current view and set root path.

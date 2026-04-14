@@ -23,8 +23,8 @@ pub const SETUP_IOURING: usize = 0x20; // args: [size], cap: Frame -> res: Statu
 pub const PROCESS_IOURING: usize = 0x21; // args: [] -> res: Status
 pub const LOOP_SETUP: usize = 0x30; // args: [], cap: FileHandle -> res: Endpoint (BlockDevice)
 
-pub const MOUNT: usize = 0x40; // args: [], str: path, cap: FS_ENDPOINT
-pub const UNMOUNT: usize = 0x41; // args: [], str: path
+pub const MOUNT: usize = 0x40; // args: [], str: path, cap: FS_ENDPOINT (push layered mount)
+pub const UNMOUNT: usize = 0x41; // args: [], str: path (pop top layered mount)
 pub const CREATE_VIEW: usize = 0x42; // args: [], str: root -> res: view_id
 pub const SET_VIEW: usize = 0x43; // args: [view_id] -> res: Status
 
