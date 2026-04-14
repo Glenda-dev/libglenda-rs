@@ -5,7 +5,8 @@ use crate::io::uring::IoUringGeneric;
 use crate::ipc::{Badge, MsgFlags, MsgTag, UTCB};
 use crate::protocol;
 use crate::protocol::terminal::{
-    SeatDesc, TerminalDisplayMode, TerminalUringConfig, VTDesc, WindowSize,
+    SeatDesc, TerminalDisplayMode, TerminalInputEvent, TerminalSessionMode, TerminalUringConfig,
+    VTDesc, WindowSize,
 };
 
 /// TerminalClient represents a connection to a specific virtual terminal.
@@ -24,6 +25,103 @@ impl TerminalClient {
 
     pub fn endpoint(&self) -> Endpoint {
         self.endpoint
+    }
+
+    pub fn set_session_mode(&mut self, mode: TerminalSessionMode) -> Result<(), Error> {
+        let mut utcb = unsafe { UTCB::new() };
+        utcb.clear();
+        utcb.set_msg_tag(MsgTag::new(
+            protocol::TERMINAL_PROTO,
+            protocol::terminal::TERM_STREAM_SET_MODE,
+            MsgFlags::NONE,
+        ));
+        utcb.set_mr(
+            0,
+            match mode {
+                TerminalSessionMode::ByteStream => 0,
+                TerminalSessionMode::Native => 1,
+            },
+        );
+        self.endpoint.call(&mut utcb)
+    }
+
+    pub fn stream_read(&mut self, buf: &mut [u8]) -> Result<usize, Error> {
+        let mut utcb = unsafe { UTCB::new() };
+        utcb.clear();
+        utcb.set_msg_tag(MsgTag::new(
+            protocol::TERMINAL_PROTO,
+            protocol::terminal::TERM_STREAM_READ,
+            MsgFlags::HAS_BUFFER,
+        ));
+        utcb.set_mr(0, buf.len());
+        self.endpoint.call(&mut utcb)?;
+        let read_len = core::cmp::min(utcb.get_mr(0), core::cmp::min(buf.len(), utcb.buffer().len()));
+        if read_len > 0 {
+            buf[..read_len].copy_from_slice(&utcb.buffer()[..read_len]);
+        }
+        Ok(read_len)
+    }
+
+    pub fn stream_write(&mut self, data: &[u8]) -> Result<usize, Error> {
+        let mut utcb = unsafe { UTCB::new() };
+        utcb.clear();
+        utcb.set_msg_tag(MsgTag::new(
+            protocol::TERMINAL_PROTO,
+            protocol::terminal::TERM_STREAM_WRITE,
+            MsgFlags::HAS_BUFFER,
+        ));
+        let copied = utcb.write(data);
+        self.endpoint.call(&mut utcb)?;
+        Ok(if utcb.get_mr(0) > 0 { core::cmp::min(utcb.get_mr(0), copied) } else { copied })
+    }
+
+    pub fn stream_poll_readable(&mut self) -> Result<bool, Error> {
+        let mut utcb = unsafe { UTCB::new() };
+        utcb.clear();
+        utcb.set_msg_tag(MsgTag::new(
+            protocol::TERMINAL_PROTO,
+            protocol::terminal::TERM_STREAM_POLL,
+            MsgFlags::NONE,
+        ));
+        self.endpoint.call(&mut utcb)?;
+        Ok(utcb.get_mr(0) != 0)
+    }
+
+    pub fn native_poll_event(&mut self) -> Result<bool, Error> {
+        let mut utcb = unsafe { UTCB::new() };
+        utcb.clear();
+        utcb.set_msg_tag(MsgTag::new(
+            protocol::TERMINAL_PROTO,
+            protocol::terminal::TERM_NATIVE_POLL_EVENT,
+            MsgFlags::NONE,
+        ));
+        self.endpoint.call(&mut utcb)?;
+        Ok(utcb.get_mr(0) != 0)
+    }
+
+    pub fn native_get_event(&mut self) -> Result<TerminalInputEvent, Error> {
+        let mut utcb = unsafe { UTCB::new() };
+        utcb.clear();
+        utcb.set_msg_tag(MsgTag::new(
+            protocol::TERMINAL_PROTO,
+            protocol::terminal::TERM_NATIVE_GET_EVENT,
+            MsgFlags::NONE,
+        ));
+        self.endpoint.call(&mut utcb)?;
+        unsafe { utcb.read_postcard() }
+    }
+
+    pub fn native_put_text(&mut self, text: &str) -> Result<usize, Error> {
+        let mut utcb = unsafe { UTCB::new() };
+        utcb.clear();
+        utcb.set_msg_tag(MsgTag::new(
+            protocol::TERMINAL_PROTO,
+            protocol::terminal::TERM_NATIVE_PUT_TEXT,
+            MsgFlags::HAS_BUFFER,
+        ));
+        let copied = utcb.write(text.as_bytes());
+        self.endpoint.call(&mut utcb)?;
+        Ok(if utcb.get_mr(0) > 0 { core::cmp::min(utcb.get_mr(0), copied) } else { copied })
     }
 
     /// Connect to the terminal service and initialize the high-performance channel.

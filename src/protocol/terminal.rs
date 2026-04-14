@@ -13,6 +13,15 @@ pub enum TerminalDisplayMode {
     Bridge,
 }
 
+/// Per-session I/O semantic mode.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum TerminalSessionMode {
+    /// Raw byte stream mode for POSIX/runtime adapters (APE tty).
+    ByteStream,
+    /// Native event/text mode for non-POSIX applications.
+    Native,
+}
+
 /// Window Size information (rows/cols for text, pixels for graphics)
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub struct WindowSize {
@@ -75,6 +84,17 @@ pub const TERM_GET_STR: usize = 0x02;
 pub const TERM_GET_CHAR: usize = 0x03;
 pub const TERM_PUT_CHAR: usize = 0x04;
 pub const TERM_POLL_READ: usize = 0x05;
+
+// New stream protocol (mechanism only)
+pub const TERM_STREAM_READ: usize = 0x40;
+pub const TERM_STREAM_WRITE: usize = 0x41;
+pub const TERM_STREAM_POLL: usize = 0x42;
+pub const TERM_STREAM_SET_MODE: usize = 0x43;
+
+// Native protocol (simplified API for native apps)
+pub const TERM_NATIVE_GET_EVENT: usize = 0x50;
+pub const TERM_NATIVE_POLL_EVENT: usize = 0x51;
+pub const TERM_NATIVE_PUT_TEXT: usize = 0x52;
 
 // VTS (Virtual Terminal Service) Methods (Manager)
 pub const VTS_ALLOC_VT: usize = 0x21;
