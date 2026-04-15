@@ -29,7 +29,7 @@ pub use vspace::VSpace;
 use crate::arch::mem::PGSIZE;
 use crate::error::Error;
 use crate::ipc::UTCB;
-use crate::sys::sys_invoke;
+use crate::sys::{sys_invoke, sys_invoke_ipc};
 use core::fmt::{Debug, Display};
 use num_enum::FromPrimitive;
 
@@ -69,6 +69,11 @@ impl CapPtr {
     #[inline(always)]
     pub fn invoke(&self, method: usize, utcb: &mut UTCB) -> Result<(), Error> {
         sys_invoke(self.0, method, utcb)
+    }
+
+    #[inline(always)]
+    pub fn invoke_ipc(&self, method: usize, utcb: &mut UTCB) -> Result<(), Error> {
+        sys_invoke_ipc(self.0, method, utcb)
     }
     pub const fn len(&self) -> usize {
         self.effective_bits() / CNODE_BITS

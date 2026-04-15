@@ -67,3 +67,15 @@ pub unsafe fn syscall(cptr: usize, method: usize) -> usize {
         usize::MAX
     }
 }
+
+#[inline(always)]
+pub unsafe fn syscall_ipc(
+    cptr: usize,
+    method: usize,
+    msgtag: &mut usize,
+    badge: &mut usize,
+    mrs: &mut [usize; 4],
+) -> usize {
+    let _ = (msgtag, badge, mrs);
+    unsafe { syscall(cptr, method) }
+}

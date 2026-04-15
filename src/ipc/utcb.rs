@@ -43,6 +43,7 @@ macro_rules! set_mrs {
 pub struct UTCB {
     msg_tag: MsgTag,
     mrs_regs: MsgArgs,
+    mrs: usize,
     cap_transfer: CapPtr,
     recv_window: CapPtr,
     reply_window: CapPtr,
@@ -97,6 +98,7 @@ impl UTCB {
 
     pub fn set_mr(&mut self, index: usize, value: usize) {
         assert!(index < MAX_MRS, "MR index out of bounds");
+        self.mrs = core::cmp::max(self.mrs, index + 1);
         unsafe { write_volatile(&mut self.mrs_regs[index], value) }
     }
 
@@ -108,7 +110,12 @@ impl UTCB {
         args
     }
 
+    pub fn get_mrs_count(&self) -> usize {
+        unsafe { read_volatile(&self.mrs) }
+    }
+
     pub fn set_mrs(&mut self, mrs: [usize; MAX_MRS]) {
+        self.mrs = MAX_MRS;
         for i in 0..MAX_MRS {
             unsafe { write_volatile(&mut self.mrs_regs[i], mrs[i]) };
         }
@@ -157,6 +164,7 @@ impl UTCB {
             write_volatile(&mut self.badge, Badge::null());
             write_volatile(&mut self.head, 0);
             write_volatile(&mut self.size, 0);
+            write_volatile(&mut self.mrs, 0);
         }
     }
 

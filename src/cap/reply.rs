@@ -16,6 +16,6 @@ impl Reply {
     }
 
     pub fn reply(&self, utcb: &mut UTCB) -> Result<(), Error> {
-        self.0.invoke(replymethod::REPLY, utcb)
+        self.0.invoke_ipc(replymethod::REPLY, utcb)
     }
 }

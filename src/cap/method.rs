@@ -89,3 +89,13 @@ pub mod vmspacemethod {
     pub const UNMAP_STAGE2: usize = 2;
     pub const SETUP_STAGE2: usize = 3;
 }
+
+#[inline(always)]
+pub const fn encode_invoke(method: usize) -> isize {
+    -((method as isize) + 1)
+}
+
+#[inline(always)]
+pub const fn decode_invoke(syscall_no: isize) -> Option<usize> {
+    if syscall_no < 0 { Some((-syscall_no - 1) as usize) } else { None }
+}

@@ -59,10 +59,10 @@ impl TCB {
         self.0.invoke(tcbmethod::SET_ADDRESS, &mut utcb)
     }
 
-    pub fn set_fault_handler(&self, fault_ep: Endpoint, native: bool) -> Result<(), Error> {
+    pub fn set_fault_handler(&self, fault_ep: Endpoint) -> Result<(), Error> {
         let mut utcb = unsafe { UTCB::new() };
         utcb.clear();
-        set_mrs!(utcb, fault_ep.cap().bits(), native as usize);
+        set_mrs!(utcb, fault_ep.cap().bits());
         self.0.invoke(tcbmethod::SET_FAULT_HANDLER, &mut utcb)
     }
 

@@ -17,25 +17,25 @@ impl Endpoint {
     }
 
     pub fn send(&self, utcb: &mut UTCB) -> Result<(), Error> {
-        self.0.invoke(ipcmethod::SEND, utcb)
+        self.0.invoke_ipc(ipcmethod::SEND, utcb)
     }
 
     pub fn recv(&self, utcb: &mut UTCB) -> Result<(), Error> {
-        self.0.invoke(ipcmethod::RECV, utcb)
+        self.0.invoke_ipc(ipcmethod::RECV, utcb)
     }
 
     pub fn call(&self, utcb: &mut UTCB) -> Result<(), Error> {
-        self.0.invoke(ipcmethod::CALL, utcb)?;
+        self.0.invoke_ipc(ipcmethod::CALL, utcb)?;
         utcb.error_check()
     }
 
     pub fn notify(&self, badge: Badge) -> Result<(), Error> {
         let mut utcb = unsafe { UTCB::new() };
         utcb.set_badge(badge);
-        self.0.invoke(ipcmethod::NOTIFY, &mut utcb)
+        self.0.invoke_ipc(ipcmethod::NOTIFY, &mut utcb)
     }
 
     pub fn proxy(&self, utcb: &mut UTCB) -> Result<(), Error> {
-        self.0.invoke(ipcmethod::PROXY, utcb)
+        self.0.invoke_ipc(ipcmethod::PROXY, utcb)
     }
 }
