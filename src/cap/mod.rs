@@ -15,7 +15,7 @@ mod vspace;
 pub use cnode::CNode;
 pub use console::Console;
 pub use endpoint::Endpoint;
-pub use frame::Frame;
+pub use frame::Page;
 pub use irq::IrqHandler;
 pub use kernel::Kernel;
 pub use method::*;
@@ -26,7 +26,7 @@ pub use untyped::Untyped;
 pub use virt::{VCPU, VMSpace};
 pub use vspace::VSpace;
 
-use crate::arch::mem::PGSIZE;
+use crate::arch::mem::{PGSIZE, PT_LEVELS, SHIFTS};
 use crate::error::Error;
 use crate::ipc::UTCB;
 use crate::sys::{sys_invoke, sys_invoke_ipc};
@@ -163,7 +163,7 @@ pub enum CapType {
     TCB = 2,
     Endpoint = 3,
     Reply = 4,
-    Frame = 5,
+    Page = 5,
     PageTable = 6,
     CNode = 7,
     IrqHandler = 8,
@@ -183,13 +183,21 @@ impl Into<usize> for CapType {
 }
 
 impl CapType {
+    pub const fn page_level_to_pages(level: usize) -> Option<usize> {
+        if level == 0 { None } else { Some(level) }
+    }
+
+    pub const fn page_pages_to_level(pages: usize) -> Option<usize> {
+        if pages == 0 { None } else { Some(pages) }
+    }
+
     pub fn pages(&self, flags: usize) -> Result<usize, Error> {
         let pages = match self {
             CapType::Untyped => flags, // 由 flags 决定
             CapType::TCB => 1,
             CapType::Endpoint => 1,
             CapType::Reply => 1,
-            CapType::Frame => flags, // 由 flags 决定
+            CapType::Page => Self::page_level_to_pages(flags).ok_or(Error::InvalidArgs)?,
             CapType::PageTable => 1,
             CapType::CNode => CNODE_PAGES,
             CapType::VSpace => 1,

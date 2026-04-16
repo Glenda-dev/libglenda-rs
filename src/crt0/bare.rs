@@ -1,5 +1,5 @@
 use crate::arch::runtime::{backtrace, panic_break};
-use crate::cap::{CONSOLE_CAP, CapPtr, Frame, IrqHandler, Kernel, Untyped};
+use crate::cap::{CONSOLE_CAP, CapPtr, Page, IrqHandler, Kernel, Untyped};
 use crate::console::KConsole;
 use crate::console::{ANSI_RED, ANSI_RESET};
 use crate::ipc::ThreadControlBlock;
@@ -14,7 +14,7 @@ pub const KERNEL_SLOT: CapPtr = CapPtr::from(11);
 pub const IRQ_CONTROL_SLOT: CapPtr = CapPtr::from(12);
 
 // Root Task aliases for capabilities provided by the kernel
-pub const BOOTINFO_CAP: Frame = Frame::from(BOOTINFO_SLOT);
+pub const BOOTINFO_CAP: Page = Page::from(BOOTINFO_SLOT);
 pub const UNTYPED_CAP: Untyped = Untyped::from(UNTYPED_SLOT);
 pub const KERNEL_CAP: Kernel = Kernel::from(KERNEL_SLOT);
 pub const IRQ_CONTROL_CAP: IrqHandler = IrqHandler::from(IRQ_CONTROL_SLOT);

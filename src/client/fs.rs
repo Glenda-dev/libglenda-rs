@@ -1,4 +1,4 @@
-use crate::cap::{CapPtr, Endpoint, Frame};
+use crate::cap::{CapPtr, Endpoint, Page};
 use crate::error::Error;
 use crate::interface::{
     FileHandleService, FileSystemService, PipeService, VirtualFileSystemService,
@@ -256,7 +256,7 @@ impl FileHandleService for FsClient {
         _pid: Badge,
         client_vaddr: usize,
         size: usize,
-        frame: Option<Frame>,
+        frame: Option<Page>,
     ) -> Result<(), Error> {
         let mut flags = MsgFlags::NONE;
         if frame.is_some() {

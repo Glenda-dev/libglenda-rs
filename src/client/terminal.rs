@@ -1,4 +1,4 @@
-use crate::cap::{CapPtr, Endpoint, Frame};
+use crate::cap::{CapPtr, Endpoint, Page};
 use crate::error::Error;
 use crate::interface::terminal::{TerminalService, VirtualTerminalService};
 use crate::io::uring::IoUringGeneric;
@@ -14,7 +14,7 @@ use crate::protocol::terminal::{
 pub struct TerminalClient {
     endpoint: Endpoint,
     config: Option<TerminalUringConfig>,
-    frame: Option<Frame>,
+    frame: Option<Page>,
 }
 
 impl TerminalClient {
@@ -141,7 +141,7 @@ impl TerminalClient {
 
         let config: TerminalUringConfig = unsafe { utcb.read_postcard()? };
         self.config = Some(config);
-        self.frame = Some(Frame::from(recv_frame));
+        self.frame = Some(Page::from(recv_frame));
 
         Ok(())
     }
@@ -152,7 +152,7 @@ impl TerminalClient {
     }
 
     /// Get the shared memory frame.
-    pub fn frame(&self) -> Option<Frame> {
+    pub fn frame(&self) -> Option<Page> {
         self.frame
     }
 
@@ -171,7 +171,7 @@ impl TerminalService for TerminalClient {
         &mut self,
         _badge: Badge,
         _recv_frame: CapPtr,
-    ) -> Result<(Frame, TerminalUringConfig), Error> {
+    ) -> Result<(Page, TerminalUringConfig), Error> {
         if let (Some(frame), Some(config)) = (self.frame, self.config) {
             return Ok((frame, config));
         }

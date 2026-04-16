@@ -27,7 +27,6 @@ pub const PROXY_CALL: usize = 0x04;
 // 身份管理命令
 pub const GET_IDENTITY: usize = 0x10;
 pub const SET_IDENTITY: usize = 0x11; // 对应 setuid/setgid
-pub const SET_GROUPS: usize = 0x12;
 
 #[repr(C)]
 #[derive(Debug, Clone, Copy, Default)]
@@ -36,5 +35,4 @@ pub struct IdentityInfo {
     pub gid: u32,
     pub euid: u32,
     pub egid: u32,
-    // Linux groups 通常是变长的，这里简化处理或通过单独调用获取
 }

@@ -1,4 +1,4 @@
-use crate::cap::{CapPtr, CapType, Frame};
+use crate::cap::{CapPtr, CapType, Page};
 use crate::error::Error;
 use crate::ipc::Badge;
 use crate::protocol::resource::{ResourceType, WarrenStatus};
@@ -18,7 +18,7 @@ pub trait ResourceService {
         pid: Badge,
         pages: usize,
         recv: CapPtr,
-    ) -> Result<(usize, Frame), Error>;
+    ) -> Result<(usize, Page), Error>;
 
     fn free(&mut self, pid: Badge, cap: CapPtr) -> Result<(), Error>;
 
@@ -39,7 +39,7 @@ pub trait ResourceService {
     ) -> Result<(), Error>;
 
     fn get_config(&mut self, pid: Badge, name: &str, recv: CapPtr)
-    -> Result<(Frame, usize), Error>;
+    -> Result<(Page, usize), Error>;
 
     fn status(&mut self, pid: Badge) -> Result<WarrenStatus, Error>;
 }

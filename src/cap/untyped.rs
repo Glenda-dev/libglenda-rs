@@ -60,13 +60,13 @@ impl Untyped {
     }
 
     #[inline(always)]
-    pub fn retype_frame(
+    pub fn retype_page(
         &self,
-        pages: usize,
+        level: usize,
         dest_cnode: CapPtr,
         dest_slot: CapPtr,
     ) -> Result<(), Error> {
-        self.retype(CapType::Frame, pages, dest_cnode, dest_slot)
+        self.retype(CapType::Page, level, dest_cnode, dest_slot)
     }
 
     #[inline(always)]

@@ -1,4 +1,4 @@
-use crate::cap::{CapPtr, CapType, Endpoint, Frame};
+use crate::cap::{CapPtr, CapType, Endpoint, Page};
 use crate::error::Error;
 use crate::interface::{CSpaceProvider, ResourceService, VSpaceProvider};
 use crate::ipc::{Badge, MsgFlags, MsgTag, UTCB};
@@ -73,7 +73,7 @@ impl ResourceService for ResourceClient {
         _pid: Badge,
         pages: usize,
         recv: CapPtr,
-    ) -> Result<(usize, Frame), Error> {
+    ) -> Result<(usize, Page), Error> {
         let tag = MsgTag::new(RESOURCE_PROTO, resource::DMA_ALLOC, MsgFlags::NONE);
 
         // Use CALL to wait for response
@@ -85,7 +85,7 @@ impl ResourceService for ResourceClient {
         self.endpoint.call(&mut utcb)?;
 
         // The paddr is returned in MR0
-        Ok((utcb.get_mr(0), Frame::from(recv)))
+        Ok((utcb.get_mr(0), Page::from(recv)))
     }
 
     fn free(&mut self, _pid: Badge, cap: CapPtr) -> Result<(), Error> {
@@ -139,7 +139,7 @@ impl ResourceService for ResourceClient {
         _pid: Badge,
         name: &str,
         recv: CapPtr,
-    ) -> Result<(Frame, usize), Error> {
+    ) -> Result<(Page, usize), Error> {
         let mut utcb = unsafe { UTCB::new() };
         utcb.clear();
 
@@ -154,7 +154,7 @@ impl ResourceService for ResourceClient {
         utcb.set_msg_tag(tag);
 
         self.endpoint.call(&mut utcb)?;
-        let frame = Frame::from(recv);
+        let frame = Page::from(recv);
         let size = utcb.get_mr(0);
         Ok((frame, size))
     }

@@ -1,4 +1,4 @@
-use super::{CapPtr, Frame, PageTable, vspacemethod};
+use super::{CapPtr, Page, PageTable, vspacemethod};
 use crate::error::Error;
 use crate::ipc::UTCB;
 use crate::mem::Perms;
@@ -17,7 +17,7 @@ impl VSpace {
         self.0
     }
 
-    pub fn map(&self, frame: Frame, vaddr: usize, perms: Perms, pages: usize) -> Result<(), Error> {
+    pub fn map(&self, frame: Page, vaddr: usize, perms: Perms, pages: usize) -> Result<(), Error> {
         let mut utcb = unsafe { UTCB::new() };
         utcb.clear();
         let perms = perms ^ Perms::SUPERVISOR;

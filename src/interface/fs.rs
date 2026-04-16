@@ -1,4 +1,4 @@
-use crate::cap::{CapPtr, Endpoint, Frame};
+use crate::cap::{CapPtr, Endpoint, Page};
 use crate::error::Error;
 use crate::ipc::Badge;
 use crate::protocol::fs::{DEntry, OpenFlags, Stat};
@@ -73,7 +73,7 @@ pub trait FileHandleService {
         _pid: Badge,
         _client_vaddr: usize,
         _size: usize,
-        _frame: Option<Frame>,
+        _frame: Option<Page>,
     ) -> Result<(), Error> {
         Err(Error::NotSupported)
     }

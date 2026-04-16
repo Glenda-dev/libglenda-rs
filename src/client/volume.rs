@@ -1,5 +1,5 @@
 use crate::arch::mem::PGSIZE;
-use crate::cap::{CapPtr, Endpoint, Frame};
+use crate::cap::{CapPtr, Endpoint, Page};
 use crate::client::resource::ResourceClient;
 use crate::error::Error;
 use crate::interface::volume::VolumeService;
@@ -95,7 +95,7 @@ impl VolumeClient {
                 size: 0,
             },
             shm_params: ShmParams {
-                frame: Frame::from(CapPtr::null()),
+                frame: Page::from(CapPtr::null()),
                 vaddr: 0,
                 paddr: 0,
                 size: 0,
@@ -292,8 +292,8 @@ impl VolumeClient {
         utcb.set_recv_window(recv);
         self.endpoint.call(&mut utcb)?;
 
-        let frame = Frame::from(recv);
-        vm.map_frame(
+        let frame = Page::from(recv);
+        vm.map_page(
             frame.clone(),
             vaddr,
             Perms::READ | Perms::WRITE,
@@ -338,7 +338,7 @@ impl VolumeClient {
         }
 
         // 2. Get the frame and Fossil's suggested view (the master mapping)
-        let actual_frame = Frame::from(recv);
+        let actual_frame = Page::from(recv);
         let srv_vaddr = utcb.get_mr(0);
         let srv_size = utcb.get_mr(1);
         // Physical address is NOT leaked to us anymore.
@@ -346,7 +346,7 @@ impl VolumeClient {
         // 3. Map it locally (use server's suggested vaddr as default)
         let local_vaddr = if vaddr != 0 { vaddr } else { srv_vaddr };
 
-        vm.map_frame(
+        vm.map_page(
             actual_frame.clone(),
             local_vaddr,
             Perms::READ | Perms::WRITE,

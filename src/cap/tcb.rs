@@ -1,4 +1,4 @@
-use super::{CNode, CapPtr, Frame, VSpace, tcbmethod};
+use super::{CNode, CapPtr, Page, VSpace, tcbmethod};
 use crate::cap::Endpoint;
 use crate::error::Error;
 use crate::ipc::UTCB;
@@ -21,9 +21,9 @@ impl TCB {
         &self,
         cspace: CNode,
         vspace: VSpace,
-        utcb_frame: Frame,
-        trapframe: Frame,
-        kstack: Frame,
+        utcb_frame: Page,
+        trapframe: Page,
+        kstack: Page,
     ) -> Result<(), Error> {
         let mut utcb = unsafe { UTCB::new() };
         utcb.clear();

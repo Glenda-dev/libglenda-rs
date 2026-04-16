@@ -1,5 +1,5 @@
 use crate::arch::mem::PGSIZE;
-use crate::cap::{CapPtr, Frame};
+use crate::cap::{CapPtr, Page};
 use crate::error::Error;
 use crate::interface::{CSpaceService, VSpaceProvider, VSpaceService};
 use crate::mem::Perms;
@@ -10,7 +10,7 @@ use core::slice;
 /// A shared memory region.
 #[derive(Debug, Clone, Copy)]
 pub struct SharedMemory {
-    frame: Frame,
+    frame: Page,
     vaddr: usize,
     client_vaddr: usize,
     paddr: usize,
@@ -19,7 +19,7 @@ pub struct SharedMemory {
 
 #[derive(Debug, Clone, Copy)]
 pub struct ShmParams {
-    pub frame: Frame,
+    pub frame: Page,
     pub vaddr: usize,
     pub paddr: usize,
     pub size: usize,
@@ -28,11 +28,11 @@ pub struct ShmParams {
 
 impl SharedMemory {
     /// Create a SharedMemory instance from an existing Frame.
-    pub const fn from_frame(frame: Frame, vaddr: usize, size: usize) -> Self {
+    pub const fn from_frame(frame: Page, vaddr: usize, size: usize) -> Self {
         Self { frame, vaddr, client_vaddr: vaddr, paddr: 0, size }
     }
 
-    pub const fn new(frame: Frame, vaddr: usize, size: usize) -> Self {
+    pub const fn new(frame: Page, vaddr: usize, size: usize) -> Self {
         Self { frame, vaddr, client_vaddr: vaddr, paddr: 0, size }
     }
 
@@ -60,7 +60,7 @@ impl SharedMemory {
         vm: &mut dyn VSpaceProvider,
         cm: &mut dyn CSpaceService,
     ) -> Result<(), Error> {
-        vspace_mgr.map_frame(
+        vspace_mgr.map_page(
             self.frame,
             self.vaddr,
             perms,
@@ -81,7 +81,7 @@ impl SharedMemory {
     }
 
     /// Get the capability to the underlying Frame.
-    pub fn frame(&self) -> Frame {
+    pub fn frame(&self) -> Page {
         self.frame
     }
 

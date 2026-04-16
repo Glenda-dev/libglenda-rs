@@ -48,7 +48,7 @@ pub trait SocketService {
         &mut self,
         client_vaddr: usize,
         size: usize,
-        frame: Option<crate::cap::Frame>,
+        frame: Option<crate::cap::Page>,
     ) -> Result<(), Error>;
 
     /// Notify server to process entries in io_uring.

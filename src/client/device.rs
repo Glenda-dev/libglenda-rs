@@ -1,5 +1,5 @@
 use crate::arch::mem::PGSIZE;
-use crate::cap::{CapPtr, CapType, Endpoint, Frame, IrqHandler};
+use crate::cap::{CapPtr, CapType, Endpoint, Page, IrqHandler};
 use crate::client::ResourceClient;
 use crate::error::Error;
 use crate::interface::device::DeviceService;
@@ -57,11 +57,12 @@ impl DeviceClient {
         }
 
         let pages = (byte_len + PGSIZE - 1) / PGSIZE;
+        let page_level = CapType::page_pages_to_level(pages).ok_or(Error::InvalidArgs)?;
         let frame_slot = cspace_mgr.alloc(res_client)?;
-        res_client.alloc(Badge::null(), CapType::Frame, pages, frame_slot)?;
+        res_client.alloc(Badge::null(), CapType::Page, page_level, frame_slot)?;
 
-        vspace_mgr.map_frame(
-            Frame::from(frame_slot),
+        vspace_mgr.map_page(
+            Page::from(frame_slot),
             map_vaddr,
             Perms::READ | Perms::WRITE,
             pages,
@@ -97,7 +98,7 @@ impl DeviceService for DeviceClient {
         _badge: Badge,
         id: usize,
         recv: CapPtr,
-    ) -> Result<(Frame, usize, usize), Error> {
+    ) -> Result<(Page, usize, usize), Error> {
         let mut utcb = unsafe { UTCB::new() };
         let tag = MsgTag::new(protocol::DEVICE_PROTO, protocol::device::GET_MMIO, MsgFlags::NONE);
         utcb.set_recv_window(recv);
@@ -107,7 +108,7 @@ impl DeviceService for DeviceClient {
 
         let addr = utcb.get_mr(0);
         let size = utcb.get_mr(1);
-        Ok((Frame::from(recv), addr, size))
+        Ok((Page::from(recv), addr, size))
     }
 
     fn get_irq(&mut self, _badge: Badge, id: usize, recv: CapPtr) -> Result<IrqHandler, Error> {

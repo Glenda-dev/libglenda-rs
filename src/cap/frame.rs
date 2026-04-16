@@ -2,9 +2,9 @@ use super::CapPtr;
 
 #[repr(transparent)]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct Frame(CapPtr);
+pub struct Page(CapPtr);
 
-impl Frame {
+impl Page {
     pub const fn from(cap: CapPtr) -> Self {
         Self(cap)
     }
@@ -14,14 +14,14 @@ impl Frame {
     }
 }
 
-impl From<CapPtr> for Frame {
+impl From<CapPtr> for Page {
     fn from(cap: CapPtr) -> Self {
         Self(cap)
     }
 }
 
-impl From<Frame> for CapPtr {
-    fn from(frame: Frame) -> Self {
+impl From<Page> for CapPtr {
+    fn from(frame: Page) -> Self {
         frame.0
     }
 }

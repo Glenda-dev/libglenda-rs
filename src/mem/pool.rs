@@ -1,5 +1,5 @@
 use crate::arch::mem::PGSIZE;
-use crate::cap::{CapPtr, CapType, Frame};
+use crate::cap::{CapPtr, CapType, Page};
 use crate::client::ResourceClient;
 use crate::error::Error;
 use crate::interface::{CSpaceService, ResourceService, VSpaceProvider, VSpaceService};
@@ -60,12 +60,15 @@ impl MemoryPool {
                 shm
             }
             ShmType::Regular => {
-                let frame_cap = res_client.alloc(Badge::null(), CapType::Frame, size, recv_slot)?;
-                SharedMemory::new(Frame::from(frame_cap), vaddr, size)
+                let pages = size_aligned / PGSIZE;
+                let page_level = CapType::page_pages_to_level(pages).ok_or(Error::InvalidArgs)?;
+                let frame_cap =
+                    res_client.alloc(Badge::null(), CapType::Page, page_level, recv_slot)?;
+                SharedMemory::new(Page::from(frame_cap), vaddr, size)
             }
         };
 
-        vm.map_frame(
+        vm.map_page(
             shm.frame(),
             vaddr,
             Perms::READ | Perms::WRITE,
@@ -99,7 +102,7 @@ impl MemoryPool {
         vm: &mut dyn VSpaceService,
         cm: &mut dyn CSpaceService,
         provider: &mut dyn VSpaceProvider,
-        frame: Frame,
+        frame: Page,
         size: usize,
         perms: Perms,
     ) -> Result<SharedMemory, Error> {
@@ -109,7 +112,7 @@ impl MemoryPool {
         let shm = SharedMemory::new(frame, vaddr, size);
 
         // Map locally in the service's VSpace via VSpaceManager
-        vm.map_frame(frame, vaddr, perms, size_aligned / PGSIZE, provider, cm)?;
+        vm.map_page(frame, vaddr, perms, size_aligned / PGSIZE, provider, cm)?;
 
         self.shms.push(shm);
         Ok(shm)

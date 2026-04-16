@@ -1,4 +1,4 @@
-use crate::cap::{Endpoint, Frame};
+use crate::cap::{Endpoint, Page};
 use crate::error::Error;
 use crate::ipc::Badge;
 use crate::protocol::terminal::{
@@ -76,7 +76,7 @@ pub trait TerminalService {
         &mut self,
         badge: Badge,
         recv_frame: crate::cap::CapPtr,
-    ) -> Result<(Frame, TerminalUringConfig), Error>;
+    ) -> Result<(Page, TerminalUringConfig), Error>;
 
     /// Change the operational mode of the terminal (Raw, Canonical, etc.).
     fn set_mode(&mut self, badge: Badge, mode: u32) -> Result<(), Error>;

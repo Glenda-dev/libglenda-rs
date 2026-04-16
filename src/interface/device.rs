@@ -1,4 +1,4 @@
-use crate::cap::{CapPtr, Endpoint, Frame, IrqHandler};
+use crate::cap::{CapPtr, Endpoint, Page, IrqHandler};
 use crate::error::Error;
 use crate::ipc::Badge;
 use crate::protocol::device::{DeviceDesc, DeviceDescNode, DeviceQuery, LogicDeviceDesc};
@@ -14,7 +14,7 @@ pub trait DeviceService {
         badge: Badge,
         id: usize,
         recv: CapPtr,
-    ) -> Result<(Frame, usize, usize), Error>;
+    ) -> Result<(Page, usize, usize), Error>;
     fn get_irq(&mut self, badge: Badge, id: usize, recv: CapPtr) -> Result<IrqHandler, Error>;
     fn report_frame(&mut self, badge: Badge, frame: CapPtr, byte_len: usize) -> Result<(), Error>;
     fn report(&mut self, badge: Badge, desc: Vec<DeviceDescNode>) -> Result<(), Error>;

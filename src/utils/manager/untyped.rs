@@ -79,7 +79,7 @@ impl UntypedService for UntypedManager {
                         block.cap.retype_pagetable(flags, CSPACE_CAP.cap(), dest)
                     }
                     CapType::CNode => block.cap.retype_cnode(CSPACE_CAP.cap(), dest),
-                    CapType::Frame => block.cap.retype_frame(flags, CSPACE_CAP.cap(), dest),
+                    CapType::Page => block.cap.retype_page(flags, CSPACE_CAP.cap(), dest),
                     CapType::VSpace => block.cap.retype_vspace(CSPACE_CAP.cap(), dest),
                     CapType::Endpoint => block.cap.retype_endpoint(CSPACE_CAP.cap(), dest),
                     _ => return Err(Error::NotSupported),

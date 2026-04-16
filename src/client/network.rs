@@ -1,4 +1,4 @@
-use crate::cap::{Endpoint, Frame};
+use crate::cap::{Endpoint, Page};
 use crate::error::Error;
 use crate::interface::{NetworkService, SocketService};
 use crate::io::uring::{IOURING_OP_READ, IOURING_OP_WRITE, IoUringClient, IoUringSqe};
@@ -174,7 +174,7 @@ impl SocketService for NetworkClient {
         &mut self,
         client_vaddr: usize,
         size: usize,
-        frame: Option<Frame>,
+        frame: Option<Page>,
     ) -> Result<(), Error> {
         let mut flags = MsgFlags::NONE;
         if frame.is_some() {

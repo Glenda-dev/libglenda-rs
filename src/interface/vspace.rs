@@ -1,13 +1,13 @@
 use super::{CSpaceProvider, CSpaceService};
-use crate::cap::{CapPtr, Frame, PageTable};
+use crate::cap::{CapPtr, Page, PageTable};
 use crate::error::Error;
 use crate::mem::Perms;
 
 /// VSpaceService is responsible for managing virtual memory mappings.
 pub trait VSpaceService {
-    fn map_frame(
+    fn map_page(
         &mut self,
-        frame: Frame,
+        frame: Page,
         vaddr: usize,
         perms: Perms,
         pages: usize,
@@ -29,7 +29,7 @@ pub trait VSpaceService {
     /// Map a frame into the scratch region and return the virtual address
     fn map_scratch(
         &mut self,
-        frame: Frame,
+        frame: Page,
         perms: Perms,
         pages: usize,
         provider: &mut dyn VSpaceProvider,

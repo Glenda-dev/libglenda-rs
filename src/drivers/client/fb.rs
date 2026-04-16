@@ -1,5 +1,5 @@
 use crate::arch::mem::PGSIZE;
-use crate::cap::{Endpoint, Frame};
+use crate::cap::{Endpoint, Page};
 use crate::client::ResourceClient;
 use crate::drivers::interface::{DriverClient, FrameBufferDriver};
 use crate::drivers::protocol::fb::FbInfo;
@@ -92,9 +92,9 @@ impl FbClient {
         utcb.set_recv_window(params.recv_slot);
         self.endpoint.call(&mut utcb)?;
 
-        let frame = Frame::from(params.recv_slot);
+        let frame = Page::from(params.recv_slot);
         let res_client = self.res_client.as_mut().ok_or(Error::InvalidArgs)?;
-        vm.map_frame(
+        vm.map_page(
             frame,
             params.vaddr,
             Perms::READ | Perms::WRITE,
@@ -138,9 +138,9 @@ impl FbClient {
 
         let paddr = utcb.get_mr(0);
         let size = utcb.get_mr(1);
-        let frame = Frame::from(recv_slot);
+        let frame = Page::from(recv_slot);
 
-        vm.map_frame(
+        vm.map_page(
             frame.clone(),
             vaddr,
             Perms::READ | Perms::WRITE,

@@ -1,5 +1,5 @@
 use crate::arch::mem::PGSIZE;
-use crate::cap::{Endpoint, Frame};
+use crate::cap::{Endpoint, Page};
 use crate::client::ResourceClient;
 use crate::drivers::client::{RingParams, ShmParams};
 use crate::drivers::interface::{DriverClient, NetDriver};
@@ -193,8 +193,8 @@ impl NetClient {
 
         self.endpoint.call(&mut utcb)?;
 
-        let frame = Frame::from(recv);
-        vm.map_frame(
+        let frame = Page::from(recv);
+        vm.map_page(
             frame.clone(),
             vaddr,
             Perms::READ | Perms::WRITE,

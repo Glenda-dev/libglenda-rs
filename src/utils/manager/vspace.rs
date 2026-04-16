@@ -1,5 +1,5 @@
 use crate::arch::mem::{PGSIZE, SHIFTS, VPN_MASK};
-use crate::cap::{CapPtr, Frame, PageTable, VSpace};
+use crate::cap::{CapPtr, Page, PageTable, VSpace};
 use crate::error::Error;
 use crate::interface::{CSpaceService, VSpaceProvider, VSpaceService};
 use crate::mem::Perms;
@@ -13,6 +13,8 @@ pub const MAP_START: usize = 0x30000000;
 pub const MAP_END: usize = 0x3F_0000_0000;
 #[cfg(target_pointer_width = "32")]
 pub const MAP_END: usize = 0x7F_0000_00;
+pub const L1_HUGE_PAGES: usize = 1 << (SHIFTS[1] - SHIFTS[0]); // 2 MiB / 4 KiB = 512
+pub const L1_HUGE_SIZE: usize = L1_HUGE_PAGES * PGSIZE;
 
 #[derive(Debug)]
 enum ShadowNode {
@@ -244,13 +246,13 @@ impl VSpaceManager {
                     let new_slot = slots.alloc(provider)?;
                     let full_dest = new_slot;
                     provider.alloc_pagetable(full_dest)?;
-                    let new_frame = Frame::from(new_slot);
+                    let new_frame = Page::from(new_slot);
 
                     // Map both to copy
-                    let src_frame = Frame::from(*cap);
+                    let src_frame = Page::from(*cap);
 
                     // Map src using current_vspace
-                    current_vspace.map_frame(
+                    current_vspace.map_page(
                         src_frame,
                         src_scratch_va,
                         Perms::READ,
@@ -260,7 +262,7 @@ impl VSpaceManager {
                     )?;
 
                     // Map dest using current_vspace
-                    current_vspace.map_frame(
+                    current_vspace.map_page(
                         new_frame,
                         dest_scratch_va,
                         Perms::READ | Perms::WRITE,
@@ -283,7 +285,7 @@ impl VSpaceManager {
                     current_vspace.unmap(dest_scratch_va, num_pages)?;
 
                     // Map to child
-                    dest_mgr.map_frame(new_frame, vaddr, *perms, num_pages, provider, slots)?;
+                    dest_mgr.map_page(new_frame, vaddr, *perms, num_pages, provider, slots)?;
                 }
             }
         }
@@ -400,6 +402,53 @@ impl VSpaceManager {
         }
     }
 
+    fn ensure_l1_entries<'a>(
+        entries: &'a mut BTreeMap<usize, Box<ShadowNode>>,
+        vaddr: usize,
+        provider: &mut dyn VSpaceProvider,
+        slots: &mut dyn CSpaceService,
+        pivot_root: VSpace,
+    ) -> Result<&'a mut BTreeMap<usize, Box<ShadowNode>>, Error> {
+        let l2_level = SHIFTS.len() - 1;
+        let idx2 = index(vaddr, l2_level);
+
+        if !entries.contains_key(&idx2) {
+            let slot = slots.alloc(provider)?;
+            if let Err(e) = provider.alloc_pagetable(slot) {
+                if e != Error::AlreadyExists && e != Error::SlotNotEmpty {
+                    let _ = slots.free(slot);
+                }
+                return Err(e);
+            }
+
+            let pt = PageTable::from(slot);
+            if let Err(e) = pivot_root.map_table(pt, vaddr, l2_level) {
+                let released = match provider.free_pagetable(slot) {
+                    Ok(()) => true,
+                    Err(free_err)
+                        if free_err == Error::InvalidCapability
+                            || free_err == Error::InvalidSlot =>
+                    {
+                        true
+                    }
+                    Err(_) => false,
+                };
+                if released {
+                    let _ = slots.free(slot);
+                }
+                return Err(e);
+            }
+
+            entries.insert(idx2, Box::new(ShadowNode::new_table(slot)));
+        }
+
+        let node = entries.get_mut(&idx2).ok_or(Error::MappingFailed)?;
+        match &mut **node {
+            ShadowNode::Table { entries: sub_entries, .. } => Ok(sub_entries),
+            _ => Err(Error::MappingFailed),
+        }
+    }
+
     fn unmap_rec(
         pivot_root: VSpace,
         cache: &mut Vec<(CapPtr, usize, usize)>,
@@ -424,20 +473,180 @@ impl VSpaceManager {
                 entries.remove(&idx);
             }
         } else if let Some(node) = entries.get_mut(&idx) {
-            if let ShadowNode::Table { entries: sub_entries, .. } = &mut **node {
-                Self::unmap_rec(pivot_root, cache, sub_entries, vaddr, level - 1);
-                // 仅当子页表现在完全变为空时，考虑回收当前层级的页表
-                if sub_entries.is_empty() {
-                    let removed = entries.remove(&idx).unwrap();
-                    if let ShadowNode::Table { cap, .. } = *removed {
-                        // 懒回收：不在这里显式向内核发送 unmap_table 解除该层级页表的映射，
-                        // 只是记录到 cache 中。这样下次如果在同位置重用，就可以省去系统调用。
-                        // 如果在其它位置复用，再执行 unmap_table。
-                        cache.push((cap, vaddr, level));
+            let mut frame_span = 0usize;
+            match &mut **node {
+                ShadowNode::Table { entries: sub_entries, .. } => {
+                    Self::unmap_rec(pivot_root, cache, sub_entries, vaddr, level - 1);
+                    // 仅当子页表现在完全变为空时，考虑回收当前层级的页表
+                    if sub_entries.is_empty() {
+                        let removed = entries.remove(&idx).unwrap();
+                        if let ShadowNode::Table { cap, .. } = *removed {
+                            // 懒回收：不在这里显式向内核发送 unmap_table 解除该层级页表的映射，
+                            // 只是记录到 cache 中。这样下次如果在同位置重用，就可以省去系统调用。
+                            // 如果在其它位置复用，再执行 unmap_table。
+                            if !cap.is_null() {
+                                cache.push((cap, vaddr, level));
+                            }
+                        }
                     }
                 }
+                ShadowNode::Frame { pages, .. } => {
+                    frame_span = core::cmp::max(*pages, 1) * PGSIZE;
+                }
+            }
+
+            if frame_span != 0 {
+                let _ = pivot_root.unmap(vaddr, frame_span);
+                entries.remove(&idx);
             }
         }
+    }
+
+    fn prepare_map_paths_huge_first(
+        &mut self,
+        vaddr: usize,
+        pages: usize,
+        provider: &mut dyn VSpaceProvider,
+        slots: &mut dyn CSpaceService,
+    ) -> Result<(), Error> {
+        let mut i = 0;
+        while i < pages {
+            let curr_vaddr = vaddr + i * PGSIZE;
+            let remain = pages - i;
+            if curr_vaddr % L1_HUGE_SIZE == 0 && remain >= L1_HUGE_PAGES {
+                Self::ensure_l1_entries(&mut self.shadow, curr_vaddr, provider, slots, self.root)?;
+                i += L1_HUGE_PAGES;
+            } else {
+                Self::ensure_path(
+                    &mut self.pages_cache,
+                    &mut self.shadow,
+                    curr_vaddr,
+                    SHIFTS.len() - 1,
+                    provider,
+                    slots,
+                    self.root,
+                )?;
+                i += 1;
+            }
+        }
+        Ok(())
+    }
+
+    fn prepare_map_paths_full_4k(
+        &mut self,
+        vaddr: usize,
+        pages: usize,
+        provider: &mut dyn VSpaceProvider,
+        slots: &mut dyn CSpaceService,
+    ) -> Result<(), Error> {
+        for i in 0..pages {
+            let curr_vaddr = vaddr + i * PGSIZE;
+            Self::ensure_path(
+                &mut self.pages_cache,
+                &mut self.shadow,
+                curr_vaddr,
+                SHIFTS.len() - 1,
+                provider,
+                slots,
+                self.root,
+            )?;
+        }
+        Ok(())
+    }
+
+    fn record_shadow_mapping(
+        &mut self,
+        frame: Page,
+        vaddr: usize,
+        perms: Perms,
+        pages: usize,
+        huge_first_succeeded: bool,
+        provider: &mut dyn VSpaceProvider,
+        slots: &mut dyn CSpaceService,
+    ) -> Result<(), Error> {
+        let mut i = 0;
+        while i < pages {
+            let curr_vaddr = vaddr + i * PGSIZE;
+            let remain = pages - i;
+
+            if huge_first_succeeded && curr_vaddr % L1_HUGE_SIZE == 0 && remain >= L1_HUGE_PAGES {
+                let l1_entries = Self::ensure_l1_entries(
+                    &mut self.shadow,
+                    curr_vaddr,
+                    provider,
+                    slots,
+                    self.root,
+                )?;
+                let idx1 = index(curr_vaddr, 1);
+                l1_entries.insert(
+                    idx1,
+                    Box::new(ShadowNode::Frame {
+                        cap: frame.cap(),
+                        perms,
+                        pages: if i == 0 { pages } else { 0 },
+                    }),
+                );
+                i += L1_HUGE_PAGES;
+                continue;
+            }
+
+            let leaf_map = Self::ensure_path(
+                &mut self.pages_cache,
+                &mut self.shadow,
+                curr_vaddr,
+                SHIFTS.len() - 1,
+                provider,
+                slots,
+                self.root,
+            )?;
+            let idx0 = index(curr_vaddr, 0);
+            leaf_map.insert(
+                idx0,
+                Box::new(ShadowNode::Frame {
+                    cap: frame.cap(),
+                    perms,
+                    pages: if i == 0 { pages } else { 0 },
+                }),
+            );
+            i += 1;
+        }
+        Ok(())
+    }
+
+    pub fn map_frame_huge_2m(
+        &mut self,
+        frame: Page,
+        vaddr: usize,
+        perms: Perms,
+        provider: &mut dyn VSpaceProvider,
+        slots: &mut dyn CSpaceService,
+    ) -> Result<bool, Error> {
+        if vaddr % L1_HUGE_SIZE != 0 {
+            return Ok(false);
+        }
+        if !Self::check_addr(vaddr) || !Self::check_addr(vaddr + L1_HUGE_SIZE - 1) {
+            return Err(Error::PermissionDenied);
+        }
+
+        let l1_entries = Self::ensure_l1_entries(
+            &mut self.shadow,
+            vaddr,
+            provider,
+            slots,
+            self.root,
+        )?;
+        let idx1 = index(vaddr, 1);
+        if l1_entries.contains_key(&idx1) {
+            return Ok(false);
+        }
+
+        self.root.map(frame, vaddr, perms, L1_HUGE_PAGES)?;
+
+        l1_entries.insert(
+            idx1,
+            Box::new(ShadowNode::Frame { cap: frame.cap(), pages: L1_HUGE_PAGES, perms }),
+        );
+        Ok(true)
     }
 
     fn is_mapped_rec(
@@ -469,9 +678,9 @@ impl VSpaceManager {
 }
 
 impl VSpaceService for VSpaceManager {
-    fn map_frame(
+    fn map_page(
         &mut self,
-        frame: Frame,
+        frame: Page,
         vaddr: usize,
         perms: Perms,
         pages: usize,
@@ -481,55 +690,37 @@ impl VSpaceService for VSpaceManager {
         if !Self::check_addr(vaddr) || !Self::check_addr(vaddr + pages * PGSIZE - 1) {
             return Err(Error::PermissionDenied);
         }
-        let levels = SHIFTS.len();
-
         for i in 0..pages {
             let curr_vaddr = vaddr + i * PGSIZE;
-            let leaf_map = Self::ensure_path(
-                &mut self.pages_cache,
-                &mut self.shadow,
-                curr_vaddr,
-                levels - 1,
-                provider,
-                slots,
-                self.root,
-            )?;
-
-            let idx0 = index(curr_vaddr, 0);
-            if let Some(_) = leaf_map.get(&idx0) {
-                // 如果已经存在映射，先清理它以防 PageTable 冲突
+            if Self::is_mapped_rec(&self.shadow, curr_vaddr, SHIFTS.len() - 1) {
                 let _ = self.unmap(curr_vaddr, 1);
             }
         }
 
-        // 调用内核进行映射，并检查返回值
-        if let Err(e) = self.root.map(frame, vaddr, perms, pages) {
-            crate::error!("VSpaceManager::map_frame: self.root.map failed with {:?}", e);
-            return Err(Error::MappingFailed);
-        }
+        self.prepare_map_paths_huge_first(vaddr, pages, provider, slots)?;
 
-        for i in 0..pages {
-            let curr_vaddr = vaddr + i * PGSIZE;
-            let leaf_map = Self::ensure_path(
-                &mut self.pages_cache,
-                &mut self.shadow,
-                curr_vaddr,
-                levels - 1,
-                provider,
-                slots,
-                self.root,
-            )?;
+        let huge_first_succeeded = match self.root.map(frame, vaddr, perms, pages) {
+            Ok(()) => true,
+            Err(Error::MappingFailed) => {
+                // 大页优先路径可能因物理地址未对齐而失败，回退到全 4K 路径。
+                let _ = self.root.unmap(vaddr, pages * PGSIZE);
+                self.prepare_map_paths_full_4k(vaddr, pages, provider, slots)?;
+                self.root.map(frame, vaddr, perms, pages)?;
+                false
+            }
+            Err(e) => return Err(e),
+        };
 
-            let idx0 = index(curr_vaddr, 0);
-            leaf_map.insert(
-                idx0,
-                Box::new(ShadowNode::Frame {
-                    cap: frame.cap(),
-                    perms,
-                    pages: if i == 0 { pages } else { 0 },
-                }),
-            );
-        }
+        self.record_shadow_mapping(
+            frame,
+            vaddr,
+            perms,
+            pages,
+            huge_first_succeeded,
+            provider,
+            slots,
+        )?;
+
         Ok(())
     }
 
@@ -596,7 +787,7 @@ impl VSpaceService for VSpaceManager {
 
     fn map_scratch(
         &mut self,
-        frame: Frame,
+        frame: Page,
         perms: Perms,
         pages: usize,
         provider: &mut dyn VSpaceProvider,
@@ -629,7 +820,7 @@ impl VSpaceService for VSpaceManager {
             }
 
             if free {
-                self.map_frame(frame, vaddr, perms, pages, provider, slots)?;
+                self.map_page(frame, vaddr, perms, pages, provider, slots)?;
                 self.scratch_ptr = offset + size;
                 return Ok(vaddr);
             }
