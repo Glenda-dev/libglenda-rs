@@ -1,3 +1,4 @@
+pub mod auth;
 pub mod device;
 pub mod fs;
 pub mod generic;
@@ -9,6 +10,7 @@ pub mod terminal;
 pub mod time;
 pub mod volume;
 
+pub use auth::AuthClient;
 pub use device::DeviceClient;
 pub use fs::FsClient;
 pub use generic::GeneralClient;
