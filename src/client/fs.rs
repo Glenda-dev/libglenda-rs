@@ -1,4 +1,4 @@
-use crate::cap::{CapPtr, Endpoint, Page, CSPACE_CAP, RECV_SLOT, Rights};
+use crate::cap::{CSPACE_CAP, CapPtr, Endpoint, Page, RECV_SLOT, Rights};
 use crate::error::Error;
 use crate::interface::{
     FileHandleService, FileSystemService, PipeService, VirtualFileSystemService,

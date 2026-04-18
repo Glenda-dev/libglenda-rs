@@ -1,5 +1,5 @@
 use crate::arch::mem::PGSIZE;
-use crate::cap::{CapPtr, Endpoint, Page, CSPACE_CAP, Rights};
+use crate::cap::{CSPACE_CAP, CapPtr, Endpoint, Page, Rights};
 use crate::client::resource::ResourceClient;
 use crate::error::Error;
 use crate::interface::volume::VolumeService;
