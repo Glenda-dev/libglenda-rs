@@ -1,5 +1,5 @@
 use crate::arch::mem::PGSIZE;
-use crate::cap::{CapPtr, Endpoint, Page};
+use crate::cap::{CapPtr, Endpoint, Page, CSPACE_CAP, Rights};
 use crate::client::resource::ResourceClient;
 use crate::error::Error;
 use crate::interface::volume::VolumeService;
@@ -282,13 +282,16 @@ impl VolumeClient {
         let size = self.ring_params.size;
 
         self.notify_ep = Some(notify_ep);
+        let _ = CSPACE_CAP.delete(recv);
+        CSPACE_CAP.copy_self(notify_ep.cap(), recv, Rights::ALL)?;
+
         let mut utcb = unsafe { UTCB::new() };
         utcb.clear();
         let tag = MsgTag::new(crate::protocol::VOLUME_PROTO, volume::SETUP_RING, MsgFlags::HAS_CAP);
         utcb.set_mr(0, sq_entries as usize);
         utcb.set_mr(1, cq_entries as usize);
         utcb.set_msg_tag(tag);
-        utcb.set_cap_transfer(notify_ep.cap());
+        utcb.set_cap_transfer(recv);
         utcb.set_recv_window(recv);
         self.endpoint.call(&mut utcb)?;
 
@@ -402,13 +405,21 @@ impl VolumeService for VolumeClient {
         state: ServiceState,
         endpoint: Option<CapPtr>,
     ) -> Result<(), Error> {
+        let mut transfer_slot = CapPtr::null();
+        if let Some(ep) = endpoint {
+            transfer_slot = crate::cap::RECV_SLOT;
+            let _ = CSPACE_CAP.delete(transfer_slot);
+            CSPACE_CAP.copy_self(ep, transfer_slot, Rights::ALL)?;
+        }
+
         let mut utcb = unsafe { UTCB::new() };
         utcb.clear();
         utcb.set_mr(0, state as usize);
 
         let mut flags = MsgFlags::NONE;
-        if let Some(ep) = endpoint {
-            utcb.set_cap_transfer(ep);
+        if !transfer_slot.is_null() {
+            utcb.set_cap_transfer(transfer_slot);
+            utcb.set_recv_window(transfer_slot);
             flags |= MsgFlags::HAS_CAP;
         }
 

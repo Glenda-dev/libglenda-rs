@@ -1,5 +1,5 @@
 use crate::arch::mem::PGSIZE;
-use crate::cap::{Endpoint, Page};
+use crate::cap::{CSPACE_CAP, Endpoint, Page, Rights};
 use crate::client::ResourceClient;
 use crate::drivers::interface::{BlockDriver, DriverClient};
 use crate::drivers::protocol::{BLOCK_PROTO, block};
@@ -144,13 +144,16 @@ impl BlockClient {
         let size = self.ring_params.size;
 
         self.notify_ep = Some(notify_ep);
+        let _ = CSPACE_CAP.delete(recv);
+        CSPACE_CAP.copy_self(notify_ep.cap(), recv, Rights::ALL)?;
+
         let mut utcb = unsafe { UTCB::new() };
         utcb.clear();
         let tag = MsgTag::new(BLOCK_PROTO, block::SETUP_RING, MsgFlags::HAS_CAP);
         utcb.set_mr(0, sq_entries as usize);
         utcb.set_mr(1, cq_entries as usize);
         utcb.set_msg_tag(tag);
-        utcb.set_cap_transfer(notify_ep.cap());
+        utcb.set_cap_transfer(recv);
         utcb.set_recv_window(recv);
         self.endpoint.call(&mut utcb)?;
 
@@ -175,13 +178,17 @@ impl BlockClient {
     fn setup_shm_internal(
         &mut self,
         _vm: &mut dyn VSpaceService,
-        _cm: &mut dyn CSpaceService,
+        cm: &mut dyn CSpaceService,
     ) -> Result<(), Error> {
         let frame = self.shm_params.frame.clone();
         let vaddr = self.shm_params.vaddr;
         let paddr = self.shm_params.paddr;
         let size = self.shm_params.size;
-        let recv = self.shm_params.recv_slot;
+        let recv = if self.shm_params.recv_slot.is_null() {
+            cm.alloc(&mut self.res_client)?
+        } else {
+            self.shm_params.recv_slot
+        };
 
         if frame.cap().is_null() {
             // BlockClient (for bare devices) expects to be provided a Frame (with physical address)
@@ -189,10 +196,13 @@ impl BlockClient {
             return Err(Error::NotInitialized);
         }
 
+        let _ = CSPACE_CAP.delete(recv);
+        CSPACE_CAP.copy_self(frame.cap(), recv, Rights::ALL)?;
+
         // Send memory frame and physical address to the driver server.
         let mut utcb = unsafe { UTCB::new() };
         utcb.clear();
-        utcb.set_cap_transfer(frame.cap());
+        utcb.set_cap_transfer(recv);
         let tag = MsgTag::new(BLOCK_PROTO, block::SETUP_BUFFER, MsgFlags::HAS_CAP);
         utcb.set_mr(0, vaddr);
         utcb.set_mr(1, size);

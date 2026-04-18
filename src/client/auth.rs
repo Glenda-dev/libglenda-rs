@@ -1,4 +1,4 @@
-use crate::cap::Endpoint;
+use crate::cap::{CSPACE_CAP, Endpoint, RECV_SLOT, Rights};
 use crate::error::Error;
 use crate::interface::AuthService;
 use crate::ipc::{MsgFlags, MsgTag, UTCB};
@@ -124,7 +124,11 @@ impl AuthService for AuthClient {
     fn set_policy_backend(&self, backend: Endpoint) -> Result<(), Error> {
         let mut utcb = unsafe { UTCB::new() };
         utcb.clear();
-        utcb.set_cap_transfer(backend.cap());
+        let transfer_slot = RECV_SLOT;
+        let _ = CSPACE_CAP.delete(transfer_slot);
+        CSPACE_CAP.copy_self(backend.cap(), transfer_slot, Rights::ALL)?;
+        utcb.set_cap_transfer(transfer_slot);
+        utcb.set_recv_window(transfer_slot);
         utcb.set_msg_tag(MsgTag::new(AUTH_PROTO, auth::SET_POLICY_BACKEND, MsgFlags::HAS_CAP));
         self.endpoint.call(&mut utcb)?;
         Ok(())

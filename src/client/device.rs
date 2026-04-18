@@ -1,5 +1,5 @@
 use crate::arch::mem::PGSIZE;
-use crate::cap::{CapPtr, CapType, Endpoint, Page, IrqHandler};
+use crate::cap::{CapPtr, CapType, Endpoint, IrqHandler, Page, CSPACE_CAP, RECV_SLOT, Rights};
 use crate::client::ResourceClient;
 use crate::error::Error;
 use crate::interface::device::DeviceService;
@@ -32,11 +32,8 @@ impl DeviceClient {
         utcb.clear();
         utcb.set_mr(0, byte_len);
         utcb.set_cap_transfer(frame);
-        let tag = MsgTag::new(
-            protocol::DEVICE_PROTO,
-            protocol::device::REPORT_FRAME,
-            MsgFlags::HAS_CAP,
-        );
+        let tag =
+            MsgTag::new(protocol::DEVICE_PROTO, protocol::device::REPORT_FRAME, MsgFlags::HAS_CAP);
         utcb.set_msg_tag(tag);
         self.endpoint.call(&mut utcb)
     }
@@ -121,12 +118,7 @@ impl DeviceService for DeviceClient {
         Ok(IrqHandler::from(recv))
     }
 
-    fn report_frame(
-        &mut self,
-        badge: Badge,
-        frame: CapPtr,
-        byte_len: usize,
-    ) -> Result<(), Error> {
+    fn report_frame(&mut self, badge: Badge, frame: CapPtr, byte_len: usize) -> Result<(), Error> {
         self.report_frame_cap(badge, frame, byte_len)
     }
 
@@ -167,6 +159,10 @@ impl DeviceService for DeviceClient {
         desc: protocol::device::LogicDeviceDesc,
         endpoint: CapPtr,
     ) -> Result<(), Error> {
+        let transfer_slot = RECV_SLOT;
+        let _ = CSPACE_CAP.delete(transfer_slot);
+        CSPACE_CAP.copy_self(endpoint, transfer_slot, Rights::ALL)?;
+
         let mut utcb = unsafe { UTCB::new() };
         let tag = MsgTag::new(
             protocol::DEVICE_PROTO,
@@ -176,7 +172,8 @@ impl DeviceService for DeviceClient {
         unsafe {
             utcb.write_postcard(&desc)?;
         }
-        utcb.set_cap_transfer(endpoint);
+        utcb.set_cap_transfer(transfer_slot);
+        utcb.set_recv_window(transfer_slot);
         utcb.set_msg_tag(tag);
         self.endpoint.call(&mut utcb)
     }
@@ -266,6 +263,10 @@ impl DeviceService for DeviceClient {
         target: crate::protocol::device::HookTarget,
         endpoint: CapPtr,
     ) -> Result<(), Error> {
+        let transfer_slot = RECV_SLOT;
+        let _ = CSPACE_CAP.delete(transfer_slot);
+        CSPACE_CAP.copy_self(endpoint, transfer_slot, Rights::ALL)?;
+
         let mut utcb = unsafe { UTCB::new() };
         let tag = MsgTag::new(
             protocol::DEVICE_PROTO,
@@ -275,7 +276,8 @@ impl DeviceService for DeviceClient {
         unsafe {
             utcb.write_postcard(&target)?;
         }
-        utcb.set_cap_transfer(endpoint);
+        utcb.set_cap_transfer(transfer_slot);
+        utcb.set_recv_window(transfer_slot);
         utcb.set_msg_tag(tag);
         self.endpoint.call(&mut utcb)
     }

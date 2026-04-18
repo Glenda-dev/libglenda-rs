@@ -1,5 +1,5 @@
 use crate::arch::mem::PGSIZE;
-use crate::cap::{Endpoint, Page};
+use crate::cap::{CSPACE_CAP, Endpoint, Page, Rights};
 use crate::client::ResourceClient;
 use crate::drivers::client::{RingParams, ShmParams};
 use crate::drivers::interface::{DriverClient, InputDriver};
@@ -94,10 +94,13 @@ impl InputClient {
         let size = self.ring_params.size;
 
         self.notify_ep = Some(notify_ep);
+        let _ = CSPACE_CAP.delete(recv);
+        CSPACE_CAP.copy_self(notify_ep.cap(), recv, Rights::ALL)?;
+
         let mut utcb = unsafe { UTCB::new() };
         utcb.clear();
+        utcb.set_cap_transfer(recv);
         utcb.set_recv_window(recv);
-        utcb.set_cap_transfer(notify_ep.cap());
         let tag = MsgTag::new(INPUT_PROTO, input::SETUP_URING, MsgFlags::HAS_CAP);
         utcb.set_mr(0, sq_entries as usize);
         utcb.set_mr(1, cq_entries as usize);
@@ -132,9 +135,12 @@ impl InputClient {
         let size = self.shm_params.size;
         let recv = self.shm_params.recv_slot;
 
+        let _ = CSPACE_CAP.delete(recv);
+        CSPACE_CAP.copy_self(frame.cap(), recv, Rights::ALL)?;
+
         let mut utcb = unsafe { UTCB::new() };
         utcb.clear();
-        utcb.set_cap_transfer(frame.cap());
+        utcb.set_cap_transfer(recv);
         let tag = MsgTag::new(INPUT_PROTO, input::SETUP_BUFFER, MsgFlags::HAS_CAP);
         utcb.set_mr(0, vaddr);
         utcb.set_mr(1, size);

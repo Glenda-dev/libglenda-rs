@@ -1,4 +1,4 @@
-use crate::cap::{CapPtr, Endpoint, Page};
+use crate::cap::{CapPtr, Endpoint, Page, CSPACE_CAP, RECV_SLOT, Rights};
 use crate::error::Error;
 use crate::interface::{
     FileHandleService, FileSystemService, PipeService, VirtualFileSystemService,
@@ -116,11 +116,16 @@ impl FileSystemService for FsClient {
 
 impl VirtualFileSystemService for FsClient {
     fn mount(&mut self, _pid: Badge, path: &str, target: Endpoint) -> Result<(), Error> {
+        let transfer_slot = RECV_SLOT;
+        let _ = CSPACE_CAP.delete(transfer_slot);
+        CSPACE_CAP.copy_self(target.cap(), transfer_slot, Rights::ALL)?;
+
         let tag = MsgTag::new(FS_PROTO, fs::MOUNT, MsgFlags::HAS_BUFFER | MsgFlags::HAS_CAP);
         let utcb = unsafe { UTCB::new() };
         utcb.clear();
         unsafe { utcb.write_str(&path)? };
-        utcb.set_cap_transfer(target.cap());
+        utcb.set_cap_transfer(transfer_slot);
+        utcb.set_recv_window(transfer_slot);
         utcb.set_msg_tag(tag);
         self.endpoint.call(utcb)?;
         Ok(())
@@ -258,16 +263,24 @@ impl FileHandleService for FsClient {
         size: usize,
         frame: Option<Page>,
     ) -> Result<(), Error> {
+        let mut transfer_slot = CapPtr::null();
+        if let Some(f) = frame {
+            transfer_slot = RECV_SLOT;
+            let _ = CSPACE_CAP.delete(transfer_slot);
+            CSPACE_CAP.copy_self(f.cap(), transfer_slot, Rights::ALL)?;
+        }
+
         let mut flags = MsgFlags::NONE;
-        if frame.is_some() {
+        if !transfer_slot.is_null() {
             flags |= MsgFlags::HAS_CAP;
         }
         let tag = MsgTag::new(FS_PROTO, fs::SETUP_IOURING, flags);
         let utcb = unsafe { UTCB::new() };
         utcb.clear();
         set_mrs!(utcb, size, client_vaddr);
-        if let Some(f) = frame {
-            utcb.set_cap_transfer(f.cap());
+        if !transfer_slot.is_null() {
+            utcb.set_cap_transfer(transfer_slot);
+            utcb.set_recv_window(transfer_slot);
         }
         utcb.set_msg_tag(tag);
         self.endpoint.call(utcb)?;

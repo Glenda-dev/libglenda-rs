@@ -1,5 +1,5 @@
 use crate::arch::mem::PGSIZE;
-use crate::cap::{Endpoint, Page};
+use crate::cap::{CSPACE_CAP, Endpoint, Page, Rights};
 use crate::client::ResourceClient;
 use crate::drivers::interface::{DriverClient, FrameBufferDriver};
 use crate::drivers::protocol::fb::FbInfo;
@@ -82,13 +82,16 @@ impl FbClient {
         cm: &mut dyn CSpaceService,
         params: RingParams,
     ) -> Result<(), Error> {
+        let _ = CSPACE_CAP.delete(params.recv_slot);
+        CSPACE_CAP.copy_self(params.notify_ep.cap(), params.recv_slot, Rights::ALL)?;
+
         let mut utcb = unsafe { UTCB::new() };
         utcb.clear();
         let tag = MsgTag::new(FB_PROTO, fb::SETUP_RING, MsgFlags::HAS_CAP);
         utcb.set_mr(0, params.sq_entries);
         utcb.set_mr(1, params.cq_entries);
         utcb.set_msg_tag(tag);
-        utcb.set_cap_transfer(params.notify_ep.cap());
+        utcb.set_cap_transfer(params.recv_slot);
         utcb.set_recv_window(params.recv_slot);
         self.endpoint.call(&mut utcb)?;
 

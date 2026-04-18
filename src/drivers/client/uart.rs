@@ -1,5 +1,5 @@
 use crate::arch::mem::PGSIZE;
-use crate::cap::{Endpoint, Page};
+use crate::cap::{CSPACE_CAP, Endpoint, Page, RECV_SLOT, Rights};
 use crate::client::ResourceClient;
 use crate::drivers::client::{RingParams, ShmParams};
 use crate::drivers::interface::{DriverClient, UartDriver};
@@ -155,10 +155,13 @@ impl UartClient {
         let vaddr = self.ring_params.vaddr;
         let size = self.ring_params.size;
         self.notify_ep = Some(notify_ep);
+        let _ = CSPACE_CAP.delete(recv);
+        CSPACE_CAP.copy_self(notify_ep.cap(), recv, Rights::ALL)?;
+
         let mut utcb = unsafe { UTCB::new() };
         utcb.clear();
+        utcb.set_cap_transfer(recv);
         utcb.set_recv_window(recv);
-        utcb.set_cap_transfer(notify_ep.cap());
         let tag = MsgTag::new(UART_PROTO, uart::SETUP_RING, MsgFlags::HAS_CAP);
         utcb.set_mr(0, sq_entries as usize);
         utcb.set_mr(1, cq_entries as usize);
@@ -193,9 +196,14 @@ impl UartClient {
         let paddr = self.shm_params.paddr;
         let size = self.shm_params.size;
 
+        let transfer_slot = RECV_SLOT;
+        let _ = CSPACE_CAP.delete(transfer_slot);
+        CSPACE_CAP.copy_self(frame.cap(), transfer_slot, Rights::ALL)?;
+
         let mut utcb = unsafe { UTCB::new() };
         utcb.clear();
-        utcb.set_cap_transfer(frame.cap());
+        utcb.set_cap_transfer(transfer_slot);
+        utcb.set_recv_window(transfer_slot);
         let tag = MsgTag::new(UART_PROTO, uart::SETUP_BUFFER, MsgFlags::HAS_CAP);
         utcb.set_mr(0, vaddr); // client_vaddr
         utcb.set_mr(1, size);

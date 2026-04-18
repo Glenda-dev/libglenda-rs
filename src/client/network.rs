@@ -1,4 +1,4 @@
-use crate::cap::{Endpoint, Page};
+use crate::cap::{CSPACE_CAP, Endpoint, Page, RECV_SLOT, Rights};
 use crate::error::Error;
 use crate::interface::{NetworkService, SocketService};
 use crate::io::uring::{IOURING_OP_READ, IOURING_OP_WRITE, IoUringClient, IoUringSqe};
@@ -176,16 +176,24 @@ impl SocketService for NetworkClient {
         size: usize,
         frame: Option<Page>,
     ) -> Result<(), Error> {
+        let mut transfer_slot = crate::cap::CapPtr::null();
+        if let Some(f) = frame {
+            transfer_slot = RECV_SLOT;
+            let _ = CSPACE_CAP.delete(transfer_slot);
+            CSPACE_CAP.copy_self(f.cap(), transfer_slot, Rights::ALL)?;
+        }
+
         let mut flags = MsgFlags::NONE;
-        if frame.is_some() {
+        if !transfer_slot.is_null() {
             flags |= MsgFlags::HAS_CAP;
         }
         let tag = MsgTag::new(NETWORK_PROTO, network::SETUP_IOURING, flags);
         let mut utcb = unsafe { UTCB::new() };
         utcb.clear();
         set_mrs!(utcb, client_vaddr, size);
-        if let Some(f) = frame {
-            utcb.set_cap_transfer(f.cap());
+        if !transfer_slot.is_null() {
+            utcb.set_cap_transfer(transfer_slot);
+            utcb.set_recv_window(transfer_slot);
         }
         utcb.set_msg_tag(tag);
         self.endpoint.call(&mut utcb)

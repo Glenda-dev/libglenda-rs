@@ -124,11 +124,16 @@ impl ResourceService for ResourceClient {
         id: usize,
         cap: CapPtr,
     ) -> Result<(), Error> {
+        let transfer_slot = crate::cap::RECV_SLOT;
+        let _ = crate::cap::CSPACE_CAP.delete(transfer_slot);
+        crate::cap::CSPACE_CAP.copy_self(cap, transfer_slot, crate::cap::Rights::ALL)?;
+
         let tag = MsgTag::new(RESOURCE_PROTO, resource::REGISTER_CAP, MsgFlags::HAS_CAP);
         let mut utcb = unsafe { UTCB::new() };
         utcb.clear();
         set_mrs!(utcb, cap_type as usize, id);
-        utcb.set_cap_transfer(cap);
+        utcb.set_cap_transfer(transfer_slot);
+        utcb.set_recv_window(transfer_slot);
         utcb.set_msg_tag(tag);
         self.endpoint.call(&mut utcb)?;
         Ok(())
