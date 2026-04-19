@@ -2,7 +2,7 @@ use crate::io::{Read, Write};
 use core::fmt;
 use core::fmt::Write as FmtWrite; // bring formatting trait into scope
 
-use crate::cap::{CapPtr, Frame};
+use crate::cap::CapPtr;
 use crate::client::terminal::TerminalClient;
 use crate::error::Error;
 use crate::interface::CSpaceService;
@@ -41,11 +41,11 @@ impl ConsoleVT {
 
         // 2. Map the frame to userspace
         let config = client.config().ok_or(Error::NotInitialized)?;
-        let frame = client.frame().ok_or(Error::NotInitialized)?;
+        let page = client.frame().ok_or(Error::NotInitialized)?;
 
         // Use a fixed address or let manager find one (simplified for now)
         let vaddr = 0x40000000;
-        vspace.map_frame(frame, vaddr, Perms::READ | Perms::WRITE, 1, provider, slots)?;
+        vspace.map_page(page, vaddr, Perms::READ | Perms::WRITE, 1, provider, slots)?;
         let base = vaddr as *mut u8;
 
         // 3. Initialize io_uring
