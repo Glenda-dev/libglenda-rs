@@ -82,6 +82,31 @@ pub trait FileHandleService {
     fn process_iouring(&mut self) -> Result<(), Error> {
         Err(Error::NotSupported)
     }
+
+    /// Request a file page frame capability at `offset`.
+    ///
+    /// The service should transfer a frame cap into `recv_slot` and return the number
+    /// of valid bytes in that page via return value.
+    fn map_page(&mut self, _pid: Badge, _offset: usize, _recv_slot: CapPtr) -> Result<usize, Error> {
+        Err(Error::NotSupported)
+    }
+
+    /// Request multiple contiguous file pages starting at `offset`.
+    /// Returns total valid bytes in the returned frame object.
+    fn map_pages(
+        &mut self,
+        pid: Badge,
+        offset: usize,
+        pages: usize,
+        recv_slot: CapPtr,
+    ) -> Result<usize, Error> {
+        if pages == 1 { self.map_page(pid, offset, recv_slot) } else { Err(Error::NotSupported) }
+    }
+
+    /// Release/unpin a previously transferred file page frame.
+    fn unmap_page(&mut self, _pid: Badge, _frame: Page) -> Result<(), Error> {
+        Err(Error::NotSupported)
+    }
 }
 
 /// Virtual Filesystem Service Interface (for VFS/Nexus)

@@ -295,4 +295,43 @@ impl FileHandleService for FsClient {
         self.endpoint.call(utcb)?;
         Ok(())
     }
+
+    fn map_page(&mut self, pid: Badge, offset: usize, recv_slot: CapPtr) -> Result<usize, Error> {
+        self.map_pages(pid, offset, 1, recv_slot)
+    }
+
+    fn map_pages(
+        &mut self,
+        _pid: Badge,
+        offset: usize,
+        pages: usize,
+        recv_slot: CapPtr,
+    ) -> Result<usize, Error> {
+        if pages == 0 {
+            return Err(Error::InvalidArgs);
+        }
+        let tag = MsgTag::new(FS_PROTO, fs::MAP_PAGE, MsgFlags::NONE);
+        let utcb = unsafe { UTCB::new() };
+        utcb.clear();
+        set_mrs!(utcb, offset, pages);
+        utcb.set_recv_window(recv_slot);
+        utcb.set_msg_tag(tag);
+        self.endpoint.call(utcb)?;
+        Ok(utcb.get_mr(0))
+    }
+
+    fn unmap_page(&mut self, _pid: Badge, frame: Page) -> Result<(), Error> {
+        let transfer_slot = RECV_SLOT;
+        let _ = CSPACE_CAP.delete(transfer_slot);
+        CSPACE_CAP.copy_self(frame.cap(), transfer_slot, Rights::ALL)?;
+
+        let tag = MsgTag::new(FS_PROTO, fs::UNMAP_PAGE, MsgFlags::HAS_CAP);
+        let utcb = unsafe { UTCB::new() };
+        utcb.clear();
+        utcb.set_cap_transfer(transfer_slot);
+        utcb.set_recv_window(transfer_slot);
+        utcb.set_msg_tag(tag);
+        self.endpoint.call(utcb)?;
+        Ok(())
+    }
 }

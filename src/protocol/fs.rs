@@ -21,6 +21,8 @@ pub const SEEK: usize = 0x17; // args: [offset, whence] -> res: new_offset
 pub const TRUNCATE: usize = 0x18; // args: [size] -> res: Status
 pub const SETUP_IOURING: usize = 0x20; // args: [size], cap: Frame -> res: Status
 pub const PROCESS_IOURING: usize = 0x21; // args: [] -> res: Status
+pub const MAP_PAGE: usize = 0x22; // args: [offset, pages], recv_window: frame slot <- cap: mapped pages, mr0: valid bytes
+pub const UNMAP_PAGE: usize = 0x23; // args: [], cap: frame -> res: Status
 pub const LOOP_SETUP: usize = 0x30; // args: [], cap: FileHandle -> res: Endpoint (BlockDevice)
 
 pub const MOUNT: usize = 0x40; // args: [], str: path, cap: FS_ENDPOINT (push layered mount)
