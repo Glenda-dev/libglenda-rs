@@ -92,7 +92,12 @@ pub trait FileHandleService {
     ///
     /// The service should transfer a frame cap into `recv_slot` and return the number
     /// of valid bytes in that page via return value.
-    fn map_page(&mut self, _pid: Badge, _offset: usize, _recv_slot: CapPtr) -> Result<usize, Error> {
+    fn map_page(
+        &mut self,
+        _pid: Badge,
+        _offset: usize,
+        _recv_slot: CapPtr,
+    ) -> Result<usize, Error> {
         Err(Error::NotSupported)
     }
 
