@@ -83,6 +83,16 @@ impl FileSystemService for FsClient {
         Ok(())
     }
 
+    fn link(&mut self, _pid: Badge, old_path: &str, new_path: &str) -> Result<(), Error> {
+        let tag = MsgTag::new(FS_PROTO, fs::LINK, MsgFlags::HAS_BUFFER);
+        let utcb = unsafe { UTCB::new() };
+        utcb.clear();
+        unsafe { utcb.write_postcard(&(old_path, new_path))? };
+        utcb.set_msg_tag(tag);
+        self.endpoint.call(utcb)?;
+        Ok(())
+    }
+
     fn stat_path(&mut self, _pid: Badge, path: &str) -> Result<Stat, Error> {
         let tag = MsgTag::new(FS_PROTO, fs::STAT_PATH, MsgFlags::HAS_BUFFER);
         let utcb = unsafe { UTCB::new() };
@@ -163,6 +173,7 @@ impl VirtualFileSystemService for FsClient {
 }
 
 impl FileHandleService for FsClient {
+    #[warn(deprecated_in_future)]
     fn read(&mut self, _pid: Badge, offset: usize, buf: &mut [u8]) -> Result<usize, Error> {
         let tag = MsgTag::new(FS_PROTO, fs::READ_SYNC, MsgFlags::NONE);
         let utcb = unsafe { UTCB::new() };
@@ -182,7 +193,7 @@ impl FileHandleService for FsClient {
         buf[..len].copy_from_slice(&utcb.buffer()[..len]);
         Ok(len)
     }
-
+    #[warn(deprecated_in_future)]
     fn write(&mut self, _pid: Badge, offset: usize, buf: &[u8]) -> Result<usize, Error> {
         let tag = MsgTag::new(FS_PROTO, fs::WRITE_SYNC, MsgFlags::HAS_BUFFER);
         let utcb = unsafe { UTCB::new() };

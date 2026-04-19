@@ -23,6 +23,7 @@ pub mod tcbmethod {
     pub const SUSPEND: usize = 10;
     pub const YIELD: usize = 11;
     pub const FORK_FROM: usize = 12;
+    pub const DELIVER_UPCALL: usize = 13;
 }
 
 pub mod pagetablemethod {

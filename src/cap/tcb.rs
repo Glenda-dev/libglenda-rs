@@ -106,4 +106,22 @@ impl TCB {
         set_mrs!(utcb, parent.cap().bits());
         self.0.invoke(tcbmethod::FORK_FROM, &mut utcb)
     }
+
+    pub fn deliver_upcall(
+        &self,
+        handler: usize,
+        arg0: usize,
+        arg1: usize,
+        arg2: usize,
+        arg3: usize,
+    ) -> Result<(), Error> {
+        let mut utcb = unsafe { UTCB::new() };
+        utcb.clear();
+        set_mrs!(utcb, handler, arg0, arg1, arg2, arg3);
+        self.0.invoke(tcbmethod::DELIVER_UPCALL, &mut utcb)
+    }
+
+    pub fn deliver_signal(&self, handler: usize, signum: usize) -> Result<(), Error> {
+        self.deliver_upcall(handler, signum, 0, 0, 0)
+    }
 }

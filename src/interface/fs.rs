@@ -27,6 +27,11 @@ pub trait FileSystemService: Send {
     /// Rename a file or directory.
     fn rename(&mut self, pid: Badge, old_path: &str, new_path: &str) -> Result<(), Error>;
 
+    /// Create a hard link from `old_path` to `new_path`.
+    fn link(&mut self, _pid: Badge, _old_path: &str, _new_path: &str) -> Result<(), Error> {
+        Err(Error::NotSupported)
+    }
+
     /// Get file status by path.
     fn stat_path(&mut self, pid: Badge, path: &str) -> Result<Stat, Error>;
 

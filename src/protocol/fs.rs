@@ -8,6 +8,7 @@ pub const STAT_PATH: usize = 0x4; // args: [], str: path -> buf: Stat
 pub const RENAME: usize = 0x5; // args: [], str: old|new -> res: Status
 pub const LSTAT_PATH: usize = 0x6; // args: [], str: path -> buf: Stat (no follow final symlink)
 pub const READLINK_PATH: usize = 0x7; // args: [], str: path -> str: symlink target
+pub const LINK: usize = 0x8; // args: [], postcard: (old_path,new_path) -> res: Status
 
 // --- File Handle Operations (Synchronous) ---
 pub const CLOSE: usize = 0x10; // args: [] -> res: Status
