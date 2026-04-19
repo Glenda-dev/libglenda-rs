@@ -99,4 +99,11 @@ impl TCB {
         utcb.clear();
         self.0.invoke(tcbmethod::SUSPEND, &mut utcb)
     }
+
+    pub fn fork_from(&self, parent: TCB) -> Result<(), Error> {
+        let mut utcb = unsafe { UTCB::new() };
+        utcb.clear();
+        set_mrs!(utcb, parent.cap().bits());
+        self.0.invoke(tcbmethod::FORK_FROM, &mut utcb)
+    }
 }
