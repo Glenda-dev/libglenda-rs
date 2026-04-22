@@ -72,6 +72,32 @@ pub trait FileHandleService {
     /// Truncate file to specified size.
     fn truncate(&mut self, pid: Badge, size: usize) -> Result<(), Error>;
 
+    /// Perform device-specific ioctl operation.
+    fn ioctl(&mut self, _pid: Badge, _cmd: u32, _arg: usize) -> Result<usize, Error> {
+        Err(Error::NotSupported)
+    }
+
+    /// Perform extended ioctl operation with structured payload.
+    ///
+    /// - `input`: optional serialized input payload copied to backend.
+    /// - `out_len`: requested output payload capacity.
+    ///
+    /// Returns `(ret, out_bytes)` where `ret` is ioctl return value and
+    /// `out_bytes` is optional output payload returned by backend.
+    fn ioctl_ex(
+        &mut self,
+        pid: Badge,
+        cmd: u32,
+        arg: usize,
+        input: Option<&[u8]>,
+        out_len: usize,
+    ) -> Result<(usize, Vec<u8>), Error> {
+        if input.map(|b| !b.is_empty()).unwrap_or(false) || out_len != 0 {
+            return Err(Error::NotSupported);
+        }
+        Ok((self.ioctl(pid, cmd, arg)?, Vec::new()))
+    }
+
     /// Configure per-handle io_uring shared region.
     fn setup_iouring(
         &mut self,

@@ -20,6 +20,8 @@ pub const GETDENTS: usize = 0x15; // args: [count -> buf: DEntry[]
 pub const SYNC: usize = 0x16;
 pub const SEEK: usize = 0x17; // args: [offset, whence] -> res: new_offset
 pub const TRUNCATE: usize = 0x18; // args: [size] -> res: Status
+pub const IOCTL: usize = 0x19; // args: [cmd, arg] -> res: result
+pub const IOCTL_EX: usize = 0x24; // args: [cmd, arg, in_len, out_len], bytes: optional input -> res: mr0=result,mr1=out_actual, bytes: optional output
 pub const SETUP_IOURING: usize = 0x20; // args: [size], cap: Frame -> res: Status
 pub const PROCESS_IOURING: usize = 0x21; // args: [] -> res: Status
 pub const MAP_PAGE: usize = 0x22; // args: [offset, pages], recv_window: frame slot <- cap: mapped pages, mr0: valid bytes
@@ -30,6 +32,9 @@ pub const MOUNT: usize = 0x40; // args: [], str: path, cap: FS_ENDPOINT (push la
 pub const UNMOUNT: usize = 0x41; // args: [], str: path (pop top layered mount)
 pub const CREATE_VIEW: usize = 0x42; // args: [], str: root -> res: view_id
 pub const SET_VIEW: usize = 0x43; // args: [view_id] -> res: Status
+
+// --- Pipe Service Operations (APE <-> pipefs worker) ---
+pub const PIPE_CREATE: usize = 0x50; // args: [] -> mr0: pipe_id
 
 // --- Request types for IoUring Entries ---
 #[repr(u8)]

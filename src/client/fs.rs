@@ -3,7 +3,7 @@ use crate::error::Error;
 use crate::interface::{
     FileHandleService, FileSystemService, PipeService, VirtualFileSystemService,
 };
-use crate::ipc::{Badge, MsgFlags, MsgTag, UTCB};
+use crate::ipc::{Badge, IPC_BUFFER_SIZE, MsgFlags, MsgTag, UTCB};
 use crate::protocol::FS_PROTO;
 use crate::protocol::fs;
 use crate::protocol::fs::{OpenFlags, Stat};
@@ -265,6 +265,57 @@ impl FileHandleService for FsClient {
         utcb.set_msg_tag(tag);
         self.endpoint.call(utcb)?;
         Ok(())
+    }
+
+    fn ioctl(&mut self, _pid: Badge, cmd: u32, arg: usize) -> Result<usize, Error> {
+        let (ret, _) = self.ioctl_ex(_pid, cmd, arg, None, 0)?;
+        Ok(ret)
+    }
+
+    fn ioctl_ex(
+        &mut self,
+        _pid: Badge,
+        cmd: u32,
+        arg: usize,
+        input: Option<&[u8]>,
+        out_len: usize,
+    ) -> Result<(usize, Vec<u8>), Error> {
+        let in_buf = input.unwrap_or(&[]);
+        if in_buf.len() > IPC_BUFFER_SIZE || out_len > IPC_BUFFER_SIZE {
+            return Err(Error::InvalidArgs);
+        }
+
+        let flags = if in_buf.is_empty() { MsgFlags::NONE } else { MsgFlags::HAS_BUFFER };
+        let tag = MsgTag::new(FS_PROTO, fs::IOCTL_EX, flags);
+        let utcb = unsafe { UTCB::new() };
+        utcb.clear();
+        utcb.set_mr(1, cmd as usize);
+        utcb.set_mr(2, arg);
+        utcb.set_mr(3, in_buf.len());
+        utcb.set_mr(4, out_len);
+        if !in_buf.is_empty() {
+            utcb.write(in_buf);
+        }
+        utcb.set_msg_tag(tag);
+        self.endpoint.call(utcb)?;
+
+        let ret = utcb.get_mr(0);
+        let out_actual = utcb.get_mr(1);
+        if out_actual > IPC_BUFFER_SIZE || out_actual > out_len {
+            return Err(Error::InvalidArgs);
+        }
+
+        if out_actual == 0 {
+            return Ok((ret, Vec::new()));
+        }
+
+        if !utcb.get_msg_tag().flags().contains(MsgFlags::HAS_BUFFER) {
+            return Err(Error::Unknown);
+        }
+
+        let mut out = Vec::with_capacity(out_actual);
+        out.extend_from_slice(&utcb.buffer()[..out_actual]);
+        Ok((ret, out))
     }
 
     fn setup_iouring(

@@ -20,3 +20,4 @@ pub mod protocol;
 pub mod sync;
 pub mod sys;
 pub mod utils;
+pub mod vfs;
