@@ -1,8 +1,8 @@
 use alloc::vec::Vec;
 
-use crate::error::Error;
-use crate::ipc::{Badge, MsgFlags, MsgTag, MAX_MRS, UTCB};
 use crate::cap::Reply;
+use crate::error::Error;
+use crate::ipc::{Badge, MAX_MRS, MsgFlags, MsgTag, UTCB};
 
 #[derive(Debug, Clone)]
 pub struct RpcRequest {
@@ -129,8 +129,11 @@ impl RpcReply {
         if self.mrs_count < MAX_MRS {
             self.mrs[self.mrs_count] = value;
             self.mrs_count += 1;
-            self.tag =
-                MsgTag::new(self.tag.proto(), self.tag.label(), self.tag.flags() | MsgFlags::HAS_MRS);
+            self.tag = MsgTag::new(
+                self.tag.proto(),
+                self.tag.label(),
+                self.tag.flags() | MsgFlags::HAS_MRS,
+            );
         }
         self
     }
@@ -138,7 +141,11 @@ impl RpcReply {
     pub fn with_buffer(mut self, buffer: &[u8]) -> Self {
         self.buffer.clear();
         self.buffer.extend_from_slice(buffer);
-        self.tag = MsgTag::new(self.tag.proto(), self.tag.label(), self.tag.flags() | MsgFlags::HAS_BUFFER);
+        self.tag = MsgTag::new(
+            self.tag.proto(),
+            self.tag.label(),
+            self.tag.flags() | MsgFlags::HAS_BUFFER,
+        );
         self
     }
 }

@@ -1,5 +1,5 @@
 use crate::arch::runtime::{backtrace, panic_break};
-use crate::cap::{CONSOLE_CAP, CapPtr, Page, IrqHandler, Kernel, Untyped};
+use crate::cap::{CONSOLE_CAP, CapPtr, IrqHandler, Kernel, Page, Untyped};
 use crate::console::KConsole;
 use crate::console::{ANSI_RED, ANSI_RESET};
 use crate::ipc::ThreadControlBlock;

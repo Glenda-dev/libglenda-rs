@@ -13,12 +13,8 @@ pub trait ResourceService {
         recv: CapPtr,
     ) -> Result<CapPtr, Error>;
 
-    fn dma_alloc(
-        &mut self,
-        pid: Badge,
-        pages: usize,
-        recv: CapPtr,
-    ) -> Result<(usize, Page), Error>;
+    fn dma_alloc(&mut self, pid: Badge, pages: usize, recv: CapPtr)
+    -> Result<(usize, Page), Error>;
 
     fn free(&mut self, pid: Badge, cap: CapPtr) -> Result<(), Error>;
 
@@ -38,8 +34,7 @@ pub trait ResourceService {
         cap: CapPtr,
     ) -> Result<(), Error>;
 
-    fn get_config(&mut self, pid: Badge, name: &str, recv: CapPtr)
-    -> Result<(Page, usize), Error>;
+    fn get_config(&mut self, pid: Badge, name: &str, recv: CapPtr) -> Result<(Page, usize), Error>;
 
     fn status(&mut self, pid: Badge) -> Result<WarrenStatus, Error>;
 }

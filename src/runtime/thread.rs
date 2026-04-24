@@ -12,14 +12,12 @@ pub struct RuntimeThreadConfig {
 }
 
 impl RuntimeThreadConfig {
-    pub const fn new(park_endpoint: Endpoint, park_recv_slot: CapPtr, park_reply_slot: CapPtr) -> Self {
-        Self {
-            park_endpoint,
-            park_recv_slot,
-            park_reply_slot,
-            worker_id: 0,
-            executor_ptr: 0,
-        }
+    pub const fn new(
+        park_endpoint: Endpoint,
+        park_recv_slot: CapPtr,
+        park_reply_slot: CapPtr,
+    ) -> Self {
+        Self { park_endpoint, park_recv_slot, park_reply_slot, worker_id: 0, executor_ptr: 0 }
     }
 
     pub const fn with_worker_id(mut self, worker_id: usize) -> Self {
@@ -56,6 +54,14 @@ fn current_tcb() -> &'static ThreadControlBlock {
     unsafe { &*(tp as *const ThreadControlBlock) }
 }
 
+fn try_current_tcb() -> Option<&'static ThreadControlBlock> {
+    let tp = crate::arch::thread::get_thread_pointer();
+    if tp == 0 {
+        return None;
+    }
+    Some(unsafe { &*(tp as *const ThreadControlBlock) })
+}
+
 pub fn init_current_thread(config: RuntimeThreadConfig) -> Result<(), Error> {
     if config.park_endpoint.cap().is_null() {
         return Err(Error::InvalidCapability);
@@ -81,6 +87,19 @@ pub fn current_thread_context() -> RuntimeThreadContext {
         executor_ptr: tcb.executor_ptr,
         current_task: tcb.current_task,
     }
+}
+
+pub fn try_current_thread_context() -> Option<RuntimeThreadContext> {
+    let tcb = try_current_tcb()?;
+    Some(RuntimeThreadContext {
+        tid: tcb.tid,
+        park_endpoint: tcb.park_ep,
+        park_recv_slot: tcb.park_recv_slot,
+        park_reply_slot: tcb.park_reply_slot,
+        worker_id: tcb.worker_id,
+        executor_ptr: tcb.executor_ptr,
+        current_task: tcb.current_task,
+    })
 }
 
 pub fn current_thread_id() -> usize {

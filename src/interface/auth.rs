@@ -1,9 +1,7 @@
-use crate::error::Error;
 use crate::cap::Endpoint;
+use crate::error::Error;
 use crate::ipc::Badge;
-use crate::protocol::auth::{
-    IdentityInfo, PermissionDecision, PolicyBackendStatus, PolicyRule,
-};
+use crate::protocol::auth::{IdentityInfo, PermissionDecision, PolicyBackendStatus, PolicyRule};
 
 /// AuthService mirrors AUTH protocol capabilities.
 pub trait AuthService {
@@ -28,11 +26,14 @@ pub trait AuthService {
         operation: &str,
     ) -> Result<PermissionDecision, Error>;
 
-    fn upsert_policy(&self, policy: PolicyRule, resource: &str, operation: &str)
-        -> Result<(), Error>;
+    fn upsert_policy(
+        &self,
+        policy: PolicyRule,
+        resource: &str,
+        operation: &str,
+    ) -> Result<(), Error>;
 
-    fn delete_policy(&self, subject: usize, resource: &str, operation: &str)
-        -> Result<(), Error>;
+    fn delete_policy(&self, subject: usize, resource: &str, operation: &str) -> Result<(), Error>;
 
     fn set_policy_backend(&self, backend: Endpoint) -> Result<(), Error>;
 

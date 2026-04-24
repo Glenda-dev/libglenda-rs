@@ -5,7 +5,7 @@ use crate::client::ProcessClient;
 use crate::error::Error;
 use crate::interface::ThreadService;
 use crate::ipc::ThreadControlBlock;
-use crate::runtime::thread::{init_current_thread, RuntimeThreadConfig};
+use crate::runtime::thread::{RuntimeThreadConfig, init_current_thread};
 
 pub trait RuntimeWorker: Send + 'static {
     type Config: Send + 'static;

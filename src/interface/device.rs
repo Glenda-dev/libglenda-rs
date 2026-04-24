@@ -1,4 +1,4 @@
-use crate::cap::{CapPtr, Endpoint, Page, IrqHandler};
+use crate::cap::{CapPtr, Endpoint, IrqHandler, Page};
 use crate::error::Error;
 use crate::ipc::Badge;
 use crate::protocol::device::{DeviceDesc, DeviceDescNode, DeviceQuery, LogicDeviceDesc};

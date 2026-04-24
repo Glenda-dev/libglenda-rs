@@ -71,13 +71,9 @@ impl UntypedService for UntypedManager {
                 let obj_paddr = paddr + watermark * PGSIZE;
                 // Try to retype
                 let ret = match obj_type {
-                    CapType::Untyped => {
-                        block.cap.retype_untyped(flags, CSPACE_CAP.cap(), dest)
-                    }
+                    CapType::Untyped => block.cap.retype_untyped(flags, CSPACE_CAP.cap(), dest),
                     CapType::TCB => block.cap.retype_tcb(CSPACE_CAP.cap(), dest),
-                    CapType::PageTable => {
-                        block.cap.retype_pagetable(flags, CSPACE_CAP.cap(), dest)
-                    }
+                    CapType::PageTable => block.cap.retype_pagetable(flags, CSPACE_CAP.cap(), dest),
                     CapType::CNode => block.cap.retype_cnode(CSPACE_CAP.cap(), dest),
                     CapType::Page => block.cap.retype_page(flags, CSPACE_CAP.cap(), dest),
                     CapType::VSpace => block.cap.retype_vspace(CSPACE_CAP.cap(), dest),

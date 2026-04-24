@@ -55,7 +55,8 @@ impl TerminalClient {
         ));
         utcb.set_mr(0, buf.len());
         self.endpoint.call(&mut utcb)?;
-        let read_len = core::cmp::min(utcb.get_mr(0), core::cmp::min(buf.len(), utcb.buffer().len()));
+        let read_len =
+            core::cmp::min(utcb.get_mr(0), core::cmp::min(buf.len(), utcb.buffer().len()));
         if read_len > 0 {
             buf[..read_len].copy_from_slice(&utcb.buffer()[..read_len]);
         }

@@ -628,13 +628,8 @@ impl VSpaceManager {
             return Err(Error::PermissionDenied);
         }
 
-        let l1_entries = Self::ensure_l1_entries(
-            &mut self.shadow,
-            vaddr,
-            provider,
-            slots,
-            self.root,
-        )?;
+        let l1_entries =
+            Self::ensure_l1_entries(&mut self.shadow, vaddr, provider, slots, self.root)?;
         let idx1 = index(vaddr, 1);
         if l1_entries.contains_key(&idx1) {
             return Ok(false);
