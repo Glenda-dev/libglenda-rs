@@ -64,4 +64,11 @@ impl<T> Receiver<T> {
         self.shared.not_full.notify_one();
         t
     }
+
+    pub fn try_recv(&self) -> Option<T> {
+        let mut queue = self.shared.queue.lock();
+        let t = queue.pop_front()?;
+        self.shared.not_full.notify_one();
+        Some(t)
+    }
 }

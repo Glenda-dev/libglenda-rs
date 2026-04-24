@@ -1,3 +1,4 @@
+pub mod ape;
 pub mod auth;
 pub mod device;
 pub mod fs;
@@ -16,6 +17,7 @@ pub mod volume;
 
 // Protocol ID
 pub const INPUT_PROTO: usize = 0x0C00;
+pub const APE_PROTO: usize = 0x0D00;
 pub const TERMINAL_PROTO: usize = 0x0B00;
 pub const TIME_PROTO: usize = 0x0A00;
 pub const VOLUME_PROTO: usize = 0x0900;

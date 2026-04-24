@@ -77,6 +77,13 @@ pub trait FileHandleService {
         Err(Error::NotSupported)
     }
 
+    /// Poll handle readiness with Linux `poll(2)` event mask.
+    ///
+    /// Default behavior is "always ready" for requested events.
+    fn poll(&mut self, _pid: Badge, events: u32) -> Result<u32, Error> {
+        Ok(events)
+    }
+
     /// Perform extended ioctl operation with structured payload.
     ///
     /// - `input`: optional serialized input payload copied to backend.

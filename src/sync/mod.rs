@@ -7,7 +7,7 @@ pub mod semaphore;
 pub mod spinlock;
 
 use crate::cap::Endpoint;
-use crate::ipc::{MsgFlags, MsgTag, UTCB};
+use crate::ipc::{MsgFlags, MsgTag, ThreadControlBlock, UTCB};
 
 /// Park the current thread (block until unparked).
 /// Uses the thread-local notification endpoint.
@@ -31,7 +31,9 @@ pub fn unpark(endpoint: Endpoint) {
 // Placeholder for referencing the current thread's parker endpoint.
 // In a real system, this comes from TLS.
 pub fn current_thread_park_endpoint() -> Endpoint {
-    // TODO: Get from TLS or TCB
-    // For now returning a dummy or panicking if used without setup
-    unimplemented!("Need TLS support to get current thread endpoint")
+    let tp = crate::arch::thread::get_thread_pointer();
+    assert!(tp != 0, "current_thread_park_endpoint requires an initialized thread pointer");
+    let tcb = unsafe { &*(tp as *const ThreadControlBlock) };
+    assert!(!tcb.park_ep.cap().is_null(), "current thread has no registered park endpoint");
+    tcb.park_ep
 }

@@ -1,5 +1,5 @@
 use super::{Badge, MsgTag};
-use crate::cap::CapPtr;
+use crate::cap::{CapPtr, Endpoint};
 use crate::error::Error;
 use crate::mem::get_utcb_va;
 use alloc::string::String;
@@ -17,11 +17,28 @@ pub type MsgArgs = [usize; MAX_MRS];
 pub struct ThreadControlBlock {
     pub self_ptr: usize,
     pub tid: usize,
+    pub park_ep: Endpoint,
+    pub park_recv_slot: CapPtr,
+    pub park_reply_slot: CapPtr,
+    pub worker_id: usize,
+    pub executor_ptr: usize,
+    pub current_task: usize,
+    pub flags: usize,
 }
 
 impl ThreadControlBlock {
     pub const fn new() -> Self {
-        Self { self_ptr: 0, tid: 0 }
+        Self {
+            self_ptr: 0,
+            tid: 0,
+            park_ep: Endpoint::from(CapPtr::null()),
+            park_recv_slot: CapPtr::null(),
+            park_reply_slot: CapPtr::null(),
+            worker_id: 0,
+            executor_ptr: 0,
+            current_task: 0,
+            flags: 0,
+        }
     }
 }
 

@@ -27,6 +27,7 @@ pub trait FsNamespace: Send {
     fn unlink(&mut self, path: &str, _badge: Badge) -> Result<(), Error>;
 
     fn stat_path(&mut self, path: &str, _badge: Badge) -> Result<fs::Stat, Error>;
+    fn lstat_path(&mut self, path: &str, _badge: Badge) -> Result<fs::Stat, Error>;
 
     fn readlink_path(&mut self, path: &str, _badge: Badge) -> Result<alloc::string::String, Error>;
 
@@ -84,7 +85,8 @@ impl<N: FsNamespace> FsRpcServer<N> {
             fs::OPEN => self.handle_open(utcb, badge),
             fs::MKDIR => self.handle_mkdir(utcb, badge),
             fs::UNLINK => self.handle_unlink(utcb, badge),
-            fs::STAT_PATH | fs::LSTAT_PATH => self.handle_stat_path(utcb, badge),
+            fs::STAT_PATH => self.handle_stat_path(utcb, badge),
+            fs::LSTAT_PATH => self.handle_lstat_path(utcb, badge),
             fs::READLINK_PATH => self.handle_readlink(utcb, badge),
             fs::CLOSE => self.handle_close(utcb, badge),
             fs::STAT => self.handle_stat(utcb, badge),
@@ -94,6 +96,7 @@ impl<N: FsNamespace> FsRpcServer<N> {
             fs::SEEK => self.handle_seek(utcb, badge),
             fs::TRUNCATE => self.handle_truncate(utcb, badge),
             fs::IOCTL => self.handle_ioctl(utcb, badge),
+            fs::POLL => self.handle_poll(utcb, badge),
             fs::IOCTL_EX => self.handle_ioctl_ex(utcb, badge),
             fs::PIPE_CREATE => self.handle_pipe_create(utcb, badge),
             _ => Err(Error::NotSupported),
@@ -139,6 +142,14 @@ impl<N: FsNamespace> FsRpcServer<N> {
     fn handle_stat_path(&self, utcb: &mut UTCB, badge: Badge) -> Result<(), Error> {
         let path = unsafe { utcb.read_str()? };
         let stat = self.backend.lock().stat_path(&path, badge)?;
+        unsafe { utcb.write_obj(&stat)? };
+        Self::ok_reply(utcb);
+        Ok(())
+    }
+
+    fn handle_lstat_path(&self, utcb: &mut UTCB, badge: Badge) -> Result<(), Error> {
+        let path = unsafe { utcb.read_str()? };
+        let stat = self.backend.lock().lstat_path(&path, badge)?;
         unsafe { utcb.write_obj(&stat)? };
         Self::ok_reply(utcb);
         Ok(())
@@ -266,6 +277,18 @@ impl<N: FsNamespace> FsRpcServer<N> {
         let ret = handle.ioctl(badge, cmd, arg)?;
         drop(handles);
         utcb.set_mr(0, ret);
+        Self::ok_reply(utcb);
+        Ok(())
+    }
+
+    fn handle_poll(&self, utcb: &mut UTCB, badge: Badge) -> Result<(), Error> {
+        let events = utcb.get_mr(1) as u32;
+        let handle_id = Self::handle_key_from_badge(badge);
+        let mut handles = self.handles.lock();
+        let handle = handles.get_mut(&handle_id).ok_or(Error::NotFound)?;
+        let revents = handle.poll(badge, events)?;
+        drop(handles);
+        utcb.set_mr(0, revents as usize);
         Self::ok_reply(utcb);
         Ok(())
     }

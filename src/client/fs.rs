@@ -272,6 +272,16 @@ impl FileHandleService for FsClient {
         Ok(ret)
     }
 
+    fn poll(&mut self, _pid: Badge, events: u32) -> Result<u32, Error> {
+        let tag = MsgTag::new(FS_PROTO, fs::POLL, MsgFlags::NONE);
+        let utcb = unsafe { UTCB::new() };
+        utcb.clear();
+        utcb.set_mr(1, events as usize);
+        utcb.set_msg_tag(tag);
+        self.endpoint.call(utcb)?;
+        Ok(utcb.get_mr(0) as u32)
+    }
+
     fn ioctl_ex(
         &mut self,
         _pid: Badge,

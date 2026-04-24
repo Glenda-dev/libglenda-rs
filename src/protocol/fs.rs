@@ -21,6 +21,7 @@ pub const SYNC: usize = 0x16;
 pub const SEEK: usize = 0x17; // args: [offset, whence] -> res: new_offset
 pub const TRUNCATE: usize = 0x18; // args: [size] -> res: Status
 pub const IOCTL: usize = 0x19; // args: [cmd, arg] -> res: result
+pub const POLL: usize = 0x1a; // args: [events] -> res: revents
 pub const IOCTL_EX: usize = 0x24; // args: [cmd, arg, in_len, out_len], bytes: optional input -> res: mr0=result,mr1=out_actual, bytes: optional output
 pub const SETUP_IOURING: usize = 0x20; // args: [size], cap: Frame -> res: Status
 pub const PROCESS_IOURING: usize = 0x21; // args: [] -> res: Status
