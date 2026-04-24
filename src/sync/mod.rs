@@ -7,7 +7,9 @@ pub mod semaphore;
 pub mod spinlock;
 
 use crate::cap::Endpoint;
-use crate::ipc::{MsgFlags, MsgTag, ThreadControlBlock, UTCB};
+use crate::ipc::{Badge, ThreadControlBlock, UTCB};
+
+const PARK_BADGE: Badge = Badge::new(1);
 
 /// Park the current thread (block until unparked).
 /// Uses the thread-local notification endpoint.
@@ -21,11 +23,7 @@ pub fn park() {
 
 /// Unpark a specific thread via its endpoint.
 pub fn unpark(endpoint: Endpoint) {
-    let tag = MsgTag::new(0, 0, MsgFlags::NONE);
-    let mut utcb = unsafe { UTCB::new() };
-    utcb.clear();
-    utcb.set_msg_tag(tag);
-    let _ = endpoint.send(&mut utcb);
+    let _ = endpoint.notify(PARK_BADGE);
 }
 
 // Placeholder for referencing the current thread's parker endpoint.

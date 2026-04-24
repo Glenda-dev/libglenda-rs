@@ -5,6 +5,7 @@ use crate::client::ProcessClient;
 use crate::error::Error;
 use crate::interface::ThreadService;
 use crate::ipc::{Badge, ThreadControlBlock};
+use crate::runtime::{RuntimeThreadConfig, init_current_thread};
 use crate::vfs::{FsNamespace, FsRpcServer};
 
 pub trait VfsWorkerServer: Send {
@@ -37,6 +38,7 @@ pub struct VfsWorkerConfig<F: VfsWorkerFactory> {
     pub endpoint: Endpoint,
     pub reply_slot: CapPtr,
     pub recv_slot: CapPtr,
+    pub park_endpoint: Endpoint,
     pub kind: F::Kind,
 }
 
@@ -57,6 +59,11 @@ pub extern "C" fn vfs_worker_entry<F: VfsWorkerFactory>(arg: usize, tid: usize) 
     }
 
     let cfg = unsafe { &*(arg as *const VfsWorkerConfig<F>) };
+    let _ = init_current_thread(RuntimeThreadConfig::new(
+        cfg.park_endpoint,
+        CapPtr::null(),
+        CapPtr::null(),
+    ));
     let server = F::create_server(cfg.kind);
 
     loop {
