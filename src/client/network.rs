@@ -58,7 +58,7 @@ impl NetworkService for NetworkClient {
 
 impl SocketService for NetworkClient {
     fn bind(&mut self, address: &[u8]) -> Result<(), Error> {
-        let tag = MsgTag::new(NETWORK_PROTO, network::BIND, MsgFlags::NONE);
+        let tag = MsgTag::new(NETWORK_PROTO, network::BIND, MsgFlags::HAS_BUFFER);
         let mut utcb = unsafe { UTCB::new() };
         utcb.clear();
         utcb.write(address);
@@ -85,7 +85,7 @@ impl SocketService for NetworkClient {
     }
 
     fn connect(&mut self, address: &[u8]) -> Result<(), Error> {
-        let tag = MsgTag::new(NETWORK_PROTO, network::CONNECT, MsgFlags::NONE);
+        let tag = MsgTag::new(NETWORK_PROTO, network::CONNECT, MsgFlags::HAS_BUFFER);
         let mut utcb = unsafe { UTCB::new() };
         utcb.clear();
         utcb.write(address);
@@ -94,7 +94,7 @@ impl SocketService for NetworkClient {
     }
 
     fn send(&mut self, data: &[u8], flags: i32) -> Result<usize, Error> {
-        let tag = MsgTag::new(NETWORK_PROTO, network::SEND, MsgFlags::NONE);
+        let tag = MsgTag::new(NETWORK_PROTO, network::SEND, MsgFlags::HAS_BUFFER);
         let mut utcb = unsafe { UTCB::new() };
         utcb.clear();
         let len = utcb.write(data);

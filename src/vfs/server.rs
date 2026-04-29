@@ -191,7 +191,7 @@ impl<N: FsNamespace> FsRpcServer<N> {
         let mut handles = self.handles.lock();
         let handle = handles.get_mut(&handle_id).ok_or(Error::NotFound)?;
         let read_size = size.min(IPC_BUFFER_SIZE);
-        let mut tmp = [0u8; IPC_BUFFER_SIZE];
+        let mut tmp = alloc::vec![0u8; IPC_BUFFER_SIZE];
         let n = handle.read(badge, offset, &mut tmp[..read_size])?;
         drop(handles);
         if n > read_size {

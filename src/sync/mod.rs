@@ -1,10 +1,15 @@
+pub mod async_mutex;
 pub mod channel;
 pub mod condvar;
 pub mod mutex;
+pub mod notification;
 pub mod once;
 pub mod rwlock;
 pub mod semaphore;
 pub mod spinlock;
+
+pub use async_mutex::{AsyncMutex, AsyncMutexGuard};
+pub use notification::{NotificationFuture, NotificationReactor};
 
 use crate::cap::Endpoint;
 use crate::ipc::{Badge, ThreadControlBlock, UTCB};

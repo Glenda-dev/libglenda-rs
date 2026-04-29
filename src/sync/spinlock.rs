@@ -3,6 +3,7 @@ use core::hint::spin_loop;
 use core::ops::{Deref, DerefMut};
 use core::sync::atomic::{AtomicBool, Ordering};
 
+#[derive(Debug)]
 pub struct SpinLock<T: ?Sized> {
     lock: AtomicBool,
     data: UnsafeCell<T>,

@@ -114,7 +114,7 @@ impl ResourceService for ResourceClient {
         set_mrs!(utcb, cap as usize, id, recv.bits());
         utcb.set_msg_tag(tag);
         self.endpoint.call(&mut utcb)?;
-        Ok(CapPtr::from(utcb.get_mr(0)))
+        Ok(recv)
     }
 
     fn register_cap(

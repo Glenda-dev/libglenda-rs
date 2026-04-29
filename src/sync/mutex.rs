@@ -6,6 +6,7 @@ use core::cell::UnsafeCell;
 use core::ops::{Deref, DerefMut};
 use core::sync::atomic::{AtomicU8, Ordering};
 
+#[derive(Debug)]
 pub struct Mutex<T: ?Sized> {
     state: AtomicU8, // 0: unlocked, 1: locked, 2: locked with waiters
     waiters: SpinLock<VecDeque<Endpoint>>,
