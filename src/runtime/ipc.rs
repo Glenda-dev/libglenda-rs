@@ -6,7 +6,7 @@ use core::fmt;
 use core::future::Future;
 use core::pin::Pin;
 
-use crate::cap::{CNode, CSPACE_CAP, CapPtr, Endpoint, Reply, Rights};
+use crate::cap::{CNode, CSPACE_CAP, CapPtr, Endpoint, RECV_SLOT, REPLY_SLOT, Reply, Rights};
 use crate::error::Error;
 use crate::ipc::{Badge, MAX_MRS, MsgFlags, MsgTag, UTCB};
 use crate::runtime::executor::ThreadPool;
@@ -243,6 +243,10 @@ impl AsyncRpcServer {
     pub fn run(&self, endpoint: Endpoint) -> ! {
         let mut utcb = unsafe { UTCB::new() };
         loop {
+            // Ensure inbound transferred caps always land on a valid slot.
+            // Without this, HAS_CAP requests may try to copy into slot 0.
+            utcb.set_recv_window(RECV_SLOT);
+            utcb.set_reply_window(REPLY_SLOT);
             // Wait for request or notification
             let res = endpoint.recv(&mut utcb);
             if res.is_err() {

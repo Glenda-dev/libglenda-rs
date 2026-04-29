@@ -59,11 +59,7 @@ pub extern "C" fn vfs_worker_entry<F: VfsWorkerFactory>(arg: usize, tid: usize) 
     }
 
     let cfg = unsafe { &*(arg as *const VfsWorkerConfig<F>) };
-    let _ = init_current_thread(RuntimeThreadConfig::new(
-        cfg.park_endpoint,
-        CapPtr::null(),
-        CapPtr::null(),
-    ));
+    let _ = init_current_thread(RuntimeThreadConfig::new(cfg.park_endpoint));
     let server = F::create_server(cfg.kind);
 
     loop {
