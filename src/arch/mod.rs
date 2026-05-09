@@ -21,6 +21,13 @@ pub mod x86_64;
 #[cfg(not(feature = "hosted"))]
 pub use x86_64::*;
 
+#[cfg(target_arch = "aarch64")]
+#[cfg(not(feature = "hosted"))]
+pub mod aarch64;
+#[cfg(target_arch = "aarch64")]
+#[cfg(not(feature = "hosted"))]
+pub use aarch64::*;
+
 #[cfg(feature = "hosted")]
 pub mod hosted;
 #[cfg(feature = "hosted")]
