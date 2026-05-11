@@ -54,3 +54,4 @@ pub const VT_ENDPOINT: usize = 8;
 pub const APE_ENDPOINT: usize = 9;
 pub const CHIMERA_ENDPOINT: usize = 10;
 pub const FACTOTUM_ENDPOINT: usize = 11;
+pub const NINE_ENDPOINT: usize = 12;
