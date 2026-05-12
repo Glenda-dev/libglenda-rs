@@ -1,10 +1,10 @@
+use crate::ipc::Badge;
+use crate::sync::mutex::Mutex;
 use alloc::collections::BTreeMap;
 use alloc::sync::Arc;
 use core::future::Future;
 use core::pin::Pin;
 use core::task::{Context, Poll, Waker};
-use crate::ipc::Badge;
-use crate::sync::mutex::Mutex;
 
 /// A reactor that maps kernel notification badges to async wakers.
 pub struct NotificationReactor {
@@ -13,9 +13,7 @@ pub struct NotificationReactor {
 
 impl NotificationReactor {
     pub fn new() -> Self {
-        Self {
-            waiters: Mutex::new(BTreeMap::new()),
-        }
+        Self { waiters: Mutex::new(BTreeMap::new()) }
     }
 
     /// Register a waker for a specific badge.
@@ -44,11 +42,7 @@ pub struct NotificationFuture {
 
 impl NotificationFuture {
     pub fn new(reactor: Arc<NotificationReactor>, badge: Badge) -> Self {
-        Self {
-            reactor,
-            badge,
-            registered: false,
-        }
+        Self { reactor, badge, registered: false }
     }
 }
 

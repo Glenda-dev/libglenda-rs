@@ -41,11 +41,7 @@ impl<T: ?Sized> AsyncMutex<T> {
     }
 
     pub fn try_lock(&self) -> Option<AsyncMutexGuard<'_, T>> {
-        if self
-            .locked
-            .compare_exchange(false, true, Ordering::Acquire, Ordering::Relaxed)
-            .is_ok()
-        {
+        if self.locked.compare_exchange(false, true, Ordering::Acquire, Ordering::Relaxed).is_ok() {
             Some(AsyncMutexGuard { lock: self })
         } else {
             None
