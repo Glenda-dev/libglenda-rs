@@ -4,5 +4,7 @@ pub const EMPTY_VA: usize = 0x0;
 pub const VPN_MASK: usize = 0x3FF;
 pub const SHIFTS: [usize; 2] = [12, 22];
 pub const USER_VA: usize = 0x10000;
+pub const TRAMPOLINE_VA: usize = VA_MAX - PGSIZE;
+pub const THREAD_AREA_BASE: usize = 0x7F_0000_00;
 pub const KSTACK_PAGES: usize = 4;
 pub const PT_LEVELS: usize = 2;

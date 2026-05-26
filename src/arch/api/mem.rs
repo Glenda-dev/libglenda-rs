@@ -11,5 +11,10 @@ pub const VPN_MASK: usize = 0x0;
 pub const SHIFTS: [usize; 1] = [0];
 // 用户空间地址起始
 pub const USER_VA: usize = 0x10000;
+pub const TRAMPOLINE_VA: usize = VA_MAX - PGSIZE;
+#[cfg(target_pointer_width = "64")]
+pub const THREAD_AREA_BASE: usize = 0x3F_0000_0000;
+#[cfg(target_pointer_width = "32")]
+pub const THREAD_AREA_BASE: usize = 0x7F_0000_00;
 // 内核栈大小
 pub const KSTACK_PAGES: usize = 1;

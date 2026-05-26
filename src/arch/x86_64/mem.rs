@@ -4,5 +4,7 @@ pub const EMPTY_VA: usize = 0x0; // 空虚拟地址
 pub const VPN_MASK: usize = 0x1FF;
 pub const SHIFTS: [usize; 4] = [12, 21, 30, 39]; // L0, L1, L2, L3
 pub const USER_VA: usize = 0x400000;
+pub const TRAMPOLINE_VA: usize = VA_MAX - PGSIZE;
+pub const THREAD_AREA_BASE: usize = 0x3F_0000_0000;
 pub const KSTACK_PAGES: usize = 1;
 pub const PT_LEVELS: usize = 4;

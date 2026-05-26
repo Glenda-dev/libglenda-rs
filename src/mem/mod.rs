@@ -1,16 +1,11 @@
-use crate::arch::mem::{PGSIZE, USER_VA, VA_MAX};
+use crate::arch::mem::{PGSIZE, THREAD_AREA_BASE, USER_VA};
 
-pub const TRAMPOLINE_VA: usize = VA_MAX - PGSIZE; // Trampoline 映射地址
+pub use crate::arch::mem::TRAMPOLINE_VA;
 
 pub const STACK_BASE: usize = TRAMPOLINE_VA; // 用户栈最高地址（起始地址，向低地址生长）
 pub const STACK_PAGES: usize = 32;
 pub const STACK_SIZE: usize = STACK_PAGES * PGSIZE;
 pub const ENTRY_VA: usize = USER_VA; // 用户程序入口地址
-
-#[cfg(target_pointer_width = "64")]
-pub const THREAD_AREA_BASE: usize = 0x3F_0000_0000;
-#[cfg(target_pointer_width = "32")]
-pub const THREAD_AREA_BASE: usize = 0x7F_0000_00;
 
 pub const fn get_utcb_va(tid: usize) -> usize {
     THREAD_AREA_BASE + tid * 2 * PGSIZE
